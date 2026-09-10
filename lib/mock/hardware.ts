@@ -310,8 +310,14 @@ export interface EnvironmentSpec {
   locationLabelEn: string;
   deviceId: string;
   hasRainGauge: boolean;
+  /** จุดนี้มี barometer + light sensor หรือไม่ (มีเฉพาะกลางแจ้ง) */
+  hasWeatherSensors: boolean;
   baselineTemperatureCelsius: number;
   baselineHumidityPercent: number;
+  /** ความกดอากาศเฉลี่ยที่ระดับพื้นที่โรงงาน (hPa) — null เมื่อไม่มี barometer */
+  baselinePressureHpa: number | null;
+  /** ความเข้มแสงกลางแดดจัด (lux) — null เมื่อไม่มี light sensor */
+  peakIlluminanceLux: number | null;
 }
 
 export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
@@ -324,8 +330,11 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     locationLabelEn: 'Pump Room',
     deviceId: 'esp32-env-1',
     hasRainGauge: false,
+    hasWeatherSensors: false,
     baselineTemperatureCelsius: 34.5,
     baselineHumidityPercent: 68,
+    baselinePressureHpa: null,
+    peakIlluminanceLux: null,
   },
   {
     id: 'env-control-cabinet',
@@ -336,8 +345,11 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     locationLabelEn: 'Control Cabinet',
     deviceId: 'esp32-env-2',
     hasRainGauge: false,
+    hasWeatherSensors: false,
     baselineTemperatureCelsius: 38.2,
     baselineHumidityPercent: 52,
+    baselinePressureHpa: null,
+    peakIlluminanceLux: null,
   },
   {
     id: 'env-outdoor',
@@ -348,7 +360,11 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     locationLabelEn: 'Outdoor',
     deviceId: 'esp32-env-3',
     hasRainGauge: true,
+    hasWeatherSensors: true,
     baselineTemperatureCelsius: 31.8,
     baselineHumidityPercent: 74,
+    // ปทุมธานีอยู่เกือบระดับน้ำทะเล ความกดอากาศจึงใกล้ 1013 hPa
+    baselinePressureHpa: 1009.4,
+    peakIlluminanceLux: 92_000,
   },
 ];

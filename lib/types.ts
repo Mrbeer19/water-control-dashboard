@@ -96,6 +96,9 @@ export type MetricKey =
   | 'temperature'
   | 'humidity'
   | 'rainfall'
+  | 'pressure_hpa'
+  | 'illuminance_lux'
+  | 'heat_index'
   // ระดับระบบ
   | 'main_inflow_lpm'
   | 'zone_outflow_lpm'
@@ -530,11 +533,28 @@ export interface EnvironmentReading {
   humidityPercent: number;
   /** จุดกลั่นตัว — ใช้เตือนไอน้ำเกาะในตู้คอนโทรล */
   dewPointCelsius: number;
+  /**
+   * ดัชนีความร้อน — อุณหภูมิที่ร่างกายรู้สึกจริงเมื่อรวมความชื้นเข้าไปด้วย
+   * ใช้เตือนความปลอดภัยของช่างที่เข้าไปทำงานในห้องปั๊ม
+   */
+  heatIndexCelsius: number;
+
+  /** เฉพาะจุดกลางแจ้ง: ความกดอากาศ (hPa) — null สำหรับจุดในอาคาร */
+  pressureHpa: number | null;
+  /** เฉพาะจุดกลางแจ้ง: ความเข้มแสง (lux) — null สำหรับจุดในอาคาร */
+  illuminanceLux: number | null;
   /** เฉพาะจุดกลางแจ้ง: ปริมาณฝนจาก rain gauge (มม./ชม.) */
   rainfallMmPerHour: number | null;
+  /** เฉพาะจุดกลางแจ้ง: ฝนสะสมตั้งแต่เที่ยงคืน (มม.) */
+  rainfallTodayMm: number | null;
+  /** เฉพาะจุดกลางแจ้ง: ฝนสะสมเดือนนี้ (มม.) */
+  rainfallMonthMm: number | null;
   /** เฉพาะจุดกลางแจ้ง: rain sensor ตรวจพบฝนอยู่หรือไม่ */
   rainDetected: boolean | null;
 }
+
+/** แนวโน้มความกดอากาศเทียบกับ 3 ชั่วโมงก่อน — ใช้บอกว่าฝนกำลังจะมาหรือกำลังผ่านไป */
+export type PressureTrend = 'rising' | 'falling' | 'steady';
 
 export interface EnvironmentSensor extends BaseEntity {
   location: EnvironmentLocation;
@@ -546,6 +566,15 @@ export interface EnvironmentSensor extends BaseEntity {
   humidityThresholds: ThresholdRange;
   /** true เมื่อจุดนี้มี rain gauge (มีเฉพาะกลางแจ้ง) */
   hasRainGauge: boolean;
+  /** true เมื่อจุดนี้มี barometer และ light sensor (มีเฉพาะกลางแจ้ง) */
+  hasWeatherSensors: boolean;
+  /**
+   * แนวโน้มความกดอากาศเทียบ 3 ชั่วโมงก่อน — null เมื่อจุดนี้ไม่มี barometer
+   * หรือประวัติยังไม่ยาวพอ 3 ชั่วโมง
+   */
+  pressureTrend3h: PressureTrend | null;
+  /** ผลต่างความกดอากาศจาก 3 ชั่วโมงก่อน (hPa) — null เมื่อคำนวณไม่ได้ */
+  pressureChange3hHpa: number | null;
   deviceId: string;
 }
 
@@ -1357,6 +1386,36 @@ export interface ReportDefinition extends BaseRecord {
   /** แถวสรุปท้ายตาราง — null เมื่อรายงานนี้ไม่มีผลรวม */
   totals: ReportRow | null;
   generatedAt: ISODateTime;
+}
+
+/** ค่าใช้น้ำและค่าน้ำรายโซนในรอบบิล ใช้กับกราฟแท่งเปรียบเทียบหน้า Overview */
+export interface ZoneCost {
+  zoneId: string;
+  name: string;
+  nameEn: string;
+  departmentId: string | null;
+  cubicMeters: number;
+  costBaht: number;
+  /** สัดส่วนการใช้เทียบทั้งโรงงาน (%) */
+  sharePercent: number;
+}
+
+/**
+ * ยอดรวมรายวัน ใช้กับกราฟเส้นการใช้น้ำรายวัน
+ * และกราฟซ้อนอุณหภูมิภายนอก vs การใช้น้ำ
+ */
+export interface DailyUsagePoint {
+  /** วันที่แบบ "YYYY-MM-DD" ตามเวลาท้องถิ่น */
+  date: string;
+  timestamp: EpochMs;
+  cubicMeters: number;
+  costBaht: number;
+  /** อุณหภูมิเฉลี่ยกลางแจ้งของวันนั้น — null เมื่อไม่มีข้อมูลเซนเซอร์ */
+  avgTemperatureCelsius: number | null;
+  /** ฝนสะสมของวันนั้น (มม.) — null เมื่อไม่มีข้อมูล */
+  rainfallMm: number | null;
+  /** true = วันในอนาคตที่ยังไม่เกิด (ส่วนที่ AI พยากรณ์) */
+  projected: boolean;
 }
 
 // ═════════════════════════════════════════════════════════════

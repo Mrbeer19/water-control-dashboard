@@ -9,6 +9,7 @@ export { CURRENT_USER_ID, DEPARTMENTS, ELECTRIC_NODE_SPECS, SYSTEM_ACTOR, USERS,
 export { DEFAULT_SETTINGS } from './settings';
 export { acknowledgeAlert, raiseAlert, resolveAlerts } from './alerts';
 export { buildAnomalies, buildForecast, buildMaintenancePredictions, buildServiceStatus } from './ai';
+export { DAILY_HISTORY_DAYS, buildDailyUsage, daysRemainingInMonth } from './daily';
 export { startSimulator, tickOnce } from './simulator';
 export {
   getState,

@@ -50,6 +50,13 @@ const HISTORY_LIMIT = 1_200;
 const BACKFILL_MINUTES = 60;
 const BACKFILL_STEP_MS = 30_000;
 
+/**
+ * ความกดอากาศ/ความเข้มแสง backfill ยาวกว่า เพราะแนวโน้มความกดอากาศต้องเทียบย้อน 3 ชม.
+ * ถ้า backfill แค่ 60 นาที หน้าจอจะขึ้น "—" จนกว่าจะเปิดทิ้งไว้ครบ 3 ชั่วโมง
+ */
+const WEATHER_BACKFILL_HOURS = 4;
+const WEATHER_BACKFILL_STEP_MS = 60_000;
+
 export interface MockState {
   departments: Department[];
   users: User[];
@@ -132,6 +139,29 @@ export function levelFromVolume(table: TankLevelPoint[], liters: number): number
     }
   }
   return last.levelMeters;
+}
+
+/**
+ * ดัชนีความร้อน (Rothfusz regression ที่ NOAA ใช้)
+ * สูตรใช้หน่วยฟาเรนไฮต์ จึงต้องแปลงไป-กลับ และมีผลจริงเมื่ออุณหภูมิเกิน 27°C
+ * ต่ำกว่านั้นคืนอุณหภูมิจริง เพราะความชื้นยังไม่ทำให้รู้สึกร้อนขึ้น
+ */
+export function heatIndex(temperatureCelsius: number, humidityPercent: number): number {
+  if (temperatureCelsius < 27) return roundTo(temperatureCelsius, 1);
+
+  const t = (temperatureCelsius * 9) / 5 + 32;
+  const r = humidityPercent;
+  const hf =
+    -42.379 +
+    2.04901523 * t +
+    10.14333127 * r -
+    0.22475541 * t * r -
+    0.00683783 * t * t -
+    0.05481717 * r * r +
+    0.00122874 * t * t * r +
+    0.00085282 * t * r * r -
+    0.00000199 * t * t * r * r;
+  return roundTo(((hf - 32) * 5) / 9, 1);
 }
 
 /** จุดน้ำค้าง (Magnus formula) — ใช้เตือนไอน้ำเกาะในตู้คอนโทรล */
@@ -345,12 +375,20 @@ function createInitialState(): MockState {
         temperatureCelsius,
         humidityPercent,
         dewPointCelsius: dewPoint(temperatureCelsius, humidityPercent),
+        heatIndexCelsius: heatIndex(temperatureCelsius, humidityPercent),
+        pressureHpa: spec.baselinePressureHpa,
+        illuminanceLux: spec.peakIlluminanceLux === null ? null : Math.round(spec.peakIlluminanceLux * 0.42),
         rainfallMmPerHour: spec.hasRainGauge ? 0 : null,
+        rainfallTodayMm: spec.hasRainGauge ? 2.4 : null,
+        rainfallMonthMm: spec.hasRainGauge ? 118.6 : null,
         rainDetected: spec.hasRainGauge ? false : null,
       },
       temperatureThresholds: settings.thresholds.temperatureCelsius,
       humidityThresholds: settings.thresholds.humidityPercent,
       hasRainGauge: spec.hasRainGauge,
+      hasWeatherSensors: spec.hasWeatherSensors,
+      pressureTrend3h: null,
+      pressureChange3hHpa: null,
       deviceId: spec.deviceId,
     };
   });
@@ -583,6 +621,34 @@ function backfillHistory(target: MockState): void {
     for (const sensor of target.sensors) {
       pushHistory(target, sensor.id, 'temperature', timestamp, roundTo(sensor.latest.temperatureCelsius + phase * 1.6 + randomBetween(-0.3, 0.3), 1));
       pushHistory(target, sensor.id, 'humidity', timestamp, roundTo(sensor.latest.humidityPercent - phase * 3.2 + randomBetween(-0.8, 0.8), 1));
+      pushHistory(target, sensor.id, 'heat_index', timestamp, roundTo(sensor.latest.heatIndexCelsius + phase * 2.1 + randomBetween(-0.3, 0.3), 1));
+    }
+  }
+
+  backfillWeatherHistory(target, now);
+}
+
+/** backfill ความกดอากาศและความเข้มแสงย้อนหลัง 4 ชั่วโมงที่ความละเอียด 1 นาที */
+function backfillWeatherHistory(target: MockState, now: number): void {
+  const steps = Math.floor((WEATHER_BACKFILL_HOURS * 3_600_000) / WEATHER_BACKFILL_STEP_MS);
+
+  for (const sensor of target.sensors) {
+    if (!sensor.hasWeatherSensors) continue;
+    const basePressure = sensor.latest.pressureHpa;
+    const peakLux = sensor.latest.illuminanceLux;
+    if (basePressure === null) continue;
+
+    for (let step = steps; step >= 1; step -= 1) {
+      const timestamp = now - step * WEATHER_BACKFILL_STEP_MS;
+      // ความกดอากาศไล่ลงช้า ๆ เข้าหาค่าปัจจุบัน ให้เห็นแนวโน้มจริงบนกราฟ
+      const drift = (step / steps) * 2.2;
+      pushHistory(target, sensor.id, 'pressure_hpa', timestamp, roundTo(basePressure + drift + randomBetween(-0.15, 0.15), 1));
+
+      if (peakLux !== null) {
+        const hour = new Date(timestamp).getHours() + new Date(timestamp).getMinutes() / 60;
+        const daylight = Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI));
+        pushHistory(target, sensor.id, 'illuminance_lux', timestamp, Math.round(92_000 * daylight ** 1.6));
+      }
     }
   }
 }

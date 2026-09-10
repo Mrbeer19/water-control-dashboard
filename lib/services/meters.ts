@@ -1,7 +1,7 @@
 /** Service: มิเตอร์น้ำ 8 โซน + มิเตอร์หลักจากการประปา */
 
-import type { MainMeter, MetricKey, TimeSeriesPoint, UnaccountedWater, WaterMeter } from '@/lib/types';
-import { readHistory } from '@/lib/mock';
+import type { DailyUsagePoint, MainMeter, MetricKey, TimeSeriesPoint, UnaccountedWater, WaterMeter } from '@/lib/types';
+import { buildDailyUsage, daysRemainingInMonth, readHistory } from '@/lib/mock';
 import { calculateStorageDelta, calculateUnaccountedWater, currentBillingPeriod } from '@/lib/utils/calculation';
 import { respond } from './internal';
 
@@ -57,4 +57,15 @@ export async function getFlowBalance(): Promise<{ inflowLpm: number; outflowLpm:
     inflowLpm: state.mainMeter.flowLpm,
     outflowLpm: Math.round(state.zones.reduce((sum, zone) => sum + zone.flowLpm, 0) * 10) / 10,
   }));
+}
+
+/**
+ * ยอดใช้น้ำรายวันย้อนหลัง 30 วัน
+ * ส่ง includeProjection = true เพื่อต่อส่วนที่ AI พยากรณ์ไปจนสิ้นเดือน
+ * (จุดที่พยากรณ์จะมี projected = true และไม่มีค่าอุณหภูมิ/ฝน)
+ *
+ * TODO(backend): GET /api/meters/daily?from=&to=&projection=
+ */
+export async function getDailyUsage(includeProjection = false): Promise<DailyUsagePoint[]> {
+  return respond((state) => buildDailyUsage(state, includeProjection ? daysRemainingInMonth() : 0));
 }

@@ -1,7 +1,8 @@
 /** Service: โซนการใช้น้ำ 8 โซน */
 
-import type { MetricKey, TimeSeriesPoint, Valve, Zone } from '@/lib/types';
+import type { MetricKey, TimeSeriesPoint, Valve, Zone, ZoneCost } from '@/lib/types';
 import { readHistory } from '@/lib/mock';
+import { round, splitIntoTiers } from '@/lib/utils/calculation';
 import { respond } from './internal';
 
 /**
@@ -47,4 +48,33 @@ export async function getZoneConsumption(
       cubicMeters: period === 'today' ? zone.todayCubicMeters : zone.monthCubicMeters,
     })),
   );
+}
+
+/**
+ * ค่าน้ำโดยประมาณรายโซนในรอบบิลนี้ + สัดส่วนการใช้เทียบทั้งโรงงาน
+ *
+ * ★ คิดค่าน้ำจากขั้นอัตราของปริมาณเฉพาะโซนนั้น ไม่ใช่เฉลี่ยจากบิลรวม
+ *   ตัวเลขจึงเป็น "ประมาณการเพื่อเปรียบเทียบ" ผลรวมทุกโซนจะไม่เท่าบิลจริงเป๊ะ
+ *   เพราะการประปาคิดขั้นบันไดจากยอดรวมของทั้งโรงงานครั้งเดียว
+ *
+ * TODO(backend): GET /api/zones/cost?from=&to=
+ */
+export async function getZoneCosts(): Promise<ZoneCost[]> {
+  return respond((state) => {
+    const { tiers } = state.settings.billing;
+    const totalCubicMeters = state.zones.reduce((sum, zone) => sum + zone.monthCubicMeters, 0);
+
+    return state.zones.map((zone) => ({
+      zoneId: zone.id,
+      name: zone.name,
+      nameEn: zone.nameEn,
+      departmentId: zone.departmentId,
+      cubicMeters: round(zone.monthCubicMeters, 2),
+      costBaht: round(
+        splitIntoTiers(zone.monthCubicMeters, tiers).reduce((sum, tier) => sum + tier.amountBaht, 0),
+        2,
+      ),
+      sharePercent: totalCubicMeters === 0 ? 0 : round((zone.monthCubicMeters / totalCubicMeters) * 100, 1),
+    }));
+  });
 }

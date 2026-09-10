@@ -1,0 +1,127 @@
+'use client';
+
+import type { EntityStatus, TankShape } from '@/lib/types';
+import { cn } from '@/lib/utils';
+
+const FILL_CLASS: Record<EntityStatus, string> = {
+  ok: 'fill-status-ok',
+  warning: 'fill-status-warning',
+  critical: 'fill-status-critical',
+  offline: 'fill-status-offline',
+};
+
+interface TankGaugeProps {
+  percentFull: number;
+  status: EntityStatus;
+  shape: TankShape;
+  /** เกณฑ์ที่จะขีดเส้นอ้างอิงบนถัง (เปอร์เซ็นต์) */
+  markers?: { percent: number; tone: EntityStatus }[];
+  className?: string;
+}
+
+/**
+ * ภาพถังน้ำแบบ SVG พร้อมระดับน้ำที่ไหลขึ้นลงตามค่าจริง
+ *
+ * ระดับใช้ CSS transition ที่ความสูงของ rect จึงขยับนุ่มเมื่อค่าใหม่เข้ามาทุก 2 วินาที
+ * ผิวน้ำเป็นคลื่นสองชั้นเลื่อนสวนทางกัน ให้ดูมีชีวิตบนจอที่เปิดทิ้งไว้ทั้งวัน
+ */
+export function TankGauge({ percentFull, status, shape, markers = [], className }: TankGaugeProps): JSX.Element {
+  const width = 120;
+  const height = 150;
+  const inset = 6;
+  const innerHeight = height - inset * 2;
+  const clamped = Math.min(100, Math.max(0, percentFull));
+  const waterHeight = (clamped / 100) * innerHeight;
+  const waterTop = inset + innerHeight - waterHeight;
+
+  // บ่อขุดผนังลาด วาดเป็นทรงสี่เหลี่ยมคางหมู ถังกลมมุมมนกว่า
+  const isPond = shape === 'pond' || shape === 'irregular';
+  const bodyRadius = shape === 'cylindrical' ? 26 : isPond ? 4 : 10;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className={cn('h-full w-full', className)}
+      role="img"
+      aria-label={`ระดับน้ำ ${clamped.toFixed(1)} เปอร์เซ็นต์`}
+    >
+      <defs>
+        <clipPath id={`tank-clip-${shape}`}>
+          {isPond ? (
+            <polygon points={`${inset + 14},${inset} ${width - inset - 14},${inset} ${width - inset},${height - inset} ${inset},${height - inset}`} />
+          ) : (
+            <rect x={inset} y={inset} width={width - inset * 2} height={innerHeight} rx={bodyRadius} />
+          )}
+        </clipPath>
+      </defs>
+
+      {/* ผนังถัง */}
+      {isPond ? (
+        <polygon
+          points={`${inset + 14},${inset} ${width - inset - 14},${inset} ${width - inset},${height - inset} ${inset},${height - inset}`}
+          className="fill-muted/40 stroke-border"
+          strokeWidth={2}
+        />
+      ) : (
+        <rect
+          x={inset}
+          y={inset}
+          width={width - inset * 2}
+          height={innerHeight}
+          rx={bodyRadius}
+          className="fill-muted/40 stroke-border"
+          strokeWidth={2}
+        />
+      )}
+
+      <g clipPath={`url(#tank-clip-${shape})`}>
+        {/* ตัวน้ำ — ความสูงเปลี่ยนแบบ transition ทำให้ระดับไหลขึ้นลงแทนการกระโดด */}
+        <rect
+          x={0}
+          y={waterTop}
+          width={width}
+          height={waterHeight + 4}
+          className={cn(FILL_CLASS[status], 'opacity-80 [transition:y_900ms_ease-out,height_900ms_ease-out]')}
+        />
+
+        {/* ผิวน้ำ 2 ชั้นเลื่อนสวนทาง */}
+        {clamped > 0.5 && (
+          <g className={cn(FILL_CLASS[status], '[transition:transform_900ms_ease-out]')} style={{ transform: `translateY(${waterTop}px)` }}>
+            <path d="M-120 0 q30 -5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className="opacity-60">
+              <animateTransform attributeName="transform" type="translate" from="0 0" to="120 0" dur="5s" repeatCount="indefinite" />
+            </path>
+            <path d="M-120 2 q30 5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className="opacity-35">
+              <animateTransform attributeName="transform" type="translate" from="120 0" to="0 0" dur="7s" repeatCount="indefinite" />
+            </path>
+          </g>
+        )}
+      </g>
+
+      {/* เส้นเกณฑ์เตือน */}
+      {markers.map((marker) => {
+        const y = inset + innerHeight - (Math.min(100, Math.max(0, marker.percent)) / 100) * innerHeight;
+        return (
+          <line
+            key={`${marker.percent}-${marker.tone}`}
+            x1={inset}
+            x2={width - inset}
+            y1={y}
+            y2={y}
+            strokeWidth={1}
+            strokeDasharray="3 3"
+            className={cn(
+              marker.tone === 'critical' ? 'stroke-status-critical' : 'stroke-status-warning',
+              'opacity-70',
+            )}
+          />
+        );
+      })}
+
+      {/* ขีดบอกระดับทุก 25% */}
+      {[25, 50, 75].map((mark) => {
+        const y = inset + innerHeight - (mark / 100) * innerHeight;
+        return <line key={mark} x1={width - inset - 10} x2={width - inset} y1={y} y2={y} strokeWidth={1} className="stroke-border" />;
+      })}
+    </svg>
+  );
+}

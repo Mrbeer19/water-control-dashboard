@@ -11,7 +11,7 @@
  * ส่วนค่าที่ไม่มีสมการผูก (อุณหภูมิ, RSSI, แรงดันไฟ) ใช้ random walk แบบดึงกลับเข้าหาค่ากลาง
  */
 
-import type { Device, ElectricNode, EntityStatus, Pump, Tank } from '@/lib/types';
+import type { Device, ElectricNode, EntityStatus, EnvironmentSensor, Pump, Tank } from '@/lib/types';
 import { ENVIRONMENT_SPECS, MAIN_METER_SPEC, PUMP_SPECS, ZONE_SPECS } from './hardware';
 import { DEVICE_SPECS } from './network';
 import { ELECTRIC_NODE_SPECS } from './organization';
@@ -21,6 +21,7 @@ import { chance, clamp, randomBetween, roundTo, walk } from './random';
 import {
   TICK_MS,
   getState,
+  historyKey,
   notify,
   nowIso,
   pushHistory,
@@ -48,6 +49,12 @@ const TRANSFER_STOP_PERCENT = 92;
 
 /** จำสถานะปั๊มถ่ายน้ำไว้ข้าม tick เพื่อให้ hysteresis ทำงาน */
 let transferActive = false;
+
+/**
+ * ค่าที่เปลี่ยนช้า (ความกดอากาศ, ความเข้มแสง) บันทึกทุกกี่ tick
+ * 30 tick = 1 นาที ทำให้ ring buffer 1,200 จุดครอบคลุมย้อนหลังราว 20 ชั่วโมง
+ */
+const SLOW_METRIC_EVERY_N_TICKS = 30;
 
 /** อัตราการรั่วของสถานการณ์ night_leak (L/min ต่อโซนที่รั่ว) */
 const NIGHT_LEAK_LPM = 11.4;
@@ -166,12 +173,41 @@ function updateEnvironment(state: MockState, at: number, iso: string): void {
 
     let rainfall: number | null = null;
     let rainDetected: boolean | null = null;
+    let rainfallTodayMm: number | null = null;
+    let rainfallMonthMm: number | null = null;
     if (spec.hasRainGauge) {
       // ฝนมาเป็นช่วง ไม่ใช่สุ่มรายวินาที — ใช้คลื่นช้าเป็นตัวเปิด/ปิด
       const rainWave = Math.sin(state.tick / 900 + 1.2);
       const raining = rainWave > 0.82;
       rainfall = raining ? roundTo(clamp((rainWave - 0.82) * 60, 0, 12), 1) : 0;
       rainDetected = raining;
+      // สะสมฝนตามอัตราที่ตกอยู่จริง (มม./ชม. × ชั่วโมงที่ผ่านไปใน 1 tick)
+      const stepMm = (rainfall * TICK_MINUTES) / 60;
+      rainfallTodayMm = roundTo((sensor.latest.rainfallTodayMm ?? 0) + stepMm, 2);
+      rainfallMonthMm = roundTo((sensor.latest.rainfallMonthMm ?? 0) + stepMm, 2);
+    }
+
+    let pressureHpa: number | null = null;
+    let illuminanceLux: number | null = null;
+    if (spec.hasWeatherSensors) {
+      // ความกดอากาศแกว่งช้ามาก และตกลงเมื่อระบบฝนเข้ามา
+      const rainPull = rainDetected === true ? -2.6 : 0;
+      pressureHpa = roundTo(
+        walk(sensor.latest.pressureHpa ?? spec.baselinePressureHpa ?? 1013, {
+          target: (spec.baselinePressureHpa ?? 1013) + Math.sin(state.tick / 2_600) * 3.4 + rainPull,
+          reversion: 0.02,
+          volatility: 0.035,
+          min: 985,
+          max: 1035,
+        }),
+        1,
+      );
+
+      // แสงตามเวลาจริงของวัน: มืดสนิทกลางคืน สว่างสุดเที่ยง ฝนตกลดลงเหลือราวหนึ่งในห้า
+      const peak = spec.peakIlluminanceLux ?? 90_000;
+      const daylight = Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI));
+      const cloudFactor = rainDetected === true ? 0.18 : 1;
+      illuminanceLux = Math.round(peak * daylight ** 1.6 * cloudFactor * randomBetween(0.94, 1.06));
     }
 
     sensor.latest = {
@@ -179,9 +215,16 @@ function updateEnvironment(state: MockState, at: number, iso: string): void {
       temperatureCelsius: roundTo(temperature, 1),
       humidityPercent: roundTo(humidity, 1),
       dewPointCelsius: dewPointOf(temperature, humidity),
+      heatIndexCelsius: heatIndexOf(temperature, humidity),
+      pressureHpa,
+      illuminanceLux,
       rainfallMmPerHour: rainfall,
+      rainfallTodayMm,
+      rainfallMonthMm,
       rainDetected,
     };
+
+    updatePressureTrend(state, sensor, at);
     sensor.status = worstStatus([
       statusFromRange(sensor.latest.temperatureCelsius, sensor.temperatureThresholds),
       statusFromRange(sensor.latest.humidityPercent, sensor.humidityThresholds),
@@ -189,6 +232,50 @@ function updateEnvironment(state: MockState, at: number, iso: string): void {
     sensor.lastSeen = iso;
     sensor.updatedAt = iso;
   }
+}
+
+/** ดัชนีความร้อน — ใช้สูตรเดียวกับที่ store ใช้ตอนสร้างค่าตั้งต้น */
+function heatIndexOf(temperatureCelsius: number, humidityPercent: number): number {
+  if (temperatureCelsius < 27) return roundTo(temperatureCelsius, 1);
+  const t = (temperatureCelsius * 9) / 5 + 32;
+  const r = humidityPercent;
+  const hf =
+    -42.379 +
+    2.04901523 * t +
+    10.14333127 * r -
+    0.22475541 * t * r -
+    0.00683783 * t * t -
+    0.05481717 * r * r +
+    0.00122874 * t * t * r +
+    0.00085282 * t * r * r -
+    0.00000199 * t * t * r * r;
+  return roundTo(((hf - 32) * 5) / 9, 1);
+}
+
+/**
+ * แนวโน้มความกดอากาศเทียบ 3 ชั่วโมงก่อน
+ * เกณฑ์ ±1.0 hPa ตามที่อุตุนิยมวิทยาใช้แยก "เปลี่ยนจริง" ออกจากการแกว่งปกติ
+ */
+function updatePressureTrend(state: MockState, sensor: EnvironmentSensor, at: number): void {
+  const current = sensor.latest.pressureHpa;
+  if (current === null) {
+    sensor.pressureTrend3h = null;
+    sensor.pressureChange3hHpa = null;
+    return;
+  }
+
+  const series = state.history.get(historyKey(sensor.id, 'pressure_hpa'));
+  const threeHoursAgo = at - 3 * 3_600_000;
+  const past = series?.find((point) => point.timestamp >= threeHoursAgo);
+  if (past === undefined || series === undefined || series.length === 0) {
+    sensor.pressureTrend3h = null;
+    sensor.pressureChange3hHpa = null;
+    return;
+  }
+
+  const change = roundTo(current - past.value, 2);
+  sensor.pressureChange3hHpa = change;
+  sensor.pressureTrend3h = change >= 1 ? 'rising' : change <= -1 ? 'falling' : 'steady';
 }
 
 function dewPointOf(temperatureCelsius: number, humidityPercent: number): number {
@@ -823,8 +910,19 @@ function recordHistory(state: MockState, at: number): void {
   for (const sensor of state.sensors) {
     pushHistory(state, sensor.id, 'temperature', at, sensor.latest.temperatureCelsius);
     pushHistory(state, sensor.id, 'humidity', at, sensor.latest.humidityPercent);
+    pushHistory(state, sensor.id, 'heat_index', at, sensor.latest.heatIndexCelsius);
     if (sensor.latest.rainfallMmPerHour !== null) {
       pushHistory(state, sensor.id, 'rainfall', at, sensor.latest.rainfallMmPerHour);
+    }
+    // ความกดอากาศและแสงเปลี่ยนช้า บันทึกนาทีละครั้งพอ
+    // และจำเป็นด้วย เพราะแนวโน้ม 3 ชม. ต้องมีจุดเก่าพอที่ ring buffer ยังไม่ทิ้ง
+    if (state.tick % SLOW_METRIC_EVERY_N_TICKS === 0) {
+      if (sensor.latest.pressureHpa !== null) {
+        pushHistory(state, sensor.id, 'pressure_hpa', at, sensor.latest.pressureHpa);
+      }
+      if (sensor.latest.illuminanceLux !== null) {
+        pushHistory(state, sensor.id, 'illuminance_lux', at, sensor.latest.illuminanceLux);
+      }
     }
   }
 }
