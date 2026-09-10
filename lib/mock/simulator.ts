@@ -756,6 +756,15 @@ function updateDevices(state: MockState, iso: string): void {
     device.status = deviceStatus(device);
     device.lastSeen = iso;
     device.updatedAt = iso;
+
+    // ค่าสุขภาพเปลี่ยนช้า บันทึกนาทีละครั้งพอ และทำให้ ring buffer ครอบคลุมย้อนหลังได้นาน
+    if (state.tick % SLOW_METRIC_EVERY_N_TICKS === 0) {
+      if (device.rssi !== null) pushHistory(state, device.id, 'rssi_dbm', Date.now(), device.rssi);
+      if (device.freeHeapBytes !== null) {
+        pushHistory(state, device.id, 'free_heap_bytes', Date.now(), device.freeHeapBytes);
+      }
+      pushHistory(state, device.id, 'uptime_seconds', Date.now(), Math.round(device.uptimeSeconds));
+    }
   }
 }
 

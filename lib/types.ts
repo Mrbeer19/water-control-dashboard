@@ -99,6 +99,10 @@ export type MetricKey =
   | 'pressure_hpa'
   | 'illuminance_lux'
   | 'heat_index'
+  // สุขภาพอุปกรณ์
+  | 'rssi_dbm'
+  | 'uptime_seconds'
+  | 'free_heap_bytes'
   // ระดับระบบ
   | 'main_inflow_lpm'
   | 'zone_outflow_lpm'
@@ -592,6 +596,22 @@ export interface EnvironmentSensor extends BaseEntity {
 export type DeviceKind = 'esp32' | 'plc' | 'hmi' | 'gateway';
 
 /**
+ * หน้าที่ของอุปกรณ์ในระบบ — ละเอียดกว่า DeviceKind
+ * ใช้กรองในหน้า Devices ("ขอดูเฉพาะ node ที่คุมวาล์ว") ซึ่ง kind อย่างเดียวตอบไม่ได้
+ * เพราะ ESP32 ทุกตัวเป็น kind เดียวกันหมดแต่ทำคนละงาน
+ */
+export type DeviceRole =
+  | 'tank_node'
+  | 'pump_node'
+  | 'valve_node'
+  | 'meter_node'
+  | 'env_node'
+  | 'power_node'
+  | 'plc'
+  | 'hmi'
+  | 'gateway';
+
+/**
  * โปรโตคอลที่ใช้สื่อสาร
  * s7comm       Siemens S7-1200 (พอร์ต 102)
  * mc_protocol  Mitsubishi FX3G — MC Protocol ไม่ใช่ s7comm คนละตระกูลกัน
@@ -605,6 +625,7 @@ export type DeviceLinkType = 'wifi' | 'ethernet' | 'serial';
 
 export interface Device extends BaseEntity {
   kind: DeviceKind;
+  role: DeviceRole;
   /**
    * รุ่นจริงที่ติดตั้งในโรงงาน เช่น
    *   "ESP32-WROOM-32E"
@@ -651,6 +672,57 @@ export interface Device extends BaseEntity {
   linkedEntityIds: string[];
   location: string;
   locationEn: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// สุขภาพของบริการเบื้องหลัง
+// ─────────────────────────────────────────────────────────────
+
+/** บริการที่ต้องเดินอยู่เพื่อให้แดชบอร์ดมีข้อมูล */
+export type ServiceKind = 'mqtt_broker' | 'database' | 'ingest' | 'ai';
+
+export interface ServiceHealth {
+  kind: ServiceKind;
+  name: string;
+  nameEn: string;
+  status: EntityStatus;
+  /** ปลายทางที่ตรวจ เช่น "10.20.10.2:1883" */
+  endpoint: string;
+  latencyMs: number | null;
+  lastCheckedAt: ISODateTime;
+  /** ข้อความอธิบายเมื่อไม่ปกติ — null เมื่อทุกอย่างเรียบร้อย */
+  message: string | null;
+  /** ตัวเลขประกอบเฉพาะบริการนั้น เช่น จำนวน message/วินาที หรือขนาดคิว */
+  detail: Record<string, string | number> | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// การอัปเดตเฟิร์มแวร์ (OTA)
+// ─────────────────────────────────────────────────────────────
+
+export type FirmwareUpdateState = 'queued' | 'downloading' | 'installing' | 'success' | 'failed';
+
+export interface FirmwareUpdateJob extends BaseRecord {
+  deviceId: string;
+  deviceName: string;
+  fromVersion: string;
+  toVersion: string;
+  state: FirmwareUpdateState;
+  /** 0–100 */
+  progressPercent: number;
+  startedAt: ISODateTime;
+  finishedAt: ISODateTime | null;
+  errorMessage: string | null;
+}
+
+/** ผลของคำสั่งจัดการอุปกรณ์ที่ไม่ใช่การอัปเดตเฟิร์มแวร์ */
+export interface DeviceActionResult {
+  deviceId: string;
+  action: 'reboot' | 'ping';
+  ok: boolean;
+  latencyMs: number | null;
+  message: string;
+  at: ISODateTime;
 }
 
 // ═════════════════════════════════════════════════════════════

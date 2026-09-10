@@ -27,7 +27,7 @@ export function Sparkline({ points, color = CHART.primary, height = 40, label }:
   if (points.length < 2) {
     return (
       <div
-        className="flex items-center justify-center rounded border border-dashed text-[10px] text-muted-foreground"
+        className="flex w-full items-center justify-center rounded border border-dashed text-[10px] text-muted-foreground"
         style={{ height }}
         role="img"
         aria-label={label}
@@ -49,7 +49,7 @@ export function Sparkline({ points, color = CHART.primary, height = 40, label }:
   const gradientId = `spark-${label.replace(/\W/g, '')}`;
 
   return (
-    <div style={{ height }} role="img" aria-label={label}>
+    <div className="w-full min-w-0 overflow-hidden" style={{ height }} role="img" aria-label={label}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={sampled} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
           <defs>

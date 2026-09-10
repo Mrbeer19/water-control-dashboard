@@ -13,6 +13,7 @@ import type {
   AnomalyEvent,
   CommandLogEntry,
   CommandSchedule,
+  FirmwareUpdateJob,
   ConnectionStatus,
   Department,
   Device,
@@ -79,6 +80,8 @@ export interface MockState {
   commandLog: CommandLogEntry[];
   /** ตารางสั่งงานล่วงหน้า */
   schedules: CommandSchedule[];
+  /** งานอัปเดตเฟิร์มแวร์ที่กำลังเดินอยู่ */
+  firmwareJobs: FirmwareUpdateJob[];
   settings: SystemSettings;
   connection: ConnectionStatus;
   /** ประวัติกราฟ key = `${entityId}:${metric}` */
@@ -405,6 +408,7 @@ function createInitialState(): MockState {
     lastSeen: iso,
     updatedAt: iso,
     kind: spec.kind,
+    role: spec.role,
     model: spec.model,
     expansionModules: [...spec.expansionModules],
     protocol: spec.protocol,
@@ -511,6 +515,7 @@ function createInitialState(): MockState {
     deliveries: [],
     commandLog: [],
     schedules: [],
+    firmwareJobs: [],
     settings,
     connection,
     history: new Map(),
@@ -630,6 +635,26 @@ function backfillHistory(target: MockState): void {
   }
 
   backfillWeatherHistory(target, now);
+  backfillDeviceHistory(target, now);
+}
+
+/** backfill สุขภาพอุปกรณ์ย้อนหลัง 4 ชั่วโมง ความละเอียด 1 นาที */
+function backfillDeviceHistory(target: MockState, now: number): void {
+  const steps = Math.floor((WEATHER_BACKFILL_HOURS * 3_600_000) / WEATHER_BACKFILL_STEP_MS);
+
+  for (const device of target.devices) {
+    for (let step = steps; step >= 1; step -= 1) {
+      const timestamp = now - step * WEATHER_BACKFILL_STEP_MS;
+      if (device.rssi !== null) {
+        pushHistory(target, device.id, 'rssi_dbm', timestamp, Math.round(device.rssi + randomBetween(-3.5, 3.5)));
+      }
+      if (device.freeHeapBytes !== null) {
+        pushHistory(target, device.id, 'free_heap_bytes', timestamp, Math.round(device.freeHeapBytes + randomBetween(-2600, 2600)));
+      }
+      // uptime เดินขึ้นเป็นเส้นตรง ยกเว้นช่วงที่อุปกรณ์รีบูตซึ่งจะตกกลับไปศูนย์
+      pushHistory(target, device.id, 'uptime_seconds', timestamp, Math.max(0, Math.round(device.uptimeSeconds - step * 60)));
+    }
+  }
 }
 
 /** backfill ความกดอากาศและความเข้มแสงย้อนหลัง 4 ชั่วโมงที่ความละเอียด 1 นาที */

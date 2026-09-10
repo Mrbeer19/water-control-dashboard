@@ -129,6 +129,72 @@
     font-feature-settings: 'cv05', 'ss01';
   }
 
+  /*
+   * เส้นไหลในท่อของแผนผัง
+   * ความเร็วคุมด้วย animation-duration ที่ตั้งจาก React ตามอัตราไหลจริง
+   * ท่อที่ไม่มีน้ำไหลจะไม่ใส่คลาสนี้ เส้นจึงหยุดนิ่งแทนที่จะวิ่งช้า ๆ ให้เข้าใจผิด
+   */
+  @keyframes pipe-flow {
+    to {
+      stroke-dashoffset: -28;
+    }
+  }
+
+  .pipe-flow {
+    stroke-dasharray: 10 18;
+    animation-name: pipe-flow;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  /* ขอบเรืองแสงของจุดที่ AI แจ้งว่าผิดปกติ */
+  @keyframes node-alarm {
+    0%,
+    100% {
+      opacity: 0.2;
+      stroke-width: 2;
+    }
+    50% {
+      opacity: 0.85;
+      stroke-width: 5;
+    }
+  }
+
+  .node-alarm {
+    animation: node-alarm 1.6s ease-in-out infinite;
+  }
+
+  /* ไฟกระพริบบนเส้นทางข้อมูลเมื่อมี message วิ่งผ่าน */
+  @keyframes data-pulse {
+    0% {
+      opacity: 0;
+      transform: translateX(0);
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(var(--data-distance, 100px));
+    }
+  }
+
+  .data-pulse {
+    animation: data-pulse 1.9s linear infinite;
+  }
+
+  /* เคารพการตั้งค่าของผู้ใช้ที่ขอลดการเคลื่อนไหว */
+  @media (prefers-reduced-motion: reduce) {
+    .pipe-flow,
+    .node-alarm,
+    .data-pulse {
+      animation: none;
+    }
+  }
+
   /* ตัวเลขบนแดชบอร์ดขยับตลอด — ใช้ tabular figures กันตัวเลขเต้น */
   .tabular {
     font-variant-numeric: tabular-nums;

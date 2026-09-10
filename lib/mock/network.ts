@@ -10,7 +10,7 @@
  *   VLAN 30  10.20.30.0/24  เซนเซอร์ ESP32 (Wi-Fi)
  */
 
-import type { DeviceKind, DeviceLinkType, DeviceProtocol } from '@/lib/types';
+import type { DeviceKind, DeviceLinkType, DeviceProtocol, DeviceRole } from '@/lib/types';
 import { ENVIRONMENT_SPECS, MAIN_METER_SPEC, PUMP_SPECS, TANK_SPECS, ZONE_SPECS } from './hardware';
 import { ELECTRIC_NODE_SPECS } from './organization';
 
@@ -19,6 +19,7 @@ export interface DeviceSpec {
   name: string;
   nameEn: string;
   kind: DeviceKind;
+  role: DeviceRole;
   model: string;
   expansionModules: string[];
   /** โปรโตคอลทางขึ้น (คุยกับ gateway/ระบบ) */
@@ -59,6 +60,7 @@ const TANK_NODES: DeviceSpec[] = TANK_SPECS.filter((tank) => tank.deviceId !== n
   name: `ESP32 ${tank.name}`,
   nameEn: `ESP32 ${tank.nameEn}`,
   kind: 'esp32' as const,
+  role: 'tank_node' as const,
   model: 'ESP32-WROOM-32E',
   expansionModules: [],
   protocol: 'mqtt' as const,
@@ -84,6 +86,7 @@ const PUMP_NODES: DeviceSpec[] = PUMP_SPECS.map((pump, index) => ({
   name: `ESP32 ${pump.name}`,
   nameEn: `ESP32 ${pump.nameEn}`,
   kind: 'esp32' as const,
+  role: 'pump_node' as const,
   model: 'ESP32-WROOM-32E',
   expansionModules: ['PZEM-004T v3.0'],
   protocol: 'mqtt' as const,
@@ -109,6 +112,7 @@ const ZONE_METER_NODES: DeviceSpec[] = ZONE_SPECS.map((zone, index) => ({
   name: `ESP32 มิเตอร์โซน ${zone.zoneNumber}`,
   nameEn: `ESP32 Zone ${zone.zoneNumber} Meter`,
   kind: 'esp32' as const,
+  role: 'valve_node' as const,
   model: 'ESP32-WROOM-32E',
   expansionModules: [],
   protocol: 'mqtt' as const,
@@ -134,6 +138,7 @@ const MAIN_METER_NODE: DeviceSpec = {
   name: 'ESP32 มิเตอร์หลัก',
   nameEn: 'ESP32 Main Meter',
   kind: 'esp32',
+  role: 'meter_node',
   model: 'ESP32-WROOM-32E',
   expansionModules: [],
   protocol: 'mqtt',
@@ -159,6 +164,7 @@ const ENV_NODES: DeviceSpec[] = ENVIRONMENT_SPECS.map((sensor, index) => ({
   name: `ESP32 ${sensor.name}`,
   nameEn: `ESP32 ${sensor.nameEn}`,
   kind: 'esp32' as const,
+  role: 'env_node' as const,
   model: 'ESP32-C3-DevKitM-1',
   expansionModules: [],
   protocol: 'mqtt' as const,
@@ -184,6 +190,7 @@ const ELECTRIC_NODES: DeviceSpec[] = ELECTRIC_NODE_SPECS.map((node, index) => ({
   name: `ESP32 ${node.name}`,
   nameEn: `ESP32 ${node.nameEn}`,
   kind: 'esp32' as const,
+  role: 'power_node' as const,
   model: 'ESP32-WROOM-32E',
   expansionModules: [node.phase === 'three' ? 'PZEM-004T v3.0 ×3' : 'PZEM-004T v3.0'],
   protocol: 'mqtt' as const,
@@ -210,6 +217,7 @@ const CONTROL_NODES: DeviceSpec[] = [
     name: 'PLC ระบบน้ำ',
     nameEn: 'Water System PLC',
     kind: 'plc',
+    role: 'plc',
     // ตัวจริงที่ติดตั้ง: CPU 1211C แบบ relay output ต่อโมดูล SM1231 สำหรับรับ 4–20 mA
     model: 'SIMATIC S7-1200 CPU 1211C DC/DC/RLY',
     expansionModules: ['SM1231 AI 4×13-bit (4–20 mA)'],
@@ -238,6 +246,7 @@ const CONTROL_NODES: DeviceSpec[] = [
     name: 'PLC ส่วนขยาย',
     nameEn: 'Expansion PLC',
     kind: 'plc',
+    role: 'plc',
     // คนละตระกูลกับ S7 — คุยด้วย MC Protocol ไม่ใช่ s7comm
     model: 'MITSUBISHI FX3G-24MR',
     expansionModules: ['FX3U-4AD'],
@@ -262,6 +271,7 @@ const CONTROL_NODES: DeviceSpec[] = [
     name: 'HMI ตู้คอนโทรล',
     nameEn: 'Control Cabinet HMI',
     kind: 'hmi',
+    role: 'hmi',
     model: 'SAMKOON SK-070HS',
     expansionModules: [],
     protocol: 'modbus_tcp',
@@ -285,6 +295,7 @@ const CONTROL_NODES: DeviceSpec[] = [
     name: 'IoT Gateway',
     nameEn: 'IoT Gateway',
     kind: 'gateway',
+    role: 'gateway',
     model: 'SIMATIC IOT2000',
     expansionModules: [],
     protocol: 'mqtt',
