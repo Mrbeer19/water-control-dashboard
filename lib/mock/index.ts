@@ -10,6 +10,15 @@ export { DEFAULT_SETTINGS } from './settings';
 export { acknowledgeAlert, raiseAlert, resolveAlerts } from './alerts';
 export { buildAnomalies, buildForecast, buildMaintenancePredictions, buildServiceStatus } from './ai';
 export { DAILY_HISTORY_DAYS, buildDailyUsage, daysRemainingInMonth } from './daily';
+export {
+  MIN_SOURCE_LEVEL_PERCENT,
+  computeNextRun,
+  createSchedule,
+  pumpInterlock,
+  seedSchedules,
+  startCommand,
+  valveInterlock,
+} from './control';
 export { startSimulator, tickOnce } from './simulator';
 export {
   getState,

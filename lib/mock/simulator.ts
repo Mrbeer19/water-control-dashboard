@@ -17,6 +17,7 @@ import { DEVICE_SPECS } from './network';
 import { ELECTRIC_NODE_SPECS } from './organization';
 import { raiseAlert, resolveAlerts, seedAlerts } from './alerts';
 import { buildAnomalies } from './ai';
+import { seedSchedules } from './control';
 import { chance, clamp, randomBetween, roundTo, walk } from './random';
 import {
   TICK_MS,
@@ -88,6 +89,7 @@ export function startSimulator(): () => void {
     seedAlerts(state);
     // โหลดผลชุดแรกจากทีม AI ตามสถานการณ์ที่ตั้งไว้
     state.anomalies = buildAnomalies(state, state.scenario);
+    seedSchedules(state);
     seeded = true;
   }
 

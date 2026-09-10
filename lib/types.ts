@@ -1050,6 +1050,9 @@ export type CommandAction =
   /** ตั้งแรงดันเป้าหมายของลูป PID (bar) */
   | 'set_setpoint'
   | 'reset_fault'
+  /** เปิด/ปิดวาล์วทุกโซนพร้อมกัน — ใช้กับปุ่มฉุกเฉินเท่านั้น */
+  | 'open_all'
+  | 'close_all'
   | 'emergency_stop';
 
 /**
@@ -1095,6 +1098,57 @@ export interface CommandResult {
 export interface CommandLogEntry {
   command: ControlCommand;
   result: CommandResult;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Interlock — เงื่อนไขที่ทำให้สั่งงานไม่ได้
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * เหตุผลที่คำสั่งถูกล็อก
+ * ★ หน้าบ้านต้องแสดงเหตุผลเสมอ ห้าม disable ปุ่มเฉย ๆ โดยไม่บอกว่าทำไม
+ *   คนที่กดไม่ได้ตอนตีสองต้องรู้ทันทีว่าต้องแก้อะไรก่อน
+ */
+export interface InterlockReason {
+  /** รหัสคงที่ เช่น "SOURCE_TANK_LOW", "CONTROL_LOCKED", "PUMP_IN_FAULT" */
+  code: string;
+  messageTh: string;
+  messageEn: string;
+}
+
+export interface ControlInterlock {
+  targetType: CommandTargetType;
+  targetId: string;
+  /** true = ถูกล็อกอย่างน้อยหนึ่งคำสั่ง */
+  blocked: boolean;
+  /** คำสั่งที่ถูกล็อก — อาเรย์ว่างพร้อม blocked = true หมายถึงล็อกทุกคำสั่ง */
+  blockedActions: CommandAction[];
+  reasons: InterlockReason[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// ตั้งเวลาสั่งงานล่วงหน้า
+// ─────────────────────────────────────────────────────────────
+
+export type ScheduleRepeat = 'once' | 'daily' | 'weekdays' | 'weekly';
+
+export interface CommandSchedule extends BaseRecord {
+  targetType: CommandTargetType;
+  targetId: string;
+  targetName: string;
+  action: CommandAction;
+  value: string | number | null;
+  /** เวลาที่จะสั่ง รูปแบบ "HH:mm" ตามเวลาโรงงาน */
+  time: string;
+  repeat: ScheduleRepeat;
+  /** 0=อาทิตย์ ถึง 6=เสาร์ ใช้เมื่อ repeat = 'weekly' */
+  daysOfWeek: number[];
+  enabled: boolean;
+  nextRunAt: ISODateTime | null;
+  lastRunAt: ISODateTime | null;
+  /** ผลของการทำงานครั้งล่าสุด — null เมื่อยังไม่เคยทำงาน */
+  lastResultState: CommandState | null;
+  createdBy: ActorRef;
 }
 
 // ═════════════════════════════════════════════════════════════

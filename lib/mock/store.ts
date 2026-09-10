@@ -12,6 +12,7 @@ import type {
   AlertAcknowledgement,
   AnomalyEvent,
   CommandLogEntry,
+  CommandSchedule,
   ConnectionStatus,
   Department,
   Device,
@@ -76,6 +77,8 @@ export interface MockState {
   acknowledgements: AlertAcknowledgement[];
   deliveries: NotificationDelivery[];
   commandLog: CommandLogEntry[];
+  /** ตารางสั่งงานล่วงหน้า */
+  schedules: CommandSchedule[];
   settings: SystemSettings;
   connection: ConnectionStatus;
   /** ประวัติกราฟ key = `${entityId}:${metric}` */
@@ -507,6 +510,7 @@ function createInitialState(): MockState {
     acknowledgements: [],
     deliveries: [],
     commandLog: [],
+    schedules: [],
     settings,
     connection,
     history: new Map(),
