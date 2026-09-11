@@ -12,6 +12,8 @@ import type {
   AIServiceStatus,
   AnomalyEvent,
   AnomalyFeedback,
+  AIMetric,
+  AIMetricQuery,
   AnomalyQuery,
   MaintenancePrediction,
   MockScenario,
@@ -22,6 +24,7 @@ import {
   buildForecast,
   buildForecasts,
   buildMaintenancePredictions,
+  buildMetrics,
   buildServiceStatus,
   persistScenario,
 } from '@/lib/mock';
@@ -94,6 +97,36 @@ export async function getForecast(target: string, targetId: string | null = null
  */
 export async function getForecasts(): Promise<AIForecast[]> {
   return respond((state) => buildForecasts(state));
+}
+
+/**
+ * ค่าที่ทีม AI คำนวณมาให้แดชบอร์ดแสดง
+ *
+ * ★ ช่องทางกลางสำหรับตัวเลขที่ไม่ใช่เหตุการณ์และไม่ใช่การพยากรณ์
+ *   เช่น ประสิทธิภาพปั๊ม พลังงานจำเพาะ ดัชนีการรั่ว
+ *   key เป็น string เปิด ทีม AI เพิ่มตัวชี้วัดใหม่ได้โดยหน้าบ้านไม่ต้อง deploy ตาม
+ *   ตัวที่ยังไม่มีคำแปลใน lib/config/ai-metrics.ts จะแสดงด้วย key ดิบแทน
+ *
+ * TODO(backend): GET /api/ai/metrics?key=&scopeType=&scopeId=&abnormalOnly=
+ */
+export async function getAIMetrics(query: AIMetricQuery = {}): Promise<AIMetric[]> {
+  return respond((state) => {
+    const all = buildMetrics(state, state.scenario);
+    return all.filter((metric) => {
+      if (query.keys !== undefined && !query.keys.includes(metric.key)) return false;
+      if (query.scopeTypes !== undefined) {
+        if (metric.scopeType === undefined || !query.scopeTypes.includes(metric.scopeType)) return false;
+      }
+      if (query.scopeIds !== undefined) {
+        if (metric.scopeId === undefined || metric.scopeId === null || !query.scopeIds.includes(metric.scopeId)) {
+          return false;
+        }
+      }
+      // ตัวที่ทีม AI ไม่ได้ระบุ status ต้องไม่ถูกกรองทิ้งเงียบ ๆ
+      if (query.abnormalOnly === true && (metric.status === undefined || metric.status === 'ok')) return false;
+      return true;
+    });
+  });
 }
 
 /**

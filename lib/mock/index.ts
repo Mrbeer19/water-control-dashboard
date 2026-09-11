@@ -15,7 +15,14 @@ export {
   defaultZoneConfigs,
 } from './settings-defaults';
 export { acknowledgeAlert, raiseAlert, resolveAlerts } from './alerts';
-export { buildAnomalies, buildForecast, buildForecasts, buildMaintenancePredictions, buildServiceStatus } from './ai';
+export {
+  buildAnomalies,
+  buildForecast,
+  buildForecasts,
+  buildMaintenancePredictions,
+  buildMetrics,
+  buildServiceStatus,
+} from './ai';
 export { DAILY_HISTORY_DAYS, buildDailyUsage, buildMeterReadings, buildMonthlyUsage, daysRemainingInMonth } from './daily';
 export {
   MIN_SOURCE_LEVEL_PERCENT,

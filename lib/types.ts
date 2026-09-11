@@ -1103,6 +1103,94 @@ export interface MaintenancePrediction {
   recommendationEn?: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// ค่าที่ทีม AI คำนวณมาเอง
+//
+// ★ นี่คือช่องทางกลางสำหรับ "ตัวเลขที่ทีม AI คิดขึ้นมา" ที่ไม่ใช่เหตุการณ์
+//   และไม่ใช่การพยากรณ์ เช่น ประสิทธิภาพปั๊ม พลังงานจำเพาะต่อลูกบาศก์เมตร
+//   ดัชนีการรั่ว หรือ KPI ใด ๆ ที่ทีม AI จะคิดเพิ่มทีหลัง
+//
+//   ออกแบบให้ทีม AI เพิ่มค่าใหม่ได้เองโดยหน้าบ้านไม่ต้อง deploy ตาม:
+//   key เป็น string เปิด และการแปลชื่อ/หน่วย/ไอคอนอยู่ใน lib/config/ai-metrics.ts
+//   ค่าที่ยังไม่มีคำแปลต้องแสดงได้ทันทีโดยใช้ key ดิบเป็นชื่อ
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * คีย์ของค่าที่คำนวณ — string เปิด ห้ามทำเป็น enum ปิด
+ * ตัวอย่างที่ใช้อยู่: 'pump_efficiency' | 'specific_energy' | 'leak_index'
+ *                    | 'water_balance_residual' | 'projected_bill'
+ */
+export type AIMetricKey = string;
+
+/**
+ * วิธีจัดรูปแบบค่า — string เปิดเช่นกัน
+ * ที่หน้าบ้านรู้จัก: 'number' | 'percent' | 'ratio' | 'currency' | 'duration_minutes'
+ * ค่าที่ไม่รู้จักจะถูกแสดงเป็นตัวเลขธรรมดาพร้อมหน่วยที่ส่งมา
+ */
+export type AIMetricFormat = string;
+
+/**
+ * ค่าหนึ่งค่าที่ทีม AI คำนวณมา
+ * บังคับแค่ key กับ computedAt — ที่เหลือขาดได้ทั้งหมด หน้าจอต้องยังแสดงได้
+ */
+export interface AIMetric {
+  key: AIMetricKey;
+  computedAt: ISODateTime;
+
+  /** ค่าตัวเลข — ไม่มีเมื่อค่านี้เป็นข้อความล้วน */
+  value?: number;
+  /** ข้อความแทนค่าตัวเลข สำหรับค่าเชิงคุณภาพ เช่น "ปกติ" / "ควรตรวจสอบ" */
+  text?: string;
+  unit?: string;
+  format?: AIMetricFormat;
+  /** จำนวนทศนิยมที่ควรแสดง — ไม่ระบุให้หน้าบ้านเลือกตาม format */
+  decimals?: number;
+
+  /** entity ที่ค่านี้พูดถึง — ไม่ระบุ = ค่าระดับทั้งระบบ */
+  scopeType?: AlertSourceType;
+  scopeId?: string | null;
+  scopeName?: string;
+
+  /** ค่าเป้าหมายที่ควรจะเป็น ใช้วาดเส้นอ้างอิงและบอกว่าห่างเป้าแค่ไหน */
+  target?: number | null;
+  /** เกณฑ์ที่ทีม AI ใช้ตัดสินว่าค่านี้ผิดปกติหรือยัง */
+  thresholds?: ThresholdRange;
+  /** สถานะที่ทีม AI ตัดสินมาแล้ว — หน้าบ้านไม่ตัดสินเอง */
+  status?: EntityStatus;
+
+  /** ค่าของรอบก่อนหน้า ใช้แสดงทิศทางการเปลี่ยนแปลง */
+  previousValue?: number | null;
+  changePercent?: number | null;
+  /** ทิศทาง — string เปิด เช่น 'up' | 'down' | 'stable' */
+  trend?: string;
+  /**
+   * true เมื่อค่าที่สูงขึ้นคือเรื่องแย่ (เช่น ดัชนีการรั่ว)
+   * ไม่ระบุให้ถือว่าสูงขึ้น = ดีขึ้น หน้าจอใช้ตัวนี้เลือกสีของลูกศร
+   */
+  higherIsWorse?: boolean;
+
+  /** 0–1 ความมั่นใจของค่านี้ */
+  confidence?: number;
+  /** ค่าที่ใช้คำนวณ ให้คนตรวจย้อนได้ว่าตัวเลขนี้มาจากไหน */
+  basis?: AnomalyFeature[];
+  /** ค่าย้อนหลังของตัวชี้วัดนี้ สำหรับวาดเส้นแนวโน้มเล็ก ๆ */
+  series?: TimeSeriesPoint[];
+
+  modelName?: string | null;
+  summaryTh?: string;
+  summaryEn?: string;
+  extra?: Record<string, string | number | boolean | null>;
+}
+
+/** ตัวกรองรายการค่าที่คำนวณ */
+export interface AIMetricQuery {
+  keys?: AIMetricKey[];
+  scopeTypes?: AlertSourceType[];
+  scopeIds?: string[];
+  /** เอาเฉพาะค่าที่ทีม AI ตีว่าไม่ปกติ */
+  abnormalOnly?: boolean;
+}
+
 /** สถานะของบริการ AI ที่รันบน gateway — ใช้บอกผู้ใช้เมื่อผลยังไม่มา */
 export interface AIServiceStatus {
   reachable: boolean;

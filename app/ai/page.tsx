@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type {
   AIForecast,
+  AIMetric,
   AIServiceStatus,
   AlertSeverity,
   AnomalyEvent,
@@ -13,6 +14,7 @@ import type {
 } from '@/lib/types';
 import { useLiveData } from '@/lib/hooks/use-live-data';
 import {
+  getAIMetrics,
   getAIServiceStatus,
   getAnomalies,
   getDailyUsage,
@@ -29,6 +31,7 @@ import { Section } from '@/components/layout/section';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AiSummaryCard } from '@/components/ai/ai-summary-card';
+import { AiMetricsSection } from '@/components/ai/ai-metrics-section';
 import { AnomalyCard } from '@/components/ai/anomaly-card';
 import { AnomalyTimeline } from '@/components/ai/anomaly-timeline';
 import { ForecastSection } from '@/components/ai/forecast-section';
@@ -43,6 +46,7 @@ interface AiData {
   status: AIServiceStatus;
   forecasts: AIForecast[];
   maintenance: MaintenancePrediction[];
+  metrics: AIMetric[];
   daily: DailyUsagePoint[];
   scenario: MockScenario;
 }
@@ -66,15 +70,16 @@ export default function AiPage(): JSX.Element {
   }, []);
 
   const { data, loading } = useLiveData<AiData>(async () => {
-    const [page, serviceStatus, forecasts, maintenance, daily, scenario] = await Promise.all([
+    const [page, serviceStatus, forecasts, maintenance, metrics, daily, scenario] = await Promise.all([
       getAnomalies({ limit: 100 }),
       getAIServiceStatus(),
       getForecasts(),
       getMaintenancePredictions(),
+      getAIMetrics(),
       getDailyUsage(false),
       getScenario(),
     ]);
-    return { page, status: serviceStatus, forecasts, maintenance, daily, scenario };
+    return { page, status: serviceStatus, forecasts, maintenance, metrics, daily, scenario };
   }, [refreshKey]);
 
   // ตัวเลือกฟิลเตอร์สร้างจากผลที่ได้มาจริง ไม่ได้ fix ไว้ล่วงหน้า
@@ -123,6 +128,11 @@ export default function AiPage(): JSX.Element {
 
       {/* A — สรุปสถานะบริการ AI */}
       <AiSummaryCard status={data?.status ?? null} loading={loading} />
+
+      {/* ค่าที่ทีม AI คำนวณมา */}
+      <Section title={t.ai.metrics} hint={t.ai.metricsHint}>
+        <AiMetricsSection metrics={data?.metrics ?? null} loading={loading} />
+      </Section>
 
       {/* B — รายการความผิดปกติ */}
       <Section
