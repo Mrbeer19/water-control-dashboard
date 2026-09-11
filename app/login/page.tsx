@@ -81,7 +81,13 @@ export default function LoginPage(): JSX.Element {
       */}
       <div className="absolute inset-0 bg-background/25 dark:bg-background/75" aria-hidden />
 
-      <header className="relative flex items-center justify-end gap-2 p-4">
+      {/*
+        แถบบน: โลโก้ซ้าย ตัวสลับภาษา/ธีมขวา — ไม่มีเมนูนำทาง เพราะหน้านี้ยังไม่ได้ล็อกอิน
+        ★ แถบนี้ใช้พื้นทึบ ไม่ใช่โปร่งแสง เพราะ BRANDING_SPEC ข้อ 5.2 ห้ามวางโลโก้บนพื้นภาพ
+      */}
+      <header className="relative flex items-center gap-3 border-b bg-card px-4 py-3">
+        <BrandLogo height={32} priority />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t.app.shortTitle}</span>
         <LangToggle />
         <ThemeToggle />
       </header>
@@ -89,19 +95,18 @@ export default function LoginPage(): JSX.Element {
       <main className="relative flex flex-1 items-center justify-center px-4 pb-10">
         <div className="w-full max-w-sm space-y-4">
           {/*
-            โลโก้อยู่ในการ์ดที่มีพื้นทึบ ไม่ได้ลอยอยู่บนภาพ เพราะ BRANDING_SPEC ข้อ 5.2
-            ห้ามวางโลโก้บนพื้นลายหรือพื้นภาพ
+            การ์ดกลางจอแบบกึ่งโปร่งแสง + เบลอฉากหลัง
+            ★ ความทึบ 90% เป็นค่าต่ำสุดที่ยังปลอดภัย — คำนวณกรณีแย่ที่สุด (การ์ดทับพิกเซลขาวล้วน
+              ของภาพในโหมดมืด) ได้ข้อความหลัก 8.0 : 1 และข้อความรอง 5.2 : 1
+              ถ้าลดถึง 80% ข้อความรองจะเหลือ 3.8 : 1 ซึ่งตก
+            ★ opacity ตรงนี้ใช้กับ "ผิวการ์ด" ไม่ใช่สีสถานะ/สีชุดข้อมูล/สีข้อความ จึงไม่ขัดกฎในข้อ 3
           */}
-          <Card>
-            <CardContent className="flex flex-col items-center p-5 text-center">
-              <BrandLogo height={40} priority />
-              <h1 className="mt-2 text-xl font-semibold tracking-tight">{t.app.title}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
+          <Card className="bg-card/90 backdrop-blur-sm">
             <CardContent className="p-5">
+              <div className="mb-4 text-center">
+                <h1 className="text-xl font-semibold tracking-tight">{t.auth.title}</h1>
+                <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
+              </div>
               {succeeded ? (
                 <LoginSuccess />
               ) : (
@@ -170,7 +175,7 @@ export default function LoginPage(): JSX.Element {
           )}
 
           {!succeeded && accounts.length > 0 && (
-            <Card>
+            <Card className="bg-card/90 backdrop-blur-sm">
               <CardContent className="p-4">
                 <p className="mb-2 text-xs font-medium">{t.auth.demoAccounts}</p>
                 <ul className="space-y-1">
