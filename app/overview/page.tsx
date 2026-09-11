@@ -34,7 +34,7 @@ export default function FlowDiagramPage(): JSX.Element {
       </div>
 
       {loading && data === null ? (
-        <Skeleton className="h-[520px] rounded-lg" />
+        <Skeleton className="h-[520px] rounded-card" />
       ) : data === null ? (
         <Card>
           <CardContent className="p-10 text-center">

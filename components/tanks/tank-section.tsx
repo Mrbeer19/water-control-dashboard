@@ -17,7 +17,7 @@ export function TankSection(): JSX.Element {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} className="h-[198px] rounded-lg" />
+          <Skeleton key={index} className="h-[198px] rounded-card" />
         ))}
       </div>
     );

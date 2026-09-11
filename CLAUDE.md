@@ -99,6 +99,18 @@ lib/
 - ทุกหน้าต้องมี loading state และ empty state
 - ตัวเลขจัดรูปแบบผ่าน util กลาง (`formatLiters`, `formatCubicMeters`, `formatBaht`, `formatDateTimeTH`)
 
+## Brand rules (Phase 7 เป็นต้นไป)
+
+สีและฟอนต์ทั้งระบบยึดตาม Corporate Identity ของ Kasetphand — สเปกเต็มอยู่ที่ `docs/BRANDING_SPEC.md`
+
+- **hex ทุกค่าอยู่ใน `lib/config/theme.ts` ที่เดียว** component ใช้ semantic token ผ่านคลาสของ Tailwind เท่านั้น
+- ห้ามใช้ palette สำเร็จรูปของ Tailwind (`red-500`, `slate-*` ฯลฯ) และห้ามคิดสีเอง
+- ห้ามใช้ opacity กับ พื้น/ขอบของสถานะ · สีชุดข้อมูลในกราฟ · สีข้อความ (hover/disabled/backdrop ใช้ได้)
+- สถานะต้องมีไอคอน + ข้อความเสมอ ใช้ `<StatusBadge>` จุดเดียว ห้ามประกอบสีเอง
+- กราฟใช้ได้ 2 สีหลัก + 1 สีอ้างอิง — เกินกว่านั้นให้หยุดถาม
+- โลโก้ render ผ่าน `components/layout/brand-logo.tsx` จุดเดียว
+- ตรวจก่อน commit เสมอ: `npm run check:colors`
+
 ## วิธีทำงาน
 
 อ่าน `RUNBOOK.md` ที่ root — เป็นตัวกำหนดลูปการทำงาน เช็คลิสต์รีวิวตัวเอง

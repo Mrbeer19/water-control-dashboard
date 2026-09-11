@@ -223,7 +223,7 @@ export function ToggleField({
 /** กล่องครอบหนึ่งกลุ่มฟิลด์ เช่น ถังหนึ่งใบ หรือปั๊มหนึ่งตัว */
 export function FieldGroup({ title, children }: { title: string; children: ReactNode }): JSX.Element {
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-card border p-4">
       <p className="mb-3 text-sm font-semibold">{title}</p>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
     </div>

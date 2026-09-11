@@ -30,8 +30,8 @@ export function MainMeterSection(): JSX.Element {
   if (loading && data === null) {
     return (
       <div className="grid gap-4 lg:grid-cols-3">
-        <Skeleton className="h-[188px] rounded-lg lg:col-span-2" />
-        <Skeleton className="h-[188px] rounded-lg" />
+        <Skeleton className="h-[188px] rounded-card lg:col-span-2" />
+        <Skeleton className="h-[188px] rounded-card" />
       </div>
     );
   }

@@ -51,7 +51,7 @@ export function ValveControlCard({
   const locked = disabled || (interlock?.blocked ?? false) || runner.pending;
 
   return (
-    <Card className={cn(isVip && 'border-primary/40')}>
+    <Card className={cn(isVip && 'border-primary')}>
       <CardContent className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

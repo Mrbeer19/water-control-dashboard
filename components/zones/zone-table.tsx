@@ -18,7 +18,7 @@ export function ZoneTable({ rows }: { rows: ZoneRow[] }): JSX.Element {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+            <tr className="border-b bg-secondary text-xs text-muted-foreground">
               <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.zone.zone}</th>
               <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.zone.flowNow}</th>
               <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.zone.today}</th>
@@ -29,7 +29,7 @@ export function ZoneTable({ rows }: { rows: ZoneRow[] }): JSX.Element {
           </thead>
           <tbody>
             {rows.map(({ zone, cost, online }) => (
-              <tr key={zone.id} className="border-b last:border-0 hover:bg-accent/40">
+              <tr key={zone.id} className="border-b last:border-0 hover:bg-accent">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
                     <StatusDot

@@ -305,6 +305,23 @@ components/ai/scenario-switcher.tsx
 
 ---
 
+## 4.5 ไฟล์ที่เกี่ยวกับหน้าตา — ทีมหลังบ้านไม่ต้องแตะ
+
+Phase 7 เปลี่ยนสีและฟอนต์ทั้งระบบให้เป็น Corporate Identity ของ Kasetphand
+ทุกอย่างอยู่ในชั้นการแสดงผลล้วน **ไม่กระทบ contract ของ API แม้แต่ field เดียว**
+
+| ไฟล์ | หน้าที่ |
+|---|---|
+| `lib/config/theme.ts` | **จุดเดียวในโค้ดที่เก็บค่า hex** — บันไดสี CI, ขั้นต่อขยายสำหรับ dark mode, สีแบรนด์ของ LINE |
+| `app/globals.css` | semantic token ทั้งหมดในรูป HSL พร้อมคอมเมนต์ hex กำกับทุกตัว (มี 2 ชุด: `:root` และ `.dark`) |
+| `tailwind.config.ts` | ผูกชื่อคลาสเข้ากับตัวแปร CSS ข้างบน |
+| `app/fonts/` | Montserrat (ละติน/ตัวเลข) + IBM Plex Sans Thai — self-host ทั้งคู่ พร้อม `OFL.txt` |
+| `components/ui/status-badge.tsx` | ป้ายสถานะกลาง — ห้าม component อื่นประกอบสีสถานะเอง |
+| `components/layout/brand-logo.tsx` | จุดเดียวที่ render โลโก้องค์กร |
+| `scripts/check-colors.mjs` | ตัวตรวจสีอัตโนมัติ รันด้วย `npm run check:colors` (ใช้ Node ล้วน ไม่มี dependency) |
+
+สเปกเต็มอยู่ที่ `docs/BRANDING_SPEC.md` และบันทึกการตัดสินใจอยู่ที่ `docs/DESIGN_PLAN.md`
+
 ## 5. ข้อควรระวังที่พบระหว่างทำ
 
 | เรื่อง | รายละเอียด |

@@ -76,7 +76,7 @@ export function PinGate({
           }}
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-info/10 text-info">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border text-info">
               <KeyRound className="h-4 w-4" aria-hidden />
             </span>
             <h2 id="pin-title" className="font-semibold">
@@ -97,7 +97,7 @@ export function PinGate({
                 setError(false);
               }}
               className={cn(
-                'tabular mt-1 h-11 w-full rounded-md border bg-background px-3 text-center text-xl tracking-[0.5em]',
+                'tabular mt-1 h-11 w-full rounded-control border bg-background px-3 text-center text-xl tracking-[0.5em]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 error && 'border-status-critical',
               )}

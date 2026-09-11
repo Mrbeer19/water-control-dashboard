@@ -16,7 +16,7 @@ export function AiSection({ draft, errors, onChange }: SettingsSectionProps): JS
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <ToggleField
           label={t.settings.anomalyEnabled}
           checked={ai.anomalyDetectionEnabled}
@@ -36,7 +36,7 @@ export function AiSection({ draft, errors, onChange }: SettingsSectionProps): JS
       </div>
 
       {/* ความไวเป็น 0–1 ตามสัญญา แปลงเป็น % ที่ชั้นแสดงผลเท่านั้น */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <div className="flex items-baseline justify-between">
           <label htmlFor="sensitivity" className="text-xs font-medium">{t.settings.sensitivity}</label>
           <span className="tabular text-sm font-semibold">{formatRatio(ai.anomalySensitivity, locale)}</span>

@@ -173,7 +173,7 @@ export default function AiPage(): JSX.Element {
           </div>
 
           {loading && data === null ? (
-            <Skeleton className="h-[150px] rounded-lg" />
+            <Skeleton className="h-[150px] rounded-card" />
           ) : data !== null && data.page.items.length > 0 ? (
             <Card>
               <CardContent className="p-4">
@@ -185,7 +185,7 @@ export default function AiPage(): JSX.Element {
           {loading && data === null ? (
             <div className="grid gap-4 xl:grid-cols-2">
               {[0, 1].map((index) => (
-                <Skeleton key={index} className="h-[280px] rounded-lg" />
+                <Skeleton key={index} className="h-[280px] rounded-card" />
               ))}
             </div>
           ) : filtered.length === 0 ? (

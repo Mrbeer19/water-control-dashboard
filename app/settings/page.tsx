@@ -117,7 +117,7 @@ export default function SettingsPage(): JSX.Element {
       <div className="space-y-4">
         <Skeleton className="h-9 w-48" />
         <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-96 rounded-lg" />
+        <Skeleton className="h-96 rounded-card" />
       </div>
     );
   }

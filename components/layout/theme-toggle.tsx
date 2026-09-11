@@ -18,7 +18,7 @@ export function ThemeToggle(): JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-0.5 rounded-full border bg-muted/40 p-0.5"
+      className="flex items-center gap-0.5 rounded-full border bg-secondary p-0.5"
       role="group"
       aria-label={t.header.themeToggle}
     >
@@ -37,7 +37,7 @@ export function ThemeToggle(): JSX.Element {
             className={cn(
               'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              active ? 'bg-card text-foreground ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             <Icon className="h-3.5 w-3.5" aria-hidden />

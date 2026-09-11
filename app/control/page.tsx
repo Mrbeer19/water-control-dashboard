@@ -72,7 +72,7 @@ export default function ControlPage(): JSX.Element {
         <Skeleton className="h-9 w-52" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((index) => (
-            <Skeleton key={index} className="h-64 rounded-lg" />
+            <Skeleton key={index} className="h-64 rounded-card" />
           ))}
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function ControlPage(): JSX.Element {
   return (
     <div className="space-y-8">
       {/* ด่าน PIN */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border bg-card px-4 py-3">
         <p className="flex items-center gap-2 text-sm">
           <ShieldCheck className={`h-4 w-4 ${needsPin ? 'text-muted-foreground' : 'text-status-ok'}`} aria-hidden />
           {needsPin ? t.control.pinTitle : t.control.pinUnlocked}

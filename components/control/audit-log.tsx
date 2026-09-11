@@ -21,7 +21,7 @@ export function AuditLog({ entries, loading }: { entries: CommandLogEntry[] | nu
   const { t, locale } = useLocale();
 
   if (loading && entries === null) {
-    return <Skeleton className="h-56 rounded-lg" />;
+    return <Skeleton className="h-56 rounded-card" />;
   }
 
   if (entries === null || entries.length === 0) {
@@ -40,7 +40,7 @@ export function AuditLog({ entries, loading }: { entries: CommandLogEntry[] | nu
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+            <tr className="border-b bg-secondary text-xs text-muted-foreground">
               <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.control.when}</th>
               <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.control.target}</th>
               <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.control.action}</th>
@@ -50,7 +50,7 @@ export function AuditLog({ entries, loading }: { entries: CommandLogEntry[] | nu
           </thead>
           <tbody>
             {entries.map(({ command, result }) => (
-              <tr key={command.id} className="border-b last:border-0 align-top hover:bg-accent/40">
+              <tr key={command.id} className="border-b last:border-0 align-top hover:bg-accent">
                 <td className="tabular whitespace-nowrap px-4 py-2.5 text-xs text-muted-foreground">
                   {formatDateTimeTH(command.issuedAt, locale)}
                 </td>

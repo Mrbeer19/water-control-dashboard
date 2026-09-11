@@ -104,7 +104,7 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
         </dl>
 
         {reading.rainDetected === true && (
-          <p className="inline-flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-[11px] text-info">
+          <p className="inline-flex items-center gap-1.5 rounded-control border px-2 py-1 text-[11px] text-info">
             <CloudRain className="h-3.5 w-3.5" aria-hidden />
             {t.env.raining} · {formatNumber(reading.rainfallMmPerHour ?? 0, locale, 1)} mm/h
           </p>

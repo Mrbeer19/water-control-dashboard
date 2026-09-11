@@ -74,7 +74,7 @@ export function BackupSection({ userId, onImported }: { userId: string; onImport
       ))}
 
       {preview !== null && (
-        <pre className="max-h-72 overflow-auto rounded-lg border bg-muted/30 p-3 text-[11px] leading-relaxed">
+        <pre className="max-h-72 overflow-auto rounded-card border bg-secondary p-3 text-[11px] leading-relaxed">
           {preview}
         </pre>
       )}

@@ -595,3 +595,44 @@ contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10
 `npm run check:colors` เพิ่มข้อที่ 5 — **กฎ opacity ตามข้อ 3** พร้อม "ยอดค้างตามแผน" รายไฟล์
 ตอนนี้ค้าง 28 จุด (37 − 9 ที่แก้ในเฟสนี้) ถ้าไฟล์ไหนเกินยอดหรือมีไฟล์ใหม่โผล่มาจะ FAIL ทันที
 แต่ละเฟสถัดไปต้องลดตัวเลขใน `PENDING` ลงจนเป็น 0 ตอน 7.8b
+
+---
+
+## 16. สรุปผล Phase 7.3 – 7.8b
+
+| เฟส | สิ่งที่ทำ |
+|---|---|
+| 7.3 | โลโก้เข้า sidebar + top bar มือถือ · กล่องสรุประบบ + เวอร์ชันท้าย sidebar (ดึงจาก `getSystemSummary` ที่มีอยู่) · header ย่อบนมือถือโดยย้ายตัวสลับภาษา/ธีม/เมนูผู้ใช้ไปท้าย drawer · `/login` เป็น split layout พื้น Blue-800 · favicon เปลี่ยนสีเป็น CI |
+| 7.4 | ตัวเลข KPI ของข้อมูลน้ำใช้ `data-water` · เพิ่ม `kpiToneClass()` ให้สีสถานะโผล่เฉพาะตอนเตือน/วิกฤต · ลูกศรเข้า-ออกเลิกใช้สีสถานะ · ช่วงความเชื่อมั่นใช้ `data-water-soft` แทน `fillOpacity` |
+| 7.5 | `/control` + `/devices` ไล่น้ำหนักพื้นตามข้อ 3.4 · drawer/dialog ใช้ `rounded-overlay` และเหลือเงาเดียวของระบบ · interlock ใช้พื้น Argent |
+| 7.6 | `/alerts` + `/reports` หัวตารางและ segmented control ใช้ขั้นจากบันไดสีแทน opacity |
+| 7.7a | `/ai` เลิกทำพื้น/ขอบจางด้วย opacity ทั้งหมด |
+| 7.7b | ท่อในผังใช้บันไดสีน้ำ (วิกฤต/offline ยังใช้สีสถานะ) · จุดที่ AI ตรวจพบเป็น Cinnabar-500 ตามข้อ 7 |
+| 7.8a | ฟอร์มตั้งค่าใช้ token `form-error` (Cinnabar-800) · tabs และ input ใช้ radius ตามข้อ 6.2 |
+| 7.8b | กวาด opacity หมวด "ควรแก้" จนหมด · `rounded-md`/`rounded-lg` เหลือ 0 เปลี่ยนเป็น `rounded-control`/`rounded-card` · เงาเหลือเฉพาะ drawer/dialog 3 จุด |
+
+### ผลตรวจสุดท้าย
+
+| รายการ | ผล |
+|---|---|
+| `npm run check:colors` | ผ่านทั้ง 6 ข้อ — hex เหลือเฉพาะ `theme.ts` · Tailwind palette 0 · whitelist 86/86 · contrast 29/29 · **opacity 0 จุด** · ชื่อ token 22/22 |
+| `npx tsc --noEmit` / `npm run lint` / `npm run build` | ผ่านทั้งหมด |
+| scrollWidth ที่ 375 px | ทั้ง 9 หน้า = 375/375 **ไม่ล้น** (เดิม 404 ล้น 29 px) |
+| scrollWidth ที่ 1920 px | ทั้ง 9 หน้า = 1920/1920 ไม่ล้น |
+| ฟอนต์ | `@font-face` ทุกตัวชี้ไป `/_next/static/media/…` ไม่มี URL ภายนอกใน CSS ที่ build ออกมา |
+| i18n | th 514 คีย์ · en 514 คีย์ · ไม่มีคีย์ที่มีข้างเดียว |
+| ไฟล์ต้องห้าม | ไม่มีไฟล์ใน `lib/services/` `lib/mock/` `lib/types.ts` `lib/hooks/` ถูกแก้เลยทั้ง Phase 7 |
+| dataviz validator | light ผ่านทุกข้อ · dark ผ่านทุกข้อยกเว้น WARN contrast ของ Blue-300 บนการ์ด (2.90 : 1) — บันทึกไว้ในข้อ 3.3 แล้ว |
+
+### บั๊กที่ตัวตรวจจับได้ระหว่างทาง
+
+การแทนที่ด้วย `sed` ทำให้เกิดคลาสพิมพ์เพี้ยน 3 จุดที่ Tailwind ไม่รู้จักแล้วเงียบ ๆ ไม่ให้สีอะไรเลย
+— `bg-status-oky`, `text-infary`, `text-form-errorcal`
+จึงเพิ่มข้อที่ 6 ใน `check-colors.mjs` ตรวจว่าชื่อ token สีที่ใช้จริงมีอยู่ใน `tailwind.config.ts` หรือไม่
+ตัวตรวจนี้จับ `text-form-errorcal` ได้ทันทีในเฟสถัดมา
+
+### เครื่องมือวัด layout
+
+`public/__measure.html` (อยู่ใน `.gitignore`) เป็นหน้าเปล่าที่ฝัง iframe ความกว้างคงที่แล้ววัด `scrollWidth`
+ใช้คู่กับ Chrome headless `--dump-dom` เพราะหน้าต่าง Chrome บน macOS ย่อต่ำกว่า 500 px ไม่ได้
+และ `--screenshot --window-size` ที่ความกว้างแคบให้ผลไม่ตรง (เรนเดอร์ที่ความกว้างเดิมแล้วค่อยครอป)

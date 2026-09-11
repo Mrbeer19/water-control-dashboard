@@ -32,8 +32,8 @@ export function BillingSection(): JSX.Element {
   if (loading && data === null) {
     return (
       <div className="grid gap-4 xl:grid-cols-3">
-        <Skeleton className="h-[340px] rounded-lg xl:col-span-2" />
-        <Skeleton className="h-[340px] rounded-lg" />
+        <Skeleton className="h-[340px] rounded-card xl:col-span-2" />
+        <Skeleton className="h-[340px] rounded-card" />
       </div>
     );
   }

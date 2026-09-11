@@ -15,7 +15,7 @@ export function LangToggle(): JSX.Element {
       title={t.header.langToggle}
       aria-label={t.header.langToggle}
       className={cn(
-        'flex h-8 items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 text-xs font-semibold',
+        'flex h-8 items-center gap-1.5 rounded-full border bg-secondary px-2.5 text-xs font-semibold',
         'text-muted-foreground transition-colors hover:text-foreground',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
       )}

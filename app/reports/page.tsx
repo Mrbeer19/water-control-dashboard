@@ -145,11 +145,11 @@ export default function ReportsPage(): JSX.Element {
           </div>
 
           {exportMessage !== null && (
-            <p className="rounded-md border px-2.5 py-1.5 text-xs text-foreground">{exportMessage}</p>
+            <p className="rounded-control border px-2.5 py-1.5 text-xs text-foreground">{exportMessage}</p>
           )}
 
           {loading && data === null ? (
-            <Skeleton className="h-[520px] rounded-lg" />
+            <Skeleton className="h-[520px] rounded-card" />
           ) : data === null || data.rows.length === 0 ? (
             <Card>
               <CardContent className="p-10 text-center">
@@ -242,7 +242,7 @@ export default function ReportsPage(): JSX.Element {
                     </thead>
                     <tbody>
                       {data.rows.map((row) => (
-                        <tr key={row.zoneId} className="border-b last:border-0 hover:bg-accent/40">
+                        <tr key={row.zoneId} className="border-b last:border-0 hover:bg-accent">
                           <td className="px-4 py-2.5">{locale === 'th' ? row.name : row.nameEn}</td>
                           <td className="tabular px-3 py-2.5 text-right">{formatCubicMeters(row.cubicMeters, locale)}</td>
                           <td className="tabular px-3 py-2.5 text-right text-muted-foreground">
@@ -275,7 +275,7 @@ export default function ReportsPage(): JSX.Element {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {monthly === null ? (
-                    <Skeleton className="h-[260px] rounded-md" />
+                    <Skeleton className="h-[260px] rounded-control" />
                   ) : (
                     <>
                       <MonthlyChart points={monthly} />
@@ -337,7 +337,7 @@ export default function ReportsPage(): JSX.Element {
                 </CardHeader>
                 <CardContent>
                   {readings === null ? (
-                    <Skeleton className="h-40 rounded-md" />
+                    <Skeleton className="h-40 rounded-control" />
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[640px] text-sm">

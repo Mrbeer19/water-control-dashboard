@@ -53,7 +53,7 @@ export function ZoneSection(): JSX.Element {
   }, []);
 
   if (loading && data === null) {
-    return <Skeleton className="h-[420px] rounded-lg" />;
+    return <Skeleton className="h-[420px] rounded-card" />;
   }
 
   if (data === null || data.zones.length === 0) {
@@ -77,7 +77,7 @@ export function ZoneSection(): JSX.Element {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <div className="inline-flex rounded-md border bg-muted/40 p-0.5" role="group">
+        <div className="inline-flex rounded-control border bg-secondary p-0.5" role="group">
           <ViewButton active={view === 'table'} onClick={() => { chooseView('table'); }} icon={Table2} label={t.overview.viewTable} />
           <ViewButton active={view === 'cards'} onClick={() => { chooseView('cards'); }} icon={LayoutGrid} label={t.overview.viewCards} />
         </div>
@@ -107,7 +107,7 @@ function ViewButton({
       className={cn(
         'inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+        active ? 'bg-card text-foreground ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
       )}
     >
       <Icon className="h-3.5 w-3.5" aria-hidden />

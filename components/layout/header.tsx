@@ -33,7 +33,7 @@ export function Header({ onOpenMenu }: HeaderProps): JSX.Element {
       <button
         type="button"
         onClick={onOpenMenu}
-        className="rounded-md p-2 text-muted-foreground hover:bg-accent lg:hidden"
+        className="rounded-control p-2 text-muted-foreground hover:bg-accent lg:hidden"
         aria-label={t.header.openMenu}
       >
         <Menu className="h-5 w-5" aria-hidden />

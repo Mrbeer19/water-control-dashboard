@@ -23,7 +23,7 @@ export function UsersSection({ draft, onChange }: SettingsSectionProps): JSX.Ele
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <ToggleField
           label={t.settings.requirePin}
           checked={security.requirePinForControl}
@@ -57,11 +57,11 @@ export function UsersSection({ draft, onChange }: SettingsSectionProps): JSX.Ele
 
       {/* รายชื่อผู้ใช้อ่านอย่างเดียว — การจัดการบัญชีเป็นงานของหลังบ้าน ไม่ใช่ของหน้าจอนี้ */}
       {loading && data === null ? (
-        <Skeleton className="h-40 rounded-lg" />
+        <Skeleton className="h-40 rounded-card" />
       ) : data === null || data.users.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">{t.common.empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-card border">
           <table className="w-full min-w-[520px] text-sm">
             <thead>
               <tr className="border-b bg-secondary text-xs text-muted-foreground">

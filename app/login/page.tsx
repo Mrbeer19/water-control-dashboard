@@ -15,7 +15,7 @@ import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { BrandLogo } from '@/components/layout/brand-logo';
 
 const INPUT_CLASS =
-  'h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-10 w-full rounded-control border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /**
  * หน้าเข้าสู่ระบบ
@@ -168,7 +168,7 @@ export default function LoginPage(): JSX.Element {
                           setPassword('demo');
                           setError(null);
                         }}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
+                        className="flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
                       >
                         <span className="min-w-0 flex-1 truncate">{account.displayName}</span>
                         <code className="shrink-0 text-[10px] text-muted-foreground">{account.id}</code>

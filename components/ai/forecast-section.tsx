@@ -25,7 +25,7 @@ export function ForecastSection({
     return (
       <div className="grid gap-4 xl:grid-cols-2">
         {[0, 1].map((index) => (
-          <Skeleton key={index} className="h-[260px] rounded-lg" />
+          <Skeleton key={index} className="h-[260px] rounded-card" />
         ))}
       </div>
     );

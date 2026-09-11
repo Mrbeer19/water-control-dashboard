@@ -17,7 +17,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 export function AiSummaryCard({ status, loading }: { status: AIServiceStatus | null; loading: boolean }): JSX.Element {
   const { t, locale } = useLocale();
 
-  if (loading && status === null) return <Skeleton className="h-[132px] rounded-lg" />;
+  if (loading && status === null) return <Skeleton className="h-[132px] rounded-card" />;
 
   if (status === null) {
     return (

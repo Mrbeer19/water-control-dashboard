@@ -26,7 +26,7 @@ export function ServiceHealthBar(): JSX.Element {
     return (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((index) => (
-          <Skeleton key={index} className="h-[86px] rounded-lg" />
+          <Skeleton key={index} className="h-[86px] rounded-card" />
         ))}
       </div>
     );

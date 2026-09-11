@@ -17,13 +17,13 @@ import { DeviceDetailPanel } from '@/components/devices/device-detail-panel';
 import { DEVICE_ROLES, kindLabel, roleLabel } from '@/components/devices/device-labels';
 
 const SELECT_CLASS =
-  'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-control border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /** Phase 3A — สถานะอุปกรณ์ทุก node */
 export default function DevicesPage(): JSX.Element {
   // useSearchParams ต้องอยู่ใต้ Suspense ตามข้อกำหนดของ App Router
   return (
-    <Suspense fallback={<Skeleton className="h-96 rounded-lg" />}>
+    <Suspense fallback={<Skeleton className="h-96 rounded-card" />}>
       <DevicesView />
     </Suspense>
   );
@@ -87,7 +87,7 @@ function DevicesView(): JSX.Element {
                 }}
                 placeholder={t.device.search}
                 aria-label={t.device.search}
-                className="h-9 w-full rounded-md border bg-background pl-8 pr-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-9 w-full rounded-control border bg-background pl-8 pr-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
 
@@ -125,7 +125,7 @@ function DevicesView(): JSX.Element {
           </div>
 
           {loading && data === null ? (
-            <Skeleton className="h-96 rounded-lg" />
+            <Skeleton className="h-96 rounded-card" />
           ) : filtered.length === 0 ? (
             <Card>
               <CardContent className="p-10 text-center">
@@ -138,7 +138,7 @@ function DevicesView(): JSX.Element {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1080px] text-sm">
                   <thead>
-                    <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                    <tr className="border-b bg-secondary text-xs text-muted-foreground">
                       <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.device.name}</th>
                       <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.device.kind}</th>
                       <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.device.ip}</th>
@@ -168,7 +168,7 @@ function DevicesView(): JSX.Element {
                             setSelectedId(device.id);
                           }
                         }}
-                        className="cursor-pointer border-b last:border-0 hover:bg-accent/40 focus-visible:bg-accent/60 focus-visible:outline-none"
+                        className="cursor-pointer border-b last:border-0 hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                       >
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">

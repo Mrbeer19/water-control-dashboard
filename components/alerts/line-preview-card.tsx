@@ -43,7 +43,7 @@ export function LinePreviewCard({
               อ่านจาก lib/config/theme.ts คีย์ thirdParty.line และใช้ได้เฉพาะไฟล์นี้
             */}
             <div
-              className="rounded-lg rounded-tl-sm p-3 ring-1"
+              className="rounded-card rounded-tl-sm p-3 ring-1"
               style={{
                 backgroundColor: `color-mix(in srgb, ${thirdParty.line} 10%, transparent)`,
                 '--tw-ring-color': `color-mix(in srgb, ${thirdParty.line} 25%, transparent)`,
@@ -60,7 +60,7 @@ export function LinePreviewCard({
                 <p className="text-xs text-muted-foreground">{t.alerts.pending}</p>
               ) : (
                 deliveries.map((delivery) => (
-                  <div key={delivery.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
+                  <div key={delivery.id} className="flex items-center gap-2 rounded-control border px-2.5 py-1.5 text-xs">
                     <Send
                       className={cn(
                         'h-3.5 w-3.5 shrink-0',

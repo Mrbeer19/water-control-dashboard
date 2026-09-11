@@ -37,7 +37,7 @@ export function RecentAlerts(): JSX.Element {
         {loading && data === null ? (
           <div className="space-y-2">
             {[0, 1, 2, 3, 4].map((index) => (
-              <Skeleton key={index} className="h-11 rounded-md" />
+              <Skeleton key={index} className="h-11 rounded-control" />
             ))}
           </div>
         ) : data === null || data.items.length === 0 ? (

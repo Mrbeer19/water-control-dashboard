@@ -73,7 +73,7 @@ export function BillingSection({ draft, errors, onChange }: SettingsSectionProps
 
         <div className="space-y-2">
           {billing.tiers.map((tier, index) => (
-            <div key={tier.id} className="grid items-start gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto] ">
+            <div key={tier.id} className="grid items-start gap-2 rounded-card border p-3 sm:grid-cols-[1fr_auto] ">
               <div className="grid gap-2 sm:grid-cols-4">
                 <TextField label={t.settings.nameLabel} value={tier.name} onChange={(value) => { setTier(index, { name: value }); }} />
                 <NumberField

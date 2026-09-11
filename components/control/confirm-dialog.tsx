@@ -108,7 +108,7 @@ export function ConfirmDialog({
                 setReason(event.target.value);
               }}
               placeholder={t.control.reasonPlaceholder}
-              className="mt-1 h-9 w-full rounded-md border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-1 h-9 w-full rounded-control border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
         )}

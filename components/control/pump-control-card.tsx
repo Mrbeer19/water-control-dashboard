@@ -108,7 +108,7 @@ export function PumpControlCard({
         {/* โหมดควบคุม */}
         <div>
           <p className="mb-1 text-[11px] text-muted-foreground">{t.pump.mode}</p>
-          <div className="inline-flex w-full rounded-md border bg-muted/40 p-0.5" role="group">
+          <div className="inline-flex w-full rounded-control border bg-secondary p-0.5" role="group">
             {MODE_ORDER.filter((mode) => mode !== 'pid' || pump.hasVfd).map((mode) => (
               <button
                 key={mode}
@@ -128,7 +128,7 @@ export function PumpControlCard({
                   'flex-1 rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   pump.controlMode === mode
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-card text-foreground ring-1 ring-border'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >

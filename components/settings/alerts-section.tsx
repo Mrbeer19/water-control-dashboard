@@ -46,7 +46,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         />
       </div>
 
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <p className="mb-2 text-sm font-semibold">{t.settings.quietHours}</p>
         <ToggleField
           label={t.settings.quietHours}
@@ -61,7 +61,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
                 type="time"
                 value={notifications.quietHours.startTime}
                 onChange={(event) => { set({ quietHours: { ...notifications.quietHours, startTime: event.target.value } }); }}
-                className="h-9 w-full rounded-md border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-9 w-full rounded-control border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </label>
             <label className="space-y-1">
@@ -70,7 +70,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
                 type="time"
                 value={notifications.quietHours.endTime}
                 onChange={(event) => { set({ quietHours: { ...notifications.quietHours, endTime: event.target.value } }); }}
-                className="h-9 w-full rounded-md border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-9 w-full rounded-control border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </label>
             <SelectField<AlertSeverity>
@@ -83,7 +83,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         )}
       </div>
 
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <p className="mb-1 text-sm font-semibold">{t.alerts.delivery}</p>
         {CHANNELS.map((channel) => (
           <ToggleField
@@ -102,7 +102,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         ))}
       </div>
 
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <ToggleField
           label={t.alerts.acknowledgedBy}
           hint={draft.notifications.notifyDepartmentManager ? 'ส่งให้หัวหน้าแผนกที่รับผิดชอบด้วย' : 'ส่งเฉพาะช่องทางกลาง'}

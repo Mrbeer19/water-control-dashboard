@@ -66,7 +66,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <ToggleField
           label={t.settings.lineEnabled}
           checked={line.enabled}
@@ -83,7 +83,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* กลุ่มปลายทาง */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold">{t.settings.lineGroups}</p>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={addGroup}>
@@ -97,7 +97,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
 
         <div className="space-y-2">
           {line.groups.map((group) => (
-            <div key={group.id} className="grid items-start gap-2 rounded-md border p-3 sm:grid-cols-[1fr_auto]">
+            <div key={group.id} className="grid items-start gap-2 rounded-control border p-3 sm:grid-cols-[1fr_auto]">
               <div className="grid gap-2 sm:grid-cols-3">
                 <TextField label={t.settings.groupName} value={group.name} onChange={(value) => { setGroup(group.id, { name: value }); }} />
                 <TextField
@@ -146,7 +146,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* ระดับไหนเข้ากลุ่มไหน */}
-      <div className="overflow-x-auto rounded-lg border p-4">
+      <div className="overflow-x-auto rounded-card border p-4">
         <p className="mb-2 text-sm font-semibold">{t.settings.routing}</p>
         {findError(errors, 'line.severityRouting.critical') !== undefined && (
           <p className="mb-2 text-[11px] text-form-error">{findError(errors, 'line.severityRouting.critical')?.messageTh}</p>
@@ -200,7 +200,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* เปิด/ปิดรายประเภทเหตุการณ์ */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <p className="mb-1 text-sm font-semibold">{t.settings.byCode}</p>
         <div className="grid gap-x-6 sm:grid-cols-2">
           {Object.entries(line.enabledCodes).map(([code, enabled]) => (
@@ -215,7 +215,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* ประวัติการส่ง */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-card border p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold">{t.settings.deliveryHistory}</p>
           <p className="tabular text-xs text-muted-foreground">
@@ -223,7 +223,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
           </p>
         </div>
         {loading && deliveries === null ? (
-          <Skeleton className="h-32 rounded-md" />
+          <Skeleton className="h-32 rounded-control" />
         ) : lineDeliveries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{t.common.empty}</p>
         ) : (

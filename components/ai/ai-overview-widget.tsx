@@ -29,7 +29,7 @@ export function AiOverviewWidget(): JSX.Element {
     return { page, status };
   }, []);
 
-  if (loading && data === null) return <Skeleton className="h-[84px] rounded-lg" />;
+  if (loading && data === null) return <Skeleton className="h-[84px] rounded-card" />;
   if (data === null) return <></>;
 
   const active = data.page.total;
@@ -42,7 +42,7 @@ export function AiOverviewWidget(): JSX.Element {
       <CardContent className="flex flex-wrap items-center gap-3 p-4">
         <span
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-card',
             hasCritical ? 'bg-status-critical text-status-critical-foreground' : 'border text-info',
           )}
         >

@@ -170,7 +170,7 @@ export default function AlertsPage(): JSX.Element {
           </div>
 
           {loading && data === null ? (
-            <Skeleton className="h-80 rounded-lg" />
+            <Skeleton className="h-80 rounded-card" />
           ) : data === null || data.page.items.length === 0 ? (
             <Card>
               <CardContent className="p-10 text-center">
@@ -199,7 +199,7 @@ export default function AlertsPage(): JSX.Element {
                         <tr
                           key={alert.id}
                           onClick={() => { setSelectedId(alert.id); }}
-                          className={cn('cursor-pointer border-b last:border-0 align-top hover:bg-accent/40', selected && 'bg-accent/60')}
+                          className={cn('cursor-pointer border-b last:border-0 align-top hover:bg-accent', selected && 'bg-accent')}
                         >
                           <td className="px-4 py-2.5">
                             <div className="flex items-start gap-2">

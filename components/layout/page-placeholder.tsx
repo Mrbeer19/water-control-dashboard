@@ -36,7 +36,7 @@ export function PagePlaceholder({
 
       <Card>
         <CardContent className="flex gap-4 p-6">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-muted text-muted-foreground">
             <Construction className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0 space-y-3">

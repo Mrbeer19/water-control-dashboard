@@ -22,10 +22,10 @@ export function EnvironmentSection(): JSX.Element {
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((index) => (
-            <Skeleton key={index} className="h-[268px] rounded-lg" />
+            <Skeleton key={index} className="h-[268px] rounded-card" />
           ))}
         </div>
-        <Skeleton className="h-[300px] rounded-lg" />
+        <Skeleton className="h-[300px] rounded-card" />
       </div>
     );
   }

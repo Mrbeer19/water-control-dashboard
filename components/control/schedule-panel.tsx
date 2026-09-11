@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const SELECT_CLASS =
-  'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-control border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /**
  * ตั้งเวลาสั่งงานล่วงหน้า
@@ -87,7 +87,7 @@ export function SchedulePanel({
         </div>
 
         {adding && (
-          <div className="grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 rounded-control border bg-secondary p-3 sm:grid-cols-2 lg:grid-cols-5">
             <label className="flex flex-col gap-1 lg:col-span-2">
               <span className="text-[11px] text-muted-foreground">{t.control.target}</span>
               <select
@@ -181,7 +181,7 @@ export function SchedulePanel({
         )}
 
         {loading && schedules === null ? (
-          <Skeleton className="h-24 rounded-md" />
+          <Skeleton className="h-24 rounded-control" />
         ) : schedules === null || schedules.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">{t.control.noSchedules}</p>
         ) : (

@@ -60,7 +60,7 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent lg:hidden"
+            className="rounded-control p-1.5 text-muted-foreground hover:bg-accent lg:hidden"
             aria-label={t.header.closeMenu}
           >
             <X className="h-4 w-4" aria-hidden />
@@ -85,7 +85,7 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
                         onClick={onClose}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          'flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium transition-colors',
                           active
                             ? 'bg-brand-strong text-brand-strong-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground',
