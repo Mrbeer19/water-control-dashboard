@@ -213,6 +213,9 @@ export function buildMaintenancePredictions(
   return state.pumps.map((pump, index) => {
     const degrading = scenario === 'pump_degrading' && pump.id === 'pump-1';
     const failureProbability = degrading ? 0.63 : 0.04 + index * 0.03;
+    // คะแนนสุขภาพเดินสวนทางกับโอกาสเสีย — สูง = ดี
+    const healthScore = Math.round((1 - failureProbability) * 100);
+    const daysUntilIssue = degrading ? 12 : Math.round(pump.hoursUntilService / 18);
 
     const prediction: MaintenancePrediction = {
       id: `maint-${pump.id}`,
@@ -222,6 +225,13 @@ export function buildMaintenancePredictions(
       targetName: pump.name,
       failureProbability: roundTo(failureProbability, 2),
       daysUntilService: degrading ? 9 : Math.round(pump.hoursUntilService / 18),
+      // มีวันที่คาดการณ์เฉพาะตัวที่โมเดลเห็นสัญญาณจริง ตัวที่ปกติจะไม่มี
+      estimatedIssueDate: degrading
+        ? nowIso(Date.now() + daysUntilIssue * 86_400_000)
+        : null,
+      healthScore,
+      trend: degrading ? 'down' : index === 1 ? 'stable' : 'up',
+      note: degrading ? 'เฝ้าดูค่ากระแสทุกกะ หากเกิน 6.5 A ให้หยุดใช้งานทันที' : undefined,
       modelName: state.settings.ai.anomalyModelName,
       features: degrading
         ? [
@@ -290,10 +300,58 @@ export function buildForecast(state: MockState, target: string, targetId: string
 }
 
 export function buildServiceStatus(state: MockState): AIServiceStatus {
+  const active = state.anomalies.filter((anomaly) => anomaly.status === 'active');
+  const critical = active.filter((anomaly) => anomaly.severity === 'critical').length;
+  const enabled = state.settings.ai.forecastEnabled || state.settings.ai.anomalyDetectionEnabled;
+
+  // ข้อความสรุปหนึ่งบรรทัดสำหรับ widget หน้า Overview
+  const summaryText =
+    !enabled
+      ? 'ปิดการตรวจจับความผิดปกติอยู่'
+      : critical > 0
+        ? `พบความผิดปกติระดับวิกฤต ${critical} รายการ ต้องตรวจสอบทันที`
+        : active.length > 0
+          ? `พบความผิดปกติ ${active.length} รายการ ยังไม่ถึงระดับวิกฤต`
+          : 'ไม่พบความผิดปกติในช่วงที่ผ่านมา';
+
   return {
-    reachable: state.settings.ai.forecastEnabled || state.settings.ai.anomalyDetectionEnabled,
+    reachable: enabled,
     lastResultAt: state.anomalies[0]?.detectedAt ?? null,
     models: [state.settings.ai.forecastModelName, state.settings.ai.anomalyModelName],
     message: null,
+    mode: enabled ? 'live' : 'degraded',
+    // ฝึกโมเดลรอบล่าสุดตามรอบที่ตั้งไว้ใน settings
+    lastTrainedAt: nowIso(Date.now() - state.settings.ai.retrainIntervalHours * 3_600_000),
+    trainingDays: 90,
+    accuracy: 0.94,
+    falsePositiveRate: 0.06,
+    summaryText,
   };
+}
+
+/**
+ * ผลพยากรณ์หลายรายการที่ทีม AI ส่งมาในรอบเดียว
+ * แต่ละรายการมี target ของตัวเอง หน้าจอจึงจัดกลุ่มตาม target ได้
+ */
+export function buildForecasts(state: MockState): AIForecast[] {
+  // เลือกเป้าหมายที่มีความหมายกับคนดูจริง: ถังที่ต้องเฝ้า และการใช้น้ำรวม
+  const targets: { target: string; targetId: string | null }[] = [
+    { target: 'tank_level', targetId: 'tank-1' },
+    { target: 'tank_level', targetId: 'tank-2' },
+    { target: 'main_meter', targetId: null },
+    ...state.zones
+      .filter((zone) => zone.monthCubicMeters > 0)
+      .slice(0, 2)
+      .map((zone) => ({ target: 'zone_consumption', targetId: zone.id })),
+  ];
+
+  return targets.map((entry) => {
+    const forecast = buildForecast(state, entry.target, entry.targetId);
+    const horizonHours = forecast.horizonHours ?? 24;
+    return {
+      ...forecast,
+      horizon: horizonHours >= 168 ? '7d' : horizonHours >= 24 ? '24h' : `${horizonHours}h`,
+      confidence: roundTo(0.72 + (entry.target === 'tank_level' ? 0.14 : 0.06), 2),
+    };
+  });
 }

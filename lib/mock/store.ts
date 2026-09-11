@@ -45,6 +45,35 @@ import { clamp, randomBetween, roundTo, rng } from './random';
 /** ระยะห่างระหว่าง tick ของ simulator */
 export const TICK_MS = 2_000;
 
+/**
+ * คีย์จำสถานการณ์สาธิตข้ามการโหลดหน้า
+ * ★ มีเฉพาะตอนใช้ mock — state อื่นทั้งหมดตั้งใจให้รีเซ็ตเมื่อรีเฟรช
+ *   แต่ scenario ต้องอยู่ข้ามหน้า ไม่งั้นสลับไป night_leak แล้วเดินไปหน้า Overview
+ *   จะกลับมาเป็นปกติทันที สาธิตการ์ดวิกฤตไม่ได้
+ */
+const SCENARIO_STORAGE_KEY = 'wcm.mockScenario';
+
+function readStoredScenario(): MockScenario {
+  if (typeof window === 'undefined') return 'normal';
+  try {
+    const stored = window.localStorage.getItem(SCENARIO_STORAGE_KEY);
+    if (stored === 'normal' || stored === 'night_leak' || stored === 'pump_degrading') return stored;
+  } catch {
+    // เบราว์เซอร์ที่ปิด storage — ใช้ค่าตั้งต้นไป
+  }
+  return 'normal';
+}
+
+/** จำสถานการณ์ที่เลือกไว้ เรียกจาก service ตอนสลับ */
+export function persistScenario(scenario: MockScenario): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SCENARIO_STORAGE_KEY, scenario);
+  } catch {
+    // จำไม่ได้ก็ไม่เป็นไร สลับในหน้าปัจจุบันยังทำงานปกติ
+  }
+}
+
 /** จำนวนจุดสูงสุดที่เก็บต่อหนึ่งเส้นกราฟ (ราว 40 นาทีที่ 2 วินาที/จุด) */
 const HISTORY_LIMIT = 1_200;
 
@@ -521,7 +550,7 @@ function createInitialState(): MockState {
     history: new Map(),
     storageBaselineLiters: tanks.reduce((sum, tank) => sum + tank.currentLiters, 0),
     storageBaselineAt: iso,
-    scenario: 'normal',
+    scenario: readStoredScenario(),
     tick: 0,
   };
 }

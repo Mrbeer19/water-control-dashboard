@@ -210,6 +210,18 @@ export function formatAnomalyScore(score: number | undefined, locale: Locale = '
   return `${numberFormat(locale, 0, 0).format(clampScore(score) * 100)}%`;
 }
 
+/**
+ * สัดส่วน 0–1 → ข้อความเปอร์เซ็นต์
+ *
+ * ใช้กับทุกค่าที่สัญญาระบุว่าเป็น 0–1 (accuracy, falsePositiveRate, confidence,
+ * failureProbability) ★ เหตุผลเดียวกับ formatAnomalyScore — การคูณ 100 ต้องอยู่
+ * ที่ชั้นแสดงผลจุดเดียว ไม่กระจายตามคอมโพเนนต์
+ */
+export function formatRatio(ratio: number | undefined, locale: Locale = 'th', decimals = 0): string {
+  if (ratio === undefined || !Number.isFinite(ratio)) return '—';
+  return formatPercent(clampScore(ratio) * 100, locale, decimals);
+}
+
 /** คะแนนดิบในสเกล 0–100 สำหรับ gauge หรือแถบความยาว */
 export function anomalyScorePercent(score: number | undefined): number | null {
   if (score === undefined || !Number.isFinite(score)) return null;

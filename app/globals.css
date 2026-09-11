@@ -201,3 +201,16 @@
     font-feature-settings: 'tnum';
   }
 }
+
+/*
+ * ★ กฎด้านล่างต้องอยู่นอก @layer เสมอ
+ *   Tailwind ตัดคลาสใน @layer ที่ไม่พบในซอร์สทิ้ง และคลาสของ Recharts
+ *   ถูกสร้างตอน runtime จึงหาไม่เจอตอน build แล้วโดนตัดไปทั้งกฎ
+ *
+ * Recharts ทิ้งกล่อง tooltip ไว้ใน DOM ที่ตำแหน่งเดิมหลังเมาส์ออกจากกราฟ
+ * กล่องที่ซ่อนอยู่ยังกินพื้นที่ layout จึงดัน scrollWidth จนเกิด horizontal scroll บนมือถือ
+ * คลิปที่ตัว wrapper ได้ เพราะ Recharts ไม่ให้ tooltip ออกนอก viewBox อยู่แล้วโดยค่าตั้งต้น
+ */
+.recharts-wrapper {
+  overflow: hidden;
+}

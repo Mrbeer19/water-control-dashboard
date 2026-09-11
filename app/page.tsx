@@ -9,6 +9,7 @@ import { MainMeterSection } from '@/components/zones/main-meter-section';
 import { BillingSection } from '@/components/billing/billing-section';
 import { RecentAlerts } from '@/components/alerts/recent-alerts';
 import { EnvironmentSection } from '@/components/environment/environment-section';
+import { AiOverviewWidget } from '@/components/ai/ai-overview-widget';
 
 /**
  * หน้า Overview — แดชบอร์ดหลักสำหรับจอแขวนผนังในห้องคอนโทรล
@@ -21,6 +22,8 @@ export default function OverviewPage(): JSX.Element {
 
   return (
     <div className="space-y-8">
+      <AiOverviewWidget />
+
       <Section title={t.overview.tanks}>
         <TankSection />
       </Section>

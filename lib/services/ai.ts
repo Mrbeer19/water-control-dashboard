@@ -17,7 +17,14 @@ import type {
   MockScenario,
   Paginated,
 } from '@/lib/types';
-import { buildAnomalies, buildForecast, buildMaintenancePredictions, buildServiceStatus } from '@/lib/mock';
+import {
+  buildAnomalies,
+  buildForecast,
+  buildForecasts,
+  buildMaintenancePredictions,
+  buildServiceStatus,
+  persistScenario,
+} from '@/lib/mock';
 import { mutate, respond } from './internal';
 
 /**
@@ -76,6 +83,17 @@ export async function getAnomaly(id: string): Promise<AnomalyEvent | null> {
  */
 export async function getForecast(target: string, targetId: string | null = null): Promise<AIForecast> {
   return respond((state) => buildForecast(state, target, targetId));
+}
+
+/**
+ * ผลพยากรณ์ทุกรายการที่ทีม AI ส่งมาในรอบนี้
+ * หน้าจอวนแสดงทั้งหมดและจัดกลุ่มตาม target — ไม่ได้ fix ว่าจะมีกี่รายการ
+ * ทีม AI เพิ่ม target ใหม่ได้โดยหน้าบ้านไม่ต้องแก้
+ *
+ * TODO(backend): GET /api/ai/forecast  (ไม่ระบุ target = เอาทุกรายการที่มี)
+ */
+export async function getForecasts(): Promise<AIForecast[]> {
+  return respond((state) => buildForecasts(state));
 }
 
 /**
@@ -144,6 +162,8 @@ export async function setScenario(scenario: MockScenario): Promise<MockScenario>
   return mutate((state) => {
     state.scenario = scenario;
     state.anomalies = buildAnomalies(state, scenario);
+    // จำไว้ให้ข้ามการโหลดหน้าได้ ไม่งั้นเดินไปหน้าอื่นแล้วกลับเป็นปกติทันที
+    persistScenario(scenario);
     return state.scenario;
   });
 }
