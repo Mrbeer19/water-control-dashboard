@@ -38,7 +38,7 @@ import { LinePreviewCard } from '@/components/alerts/line-preview-card';
 import { RecoveryList } from '@/components/alerts/recovery-list';
 
 const SELECT_CLASS =
-  'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-control border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 const SEVERITY_TONE: Record<AlertSeverity, EntityStatus> = {
   critical: 'critical',
@@ -183,7 +183,7 @@ export default function AlertsPage(): JSX.Element {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-sm">
                   <thead>
-                    <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                    <tr className="border-b bg-secondary text-xs text-muted-foreground">
                       <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.alerts.message}</th>
                       <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.alerts.code}</th>
                       <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.alerts.raisedAt}</th>

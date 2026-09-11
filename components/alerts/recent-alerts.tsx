@@ -52,7 +52,7 @@ export function RecentAlerts(): JSX.Element {
               <li key={alert.id}>
                 <Link
                   href="/alerts"
-                  className="flex items-start gap-2.5 py-2.5 transition-colors hover:bg-accent/40"
+                  className="flex items-start gap-2.5 py-2.5 transition-colors hover:bg-accent"
                 >
                   <StatusDot status={SEVERITY_TONE[alert.severity]} title={t.status[SEVERITY_TONE[alert.severity]]} />
                   <div className="min-w-0 flex-1">

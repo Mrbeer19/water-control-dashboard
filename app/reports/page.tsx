@@ -17,7 +17,7 @@ import { ZoneUsageChart } from '@/components/reports/zone-usage-chart';
 import { MonthlyChart } from '@/components/reports/monthly-chart';
 
 const INPUT_CLASS =
-  'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-control border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 function toDateInput(date: Date): string {
   return `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}-${`${date.getDate()}`.padStart(2, '0')}`;
@@ -68,7 +68,7 @@ export default function ReportsPage(): JSX.Element {
         <div className="space-y-4">
           {/* ตัวเลือกช่วงวันที่ */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
+            <div className="inline-flex rounded-control border bg-secondary p-0.5">
               {(['7d', '30d', 'custom'] as TimeRangePreset[]).map((option) => (
                 <button
                   key={option}
@@ -81,7 +81,7 @@ export default function ReportsPage(): JSX.Element {
                   className={cn(
                     'rounded px-2.5 py-1 text-xs font-medium transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    preset === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                    preset === option ? 'bg-card text-foreground ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   {option === '7d' ? t.reports.preset7 : option === '30d' ? t.reports.preset30 : t.common.all}
@@ -221,7 +221,7 @@ export default function ReportsPage(): JSX.Element {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[720px] text-sm">
                     <thead>
-                      <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                      <tr className="border-b bg-secondary text-xs text-muted-foreground">
                         <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.zone.zone}</th>
                         <th scope="col" className="px-3 py-2.5 text-right font-medium">
                           {t.reports.thisPeriod}
