@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "check:colors": "node scripts/check-colors.mjs"
+    "check:colors": "node scripts/check-colors.mjs",
+    "check:buckets": "node --experimental-strip-types --no-warnings scripts/check-buckets.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",
