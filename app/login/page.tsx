@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LangToggle } from '@/components/layout/lang-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { BrandLogo } from '@/components/layout/brand-logo';
-import { BrandMascot } from '@/components/layout/brand-mascot';
+import { LoginSuccess } from '@/components/layout/login-success';
 
 const INPUT_CLASS =
   'h-10 w-full rounded-control border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -33,6 +33,7 @@ export default function LoginPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [accounts, setAccounts] = useState<User[]>([]);
+  const [succeeded, setSucceeded] = useState(false);
 
   useEffect(() => {
     setAccounts(demoAccounts());
@@ -48,71 +49,62 @@ export default function LoginPage(): JSX.Element {
     try {
       const result = await signIn(username, password);
       if (result.ok) {
-        router.replace('/');
+        // โชว์เครื่องหมายถูกให้จบก่อนค่อยเปลี่ยนหน้า ไม่งั้นผู้ใช้จะไม่ทันเห็นว่าสำเร็จ
+        setSucceeded(true);
+        window.setTimeout(() => {
+          router.replace('/');
+        }, 1_100);
         return;
       }
       setError(locale === 'th' ? result.errorTh : result.errorEn);
-    } finally {
+      setBusy(false);
+    } catch {
       setBusy(false);
     }
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background lg:flex-row">
+    <div className="relative flex min-h-dvh flex-col">
       {/*
-        ฝั่งภาพ: ภาพจากเอกสาร CI ขององค์กร (หน้า 7 พาเนล Sustainability) ไม่ใช่ภาพจาก template
-        ★ ภาพถูกทำเป็น duotone บันได Blue ไว้แล้วตั้งแต่ตอนสร้างไฟล์ ความสว่างสูงสุด 0.12
-          ทำให้ตัวอักษร Lynx White ได้ contrast 5.71 : 1 ทุกจุดของภาพโดยไม่ต้องพึ่ง overlay
-        ★ ครึ่งบนไล่เป็นสีทึบ เพื่อให้โลโก้อยู่บนพื้นเรียบ ไม่ใช่บนพื้นลาย (ข้อ 5.2)
-        ★ สี bg-info-strong เป็นพื้นสำรองเผื่อภาพโหลดไม่ขึ้น
+        ภาพฉากของแบรนด์เต็มจอ — ไฟล์อยู่ใน public/brand/ ไม่ได้ดึงจากอินเทอร์เน็ต (on-premise)
+        ★ ภาพสว่างมาก (ความสว่างเฉลี่ย 0.65) จึงห้ามวางตัวอักษรลงบนภาพตรง ๆ
+          ทุกข้อความต้องอยู่ในการ์ดที่มีพื้นทึบของตัวเอง
       */}
-      <aside
-        className="hidden bg-info-strong bg-cover bg-center text-info-strong-foreground lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:p-10"
-        style={{
-          backgroundImage: [
-            'linear-gradient(to bottom,',
-            'hsl(var(--info-strong)) 0%,',
-            'hsl(var(--info-strong) / 0.88) 20%,',
-            'hsl(var(--info-strong) / 0.12) 46%,',
-            'hsl(var(--info-strong) / 0.42) 100%),',
-            'url(/brand/login-cover.jpg)',
-          ].join(' '),
-        }}
-      >
-        <BrandLogo height={44} priority />
-        <div className="space-y-5">
-          {/* มาสคอตอยู่คนละมุมกับโลโก้องค์กร ไม่ล้ำ clear space ของโลโก้ (ข้อ 5.2) */}
-          <BrandMascot height={148} />
-          <div className="min-w-0 space-y-2">
-            <p className="text-2xl font-semibold leading-snug">{t.app.title}</p>
-            <p className="text-sm opacity-90">{t.auth.subtitle}</p>
-          </div>
-        </div>
-        <p className="flex items-center gap-1.5 text-[11px]">
-          <ServerCog className="h-3.5 w-3.5" aria-hidden />
-          {t.auth.localOnly}
-        </p>
-      </aside>
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/brand/login-scene.jpg)' }}
+        aria-hidden
+      />
+      {/*
+        ฉากบังแสง — โหมดสว่างบาง ๆ พอให้การ์ดเด่นขึ้น โหมดมืดเข้มกว่าเพราะภาพสว่างจัด
+        (opacity ตรงนี้เป็น backdrop ซึ่งกฎ opacity ในข้อ 3 อนุญาต)
+      */}
+      <div className="absolute inset-0 bg-background/25 dark:bg-background/75" aria-hidden />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-      <header className="flex items-center justify-end gap-2 p-4">
+      <header className="relative flex items-center justify-end gap-2 p-4">
         <LangToggle />
         <ThemeToggle />
       </header>
 
-      <main className="flex flex-1 items-start justify-center px-4 pb-10">
+      <main className="relative flex flex-1 items-center justify-center px-4 pb-10">
         <div className="w-full max-w-sm space-y-4">
-          <div className="text-center">
-            {/* บนจอเล็กไม่มีฝั่งภาพ จึงวางโลโก้ไว้เหนือฟอร์มแทน */}
-            <span className="mx-auto mb-3 flex justify-center lg:hidden">
+          {/*
+            โลโก้อยู่ในการ์ดที่มีพื้นทึบ ไม่ได้ลอยอยู่บนภาพ เพราะ BRANDING_SPEC ข้อ 5.2
+            ห้ามวางโลโก้บนพื้นลายหรือพื้นภาพ
+          */}
+          <Card>
+            <CardContent className="flex flex-col items-center p-5 text-center">
               <BrandLogo height={40} priority />
-            </span>
-            <h1 className="text-xl font-semibold tracking-tight">{t.app.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
-          </div>
+              <h1 className="mt-2 text-xl font-semibold tracking-tight">{t.app.title}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent className="p-5">
+              {succeeded ? (
+                <LoginSuccess />
+              ) : (
               <form
                 className="space-y-3"
                 onSubmit={(event) => {
@@ -165,16 +157,19 @@ export default function LoginPage(): JSX.Element {
                   {busy ? t.auth.signingIn : t.auth.signIn}
                 </Button>
               </form>
+              )}
             </CardContent>
           </Card>
 
           {/* บอกตรง ๆ ว่านี่เป็นหน้าจอสาธิต ไม่ใช่ระบบที่ปกป้องอะไรอยู่จริง */}
-          <p className="flex gap-1.5 rounded-control bg-status-warning-surface px-2.5 py-2 text-[11px] leading-snug text-status-warning">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            {t.auth.demoNotice}
-          </p>
+          {!succeeded && (
+            <p className="flex gap-1.5 rounded-control bg-status-warning-surface px-2.5 py-2 text-[11px] leading-snug text-status-warning">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t.auth.demoNotice}
+            </p>
+          )}
 
-          {accounts.length > 0 && (
+          {!succeeded && accounts.length > 0 && (
             <Card>
               <CardContent className="p-4">
                 <p className="mb-2 text-xs font-medium">{t.auth.demoAccounts}</p>
@@ -203,13 +198,14 @@ export default function LoginPage(): JSX.Element {
             </Card>
           )}
 
-          <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground lg:hidden">
-            <ServerCog className="h-3.5 w-3.5" aria-hidden />
-            {t.auth.localOnly}
-          </p>
+          {!succeeded && (
+            <p className="flex items-center justify-center gap-1.5 rounded-control bg-card px-2.5 py-1.5 text-[11px] text-muted-foreground">
+              <ServerCog className="h-3.5 w-3.5" aria-hidden />
+              {t.auth.localOnly}
+            </p>
+          )}
         </div>
       </main>
-      </div>
     </div>
   );
 }

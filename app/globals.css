@@ -228,6 +228,67 @@
     }
   }
 
+  /*
+   * เครื่องหมายถูกตอนเข้าสู่ระบบสำเร็จ — วงกลมวาดก่อน แล้วเครื่องหมายถูกตามมา
+   * ความยาวเส้น: วงกลม r=40 → 2πr ≈ 251.3 · เครื่องหมายถูก ≈ 50
+   */
+  @keyframes success-ring {
+    from {
+      stroke-dashoffset: 251.3;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes success-check {
+    from {
+      stroke-dashoffset: 50;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes success-pop {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.03);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .success-pop {
+    animation: success-pop 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .success-ring {
+    stroke-dasharray: 251.3;
+    animation: success-ring 620ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  }
+
+  .success-check {
+    stroke-dasharray: 50;
+    animation: success-check 320ms cubic-bezier(0.65, 0, 0.35, 1) 480ms both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .success-pop,
+    .success-ring,
+    .success-check {
+      animation: none;
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
   /* ตัวเลขบนแดชบอร์ดขยับตลอด — ใช้ tabular figures กันตัวเลขเต้น */
   .tabular {
     font-variant-numeric: tabular-nums;
