@@ -18,7 +18,10 @@ export interface TankSpec {
   levelToVolumeTable: TankLevelPoint[] | null;
   location: string;
   locationEn: string;
-  /** null เมื่อ levelSource เป็น manual (ยังไม่มีเซนเซอร์ที่จุดนี้) */
+  /**
+   * ESP32 node ที่อ่านเซนเซอร์ระดับน้ำของถังใบนี้
+   * null ได้เฉพาะกรณีที่ต้องถอยไปใช้การจดมือ (เช่น เซนเซอร์เสียระหว่างรออะไหล่)
+   */
   deviceId: string | null;
   /** เปอร์เซ็นต์ตั้งต้นตอนเปิดหน้าจอ */
   initialPercent: number;
@@ -63,8 +66,9 @@ export const TANK_SPECS: readonly TankSpec[] = [
     capacityLiters: 490_000,
     heightMeters: 4.0,
     shape: 'pond',
-    levelSource: 'manual',
-    // บ่อขุดผนังลาด หน้าตัดกว้างขึ้นตามความลึก จึงเทียบปริมาตรจากตารางแทนสูตร level × area
+    levelSource: 'sensor',
+    // เซนเซอร์ให้ค่า "ความลึก" ไม่ใช่ปริมาตร และบ่อขุดผนังลาดมีหน้าตัดกว้างขึ้นตามความลึก
+    // จึงยังต้องเทียบปริมาตรจากตารางนี้ ใช้สูตร level × area ตรง ๆ ไม่ได้
     levelToVolumeTable: [
       { levelMeters: 0.0, volumeLiters: 0 },
       { levelMeters: 0.5, volumeLiters: 42_000 },
@@ -78,7 +82,7 @@ export const TANK_SPECS: readonly TankSpec[] = [
     ],
     location: 'ท้ายโรงงาน',
     locationEn: 'Rear Plant Area',
-    deviceId: null,
+    deviceId: 'esp32-tank-3',
     initialPercent: 82,
   },
 ];

@@ -227,7 +227,7 @@ base topic ตั้งค่าได้ใน `SystemSettings.network.mqttBase
 
 | Topic | ทิศทาง | payload |
 |---|---|---|
-| `plant/water/tank/<tankId>/telemetry` | node → gateway | ระดับน้ำ, อัตราไหลเข้า/ออก |
+| `plant/water/tank/<tankId>/telemetry` | node → gateway | ระดับน้ำจาก ES-Y30A (RS485), อัตราไหลเข้า/ออก |
 | `plant/water/pump/<pumpId>/telemetry` | node → gateway | V, A, W, kWh, flow, pressure, สถานะ VFD |
 | `plant/water/meter/<meterId>/telemetry` | node → gateway | pulse count, flow |
 | `plant/water/meter/main/telemetry` | node → gateway | มิเตอร์หลัก + แรงดันขาเข้า |
@@ -292,8 +292,8 @@ components/ai/scenario-switcher.tsx
 | เรื่อง | รายละเอียด |
 |---|---|
 | **หน่วยของ score** | `AnomalyEvent.score` 0–1 แต่ `MaintenancePrediction.healthScore` 0–100 และ**ทิศทางกลับกัน** (score สูง = แย่, healthScore สูง = ดี) |
-| **`Tank.deviceId` เป็น null ได้** | บ่อสำรองยังไม่มีเซนเซอร์ ค่าระดับมาจากคนจด (`levelSource: 'manual'`) |
-| **บ่อสำรองแปลงหน่วยด้วยตาราง** | `shape: 'pond'` หน้าตัดไม่คงที่ ต้องใช้ `levelToVolumeTable` ไม่ใช่ `level × area` |
+| **`Tank.deviceId` เป็น null ได้** | ปกติทุกถังมีเซนเซอร์ `levelSource: 'sensor'` — `null` + `'manual'` เป็นทางถอยตอนเซนเซอร์เสีย UI รองรับทั้งสองแบบแล้ว |
+| **บ่อสำรองแปลงหน่วยด้วยตาราง** | เซนเซอร์ให้ค่าความลึกเท่านั้น และ `shape: 'pond'` มีหน้าตัดไม่คงที่ ต้องแปลงผ่าน `levelToVolumeTable` ไม่ใช่ `level × area` |
 | **PLC มี 2 ตัว คนละโปรโตคอล** | S7-1200 ใช้ `s7comm` พอร์ต 102 / FX3G ใช้ `mc_protocol` พอร์ต 5551 |
 | **`Device.fieldbus`** | แยกจาก `protocol` — ESP32 ที่ปั๊มอ่าน PZEM ผ่าน `modbus_rtu` แล้วส่งขึ้นด้วย `mqtt` |
 | **วันจดมิเตอร์ ≠ วันเริ่มรอบบิล** | `meterReadingDay` กับ `billingCycleStartDay` เป็นคนละวัน |

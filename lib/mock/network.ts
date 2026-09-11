@@ -52,19 +52,22 @@ const ESP32_MAC_PREFIX = '3C:61:05:A2:1F';
 const ESP32_FIRMWARE = 'wcm-node-2.4.1';
 
 /**
- * ESP32 ประจำถังน้ำ — วัดระดับด้วย ultrasonic + pressure transducer
- * บ่อสำรอง (tank-3) ยังไม่มีเซนเซอร์ ค่าระดับมาจากคนจด จึงไม่มี node
+ * ESP32 ประจำถังน้ำทั้ง 3 ใบ
+ *
+ * เซนเซอร์ระดับน้ำเป็น ES-Y30A แบบหยั่งจุ่ม ช่วงวัด 5 เมตร ใช้รุ่นเดียวกันทุกถัง
+ * (ถังลึกสุดคือบ่อสำรองที่ 4 เมตร จึงอยู่ในช่วงของรุ่น 5 เมตรทั้งหมด)
+ * อ่านค่าผ่าน RS485/Modbus RTU เข้า ESP32 แล้วส่งขึ้น gateway ด้วย MQTT
  */
-const TANK_NODES: DeviceSpec[] = TANK_SPECS.filter((tank) => tank.deviceId !== null).map((tank, index) => ({
-  id: tank.deviceId ?? '',
+const TANK_NODES: DeviceSpec[] = TANK_SPECS.map((tank, index) => ({
+  id: tank.deviceId ?? `esp32-tank-${index + 1}`,
   name: `ESP32 ${tank.name}`,
   nameEn: `ESP32 ${tank.nameEn}`,
   kind: 'esp32' as const,
   role: 'tank_node' as const,
   model: 'ESP32-WROOM-32E',
-  expansionModules: [],
+  expansionModules: [`ES-Y30A ${tank.heightMeters <= 5 ? '5 m' : '10 m'} (RS485)`],
   protocol: 'mqtt' as const,
-  fieldbus: null,
+  fieldbus: 'modbus_rtu' as const,
   linkType: 'wifi' as const,
   ip: `10.20.30.${11 + index}`,
   vlan: 30,
@@ -74,10 +77,11 @@ const TANK_NODES: DeviceSpec[] = TANK_SPECS.filter((tank) => tank.deviceId !== n
   location: tank.location,
   locationEn: tank.locationEn,
   linkedEntityIds: [tank.id],
-  baselineRssi: [-58, -71][index] ?? -68,
+  // บ่อสำรองอยู่ท้ายโรงงาน ไกลจาก AP ที่สุด สัญญาณจึงอ่อนกว่าอีกสองจุด
+  baselineRssi: [-58, -71, -83][index] ?? -68,
   baselineFreeHeapBytes: 178_000,
-  initialUptimeSeconds: [612_400, 271_900][index] ?? 200_000,
-  initialReconnectCount: [3, 11][index] ?? 5,
+  initialUptimeSeconds: [612_400, 271_900, 96_300][index] ?? 200_000,
+  initialReconnectCount: [3, 11, 47][index] ?? 5,
 }));
 
 /** ESP32 ประจำปั๊ม — อ่านค่าไฟฟ้าจาก PZEM ผ่าน Modbus RTU แล้วส่งขึ้นด้วย MQTT */

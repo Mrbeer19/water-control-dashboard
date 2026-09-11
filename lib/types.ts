@@ -241,8 +241,8 @@ export type TankShape = 'rectangular' | 'cylindrical' | 'pond' | 'irregular';
 
 /**
  * ที่มาของค่าระดับน้ำ
- * sensor  อ่านจากเซนเซอร์อัตโนมัติ
- * manual  ให้คนจดแล้วกรอกเข้าระบบ (บ่อสำรองยังไม่มีเซนเซอร์ / เซนเซอร์เสีย)
+ * sensor  อ่านจากเซนเซอร์ระดับน้ำอัตโนมัติ — เป็นสภาพปกติของทุกถัง
+ * manual  ให้คนจดแล้วกรอกเข้าระบบ ใช้เป็นทางถอยเฉพาะตอนเซนเซอร์เสียหรือรออะไหล่
  */
 export type TankLevelSource = 'sensor' | 'manual';
 
@@ -250,8 +250,9 @@ export interface Tank extends BaseEntity {
   role: TankRole;
   shape: TankShape;
   /**
-   * ★ บ่อสำรอง (shape = 'pond') หน้าตัดไม่คงที่ percentFull จึงคำนวณจาก
-   *   level × area ตรง ๆ ไม่ได้ ต้องเทียบจาก levelToVolumeTable
+   * ★ เซนเซอร์ให้ค่า "ความลึก" เท่านั้น การแปลงเป็นปริมาตรขึ้นกับรูปทรง
+   *   บ่อสำรอง (shape = 'pond') หน้าตัดไม่คงที่ จึงต้องเทียบจาก levelToVolumeTable
+   *   ใช้ level × area ตรง ๆ ไม่ได้
    */
   levelSource: TankLevelSource;
   /** ตารางเทียบระดับ (เมตร) → ปริมาตร (ลิตร) — จำเป็นเมื่อ shape เป็น pond/irregular */
@@ -287,7 +288,10 @@ export interface Tank extends BaseEntity {
   minutesToFull: number | null;
   minutesToEmpty: number | null;
 
-  /** ESP32 node ที่วัดถังใบนี้ — null เมื่อ levelSource เป็น manual */
+  /**
+   * ESP32 node ที่อ่านเซนเซอร์ระดับน้ำของถังใบนี้
+   * null ได้เฉพาะกรณีที่ถอยไปใช้การจดมือชั่วคราว
+   */
   deviceId: string | null;
   location: string;
   locationEn: string;
