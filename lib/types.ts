@@ -1252,6 +1252,8 @@ export interface GeneralSettings {
   refreshIntervalMs: number;
   /** โหมดจอแขวนผนัง: ซ่อน sidebar และขยายตัวเลข */
   wallDisplayMode: boolean;
+  /** หน่วยอุณหภูมิที่แสดงผล — ค่าที่เก็บยังเป็น °C เสมอ แปลงที่ชั้นแสดงผล */
+  temperatureUnit?: TemperatureUnit;
 }
 
 /** ★ ต้นทางความจริงของทุกเกณฑ์เตือน — ค่าที่ฝังใน entity เป็นเพียงสำเนา */
@@ -1287,6 +1289,9 @@ export interface NetworkSettings {
   pollIntervalMs: number;
   /** ไม่ได้ยินจากอุปกรณ์เกินกี่วินาทีถือว่า offline */
   deviceTimeoutSeconds: number;
+  /** ฐานข้อมูลที่เก็บข้อมูลย้อนหลัง — optional เพราะติดตั้งรุ่นแรกยังไม่แยกเครื่อง */
+  databaseHost?: string;
+  databasePort?: number;
 }
 
 export interface QuietHours {
@@ -1362,6 +1367,9 @@ export interface AISettings {
   leakDetectionEnabled: boolean;
   /** ฝึกโมเดลใหม่ทุกกี่ชั่วโมง */
   retrainIntervalHours: number;
+  /** ช่วงเวลากลางคืนที่ใช้ตรวจ night-flow รูปแบบ "HH:mm" */
+  nightFlowStartTime?: string;
+  nightFlowEndTime?: string;
 }
 
 export interface MaintenanceSettings {
@@ -1392,6 +1400,126 @@ export interface SecuritySettings {
   auditLogRetentionDays: number;
 }
 
+// ─────────────────────────────────────────────────────────────
+// ตั้งค่าระดับรายอุปกรณ์
+//
+// ★ ทั้งหมดเป็น optional โดยตั้งใจ — ระบบที่ยังไม่เคยมีคนเข้าไปตั้งค่าจะไม่มีก้อนนี้
+//   หน้าจอต้องถอยไปใช้ค่าจากอุปกรณ์จริงแทน ไม่ใช่แสดงช่องว่าง
+// ─────────────────────────────────────────────────────────────
+
+/** ตั้งค่าถังน้ำหนึ่งใบ */
+export interface TankConfig {
+  tankId: string;
+  name: string;
+  capacityLiters: number;
+  /** ชดเชยค่าที่เซนเซอร์อ่านได้ (เมตร) บวก = เซนเซอร์อ่านต่ำกว่าจริง */
+  sensorOffsetMeters: number;
+  /** ตัวคูณปรับสเกลเซนเซอร์ ปกติ 1.0 */
+  sensorScale: number;
+  thresholdsPercent: ThresholdRange;
+  /** ระดับที่ให้ปั๊มเริ่มเติมอัตโนมัติ (%) */
+  pumpAutoStartPercent: number;
+  /** ระดับที่ให้ปั๊มหยุดเติม (%) — ต้องสูงกว่า autoStart เสมอ */
+  pumpAutoStopPercent: number;
+}
+
+/** ตั้งค่าปั๊มหนึ่งตัว */
+export interface PumpConfig {
+  pumpId: string;
+  name: string;
+  /** กำลังไฟฟ้าตาม nameplate (kW) */
+  nameplateKw: number;
+  /** เกณฑ์กระแสเกิน (A) */
+  overcurrentAmp: number;
+  /** เวลาเดินต่อเนื่องสูงสุดต่อครั้ง (นาที) 0 = ไม่จำกัด */
+  maxRunMinutes: number;
+  sourceTankId: string;
+  /** ถังปลายทางที่ปั๊มตัวนี้เติมให้ — null เมื่อจ่ายตรงเข้าโซน */
+  destinationTankId: string | null;
+}
+
+/** ตั้งค่าโซนและมิเตอร์หนึ่งชุด */
+export interface ZoneConfig {
+  zoneId: string;
+  name: string;
+  /** จำนวน pulse ต่อ 1 ลิตรของมิเตอร์รุ่นนี้ */
+  kFactor: number;
+  /** ESP32 node ที่ผูกกับจุดวัดนี้ */
+  deviceId: string;
+  valveId: string;
+  /** โควตาน้ำต่อเดือน (m³) — null = ไม่จำกัด */
+  monthlyQuotaCubicMeters: number | null;
+}
+
+/** หน่วยอุณหภูมิที่แสดงบนหน้าจอ */
+export type TemperatureUnit = 'celsius' | 'fahrenheit';
+
+/** ตั้งค่าเซนเซอร์สภาพแวดล้อมหนึ่งจุด */
+export interface EnvironmentConfig {
+  sensorId: string;
+  /** ชื่อจุดติดตั้ง */
+  locationLabel: string;
+  /** ชดเชยอุณหภูมิ (°C) บวก = เซนเซอร์อ่านต่ำกว่าจริง */
+  temperatureOffsetCelsius: number;
+  /** ชดเชยความชื้น (%RH) */
+  humidityOffsetPercent: number;
+  temperatureThresholds: ThresholdRange;
+  humidityThresholds: ThresholdRange;
+  /** ปริมาณฝนต่อการกระดก 1 ครั้งของ rain gauge (มม.) — null เมื่อจุดนี้ไม่มี */
+  rainGaugeMmPerTip: number | null;
+}
+
+/**
+ * ตั้งค่าการแจ้งเตือนทาง LINE
+ * ★ ใช้ LINE Messaging API — recipient เป็น group id ไม่ใช่ token แบบ LINE Notify เดิม
+ */
+export interface LineNotificationSettings {
+  enabled: boolean;
+  /**
+   * Channel Access Token
+   * ★ หลังบ้านต้องไม่ส่งค่าจริงกลับมาให้หน้าบ้าน ให้ส่งเป็นรูปแบบปิดบัง เช่น "••••abcd"
+   *   หน้าจอส่งค่าใหม่ขึ้นไปเฉพาะตอนที่ผู้ใช้พิมพ์ทับเท่านั้น
+   */
+  channelAccessTokenMasked: string;
+  groups: LineGroup[];
+  /** ระดับความรุนแรงไหนส่งเข้ากลุ่มไหน — key คือ severity */
+  severityRouting: Record<AlertSeverity, string[]>;
+  /** ปิดเสียงตามช่วงเวลา ใช้ชุดเดียวกับ NotificationSettings ได้ */
+  quietHours: QuietHours;
+  /** กันสแปม: ไม่ส่งซ้ำภายในกี่วินาที */
+  debounceSeconds: number;
+  /** ไม่มีใคร ack ภายในกี่นาที ให้ยกระดับส่งซ้ำ */
+  escalationTimeoutMinutes: number;
+  /** เปิด/ปิดรายประเภทเหตุการณ์ — key คือ AlertCode */
+  enabledCodes: Record<string, boolean>;
+}
+
+export interface LineGroup {
+  id: string;
+  /** ชื่อที่ตั้งเองเพื่อให้คนอ่านรู้ว่ากลุ่มไหน */
+  name: string;
+  /** LINE group id (ขึ้นต้นด้วย C) */
+  groupId: string;
+  active: boolean;
+}
+
+/** ผลการส่งข้อความทดสอบ */
+export interface NotificationTestResult {
+  ok: boolean;
+  channel: NotificationChannel;
+  recipient: string;
+  message: string;
+  at: ISODateTime;
+}
+
+/** ข้อผิดพลาดของฟิลด์หนึ่งในฟอร์มตั้งค่า */
+export interface SettingsFieldError {
+  /** เส้นทางของฟิลด์ เช่น "tanks.tank-1.pumpAutoStopPercent" */
+  path: string;
+  messageTh: string;
+  messageEn: string;
+}
+
 /** รวมทุกหมวดที่หน้า Settings แก้ได้ */
 export interface SystemSettings {
   general: GeneralSettings;
@@ -1402,6 +1530,17 @@ export interface SystemSettings {
   ai: AISettings;
   maintenance: MaintenanceSettings;
   security: SecuritySettings;
+
+  /**
+   * หมวดรายอุปกรณ์และ LINE — optional เพราะระบบที่ยังไม่เคยตั้งค่าจะไม่มีก้อนนี้
+   * หน้าจอต้องถอยไปใช้ค่าจากอุปกรณ์จริงแทน
+   */
+  tanks?: TankConfig[];
+  pumps?: PumpConfig[];
+  zones?: ZoneConfig[];
+  environment?: EnvironmentConfig[];
+  line?: LineNotificationSettings;
+
   updatedAt: ISODateTime;
   updatedBy: ActorRef;
 }
