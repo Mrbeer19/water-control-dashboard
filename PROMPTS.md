@@ -297,6 +297,371 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 
 ---
 
+## Phase 7 — UI Branding (Kasetphand CI)
+
+สเปกทั้งหมดอยู่ใน `docs/BRANDING_SPEC.md` — ไฟล์นี้**อ้างอิงด้วยเลขหัวข้อเท่านั้น ไม่คัดลอกเนื้อหา**
+ถ้าสเปกกับโค้ดจริงขัดกัน ใช้กฎเดิมใน `CLAUDE.md`: **ของที่มีอยู่ในโค้ดชนะ แล้วแก้เอกสารตามโค้ด**
+
+**ขอบเขตร่วมของทุก 7.x**
+
+- restyle เท่านั้น — ห้ามแก้ `lib/services/`, `lib/mock/`, `lib/types.ts`, `lib/hooks/` (§8 อื่น ๆ ข้อ 5)
+- ห้ามเพิ่ม dependency, ห้ามเรียก CDN/Google Fonts (ข้อจำกัด on-premise ใน `CLAUDE.md`)
+- ข้อความใหม่ทุกคำต้องมีคีย์ th + en ใน `lib/i18n/` (§8 อื่น ๆ ข้อ 3)
+- ทำตามลูป 6 ขั้นใน `RUNBOOK.md` ทุกเฟสย่อย และ commit แยกรายเฟส
+
+**ลำดับ:** รากฐาน (7.0–7.2) → component กลาง (7.3) → shell (7.4) → กราฟ/SVG (7.5) → รายหน้า (7.6–7.8) → เก็บกวาด (7.9)
+
+| เฟส | ขอบเขต | ไฟล์โดยประมาณ |
+|---|---|---|
+| 7.0 | token สี | 3 |
+| 7.1 | โลโก้ | 2 + ไฟล์ภาพ |
+| 7.2 | ฟอนต์ | 3 + ไฟล์ฟอนต์ |
+| 7.3 | primitive กลาง | 6 |
+| 7.4 | shell | 11 |
+| 7.5a | กราฟ Recharts | 10 |
+| 7.5b | SVG เขียนมือ | 3 |
+| 7.6a | หน้า `/` | 13 |
+| 7.6b | `/control` + `/overview` | 11 |
+| 7.7a | `/devices` + `/alerts` | 8 |
+| 7.7b | `/reports` | 6 |
+| 7.7c | `/ai` | 10 |
+| 7.8a | `/settings` | 14 |
+| 7.8b | `/login` | 2 |
+| 7.9 | sweep + acceptance | — |
+
+---
+
+### Phase 7.0 — token สีทั้งระบบ
+
+```
+ไฟล์: lib/config/theme.ts (สร้างใหม่), app/globals.css, tailwind.config.ts
+
+1. สร้าง lib/config/theme.ts เป็น "จุดเดียวในโค้ดที่มี hex" ตามบันไดสีใน §3.1
+   ทุกค่าที่ไม่ใช่ CSS class (กราฟ, SVG) ต้องอ่านจากไฟล์นี้ — §3.7
+2. map semantic token ตาม §3.3 เข้าตัวแปรเดิมใน app/globals.css
+   คงรูปแบบค่าเดิมของไฟล์ไว้ (ตอนนี้เป็น HSL แบบ "H S% L%" ไม่มี hsl() ครอบ)
+   และใส่คอมเมนต์ hex ต้นฉบับข้างทุกตัว — §3.7
+   ตัวแปรที่มีอยู่และต้องถูก map ครบ: --background --foreground --card --popover
+   --primary --secondary --muted --accent --destructive --border --input --ring
+   --status-ok --status-warning --status-critical --status-offline (+ -foreground ทุกตัว)
+3. --chart-1..8 และ --chart-seq-100/250/400/550 ใน app/globals.css ตอนนี้เป็น hex
+   ให้เปลี่ยนเป็นขั้นจากบันได §3.1 แล้วตั้งชื่อตาม §3.3 (data-series-*, data-water)
+   ★ ชุดเดิมผ่าน validator ของ dataviz มาแล้ว ชุดใหม่ต้องรัน validator ซ้ำทั้ง light/dark
+4. tailwind.config.ts ตอนนี้ไม่มี hex เลย (อ้าง hsl(var(--x)) ทั้งหมด) — คงรูปแบบนี้ไว้
+   เพิ่มเฉพาะชื่อ token ใหม่ที่ §3.3 กำหนดและยังไม่มี
+5. radius ตาม §6.2 — ตอนนี้ --radius: 0.625rem ค่าเดียว ถ้า §6.2 ต้องการ 4 ระดับ
+   ให้เพิ่มเป็นตัวแปรใหม่ อย่าทับ --radius เดิมเพราะ shadcn ใช้อยู่
+6. ยังไม่ต้องแตะ component ใด ๆ ในเฟสนี้
+
+§8 ที่ต้องผ่าน: สี ข้อ 1 (hex เหลือเฉพาะ lib/config/theme.ts — ยกเว้น 2 จุดใน
+  app/layout.tsx และ 1 จุดใน components/alerts/line-preview-card.tsx ที่ไปจัดการใน 7.9),
+  สี ข้อ 3 (test whitelist), สี ข้อ 5 (คู่ contrast ตาม §3.2–3.5)
+
+จุดหยุดถาม:
+- §3.6 dark mode ยังเป็น [ ใส่ ก หรือ ข ] — หยุดถามก่อนเขียนบล็อก .dark ทุกครั้ง
+  (RUNBOOK จุดหยุดข้อ 7 และตัวสเปกเองสั่งไว้)
+- ถ้าชุดสีกราฟใหม่ไม่ผ่าน validator ของ dataviz (CVD ΔE หรือ chroma floor)
+  หยุดถาม อย่าเลือกสีเองนอกบันได §3.1
+```
+
+---
+
+### Phase 7.1 — โลโก้
+
+```
+ไฟล์: public/brand/ (ว่างอยู่), components/layout/brand-logo.tsx (สร้างใหม่)
+แหล่งภาพ: docs/design-refs/Corporate Identity_compressed.pdf (gitignore ไว้แล้ว)
+
+1. หาไฟล์โลโก้ตามลำดับใน §5.1 — docs/design-refs/ ตอนนี้ไม่มีไฟล์โลโก้แยก
+   มีแต่ PDF ดังนั้นจะเข้าขั้นตอนที่ 2/3 (pdfimages, pdftoppm มีในเครื่องแล้ว)
+2. เขียน components/layout/brand-logo.tsx เป็นจุดเดียวที่ render โลโก้ — §5.2
+3. วางตำแหน่งตาม §5.3 (sidebar, /login, mobile top bar)
+   — การเสียบเข้า shell จริงทำใน 7.4 และ 7.8b
+4. ไฟล์ภาพต้องอยู่ใน public/brand/ และถูก commit (ต่างจาก docs/design-refs/)
+
+§8 ที่ต้องผ่าน: โลโก้ ข้อ 1–2 ทั้งสองข้อ
+
+จุดหยุดถาม:
+- extract จาก PDF แล้วได้ภาพเบลอ/พื้นไม่โปร่งใส — หยุดถาม ห้าม trace เป็น SVG เอง (§5.1 ข้อ 4)
+- favicon: §5.3 บันทึกเป็น open question ไว้แล้ว (ตอนนี้ app/layout.tsx ชี้ /favicon.svg)
+  หยุดถามก่อนเปลี่ยน
+```
+
+---
+
+### Phase 7.2 — Typography (Montserrat + IBM Plex Sans Thai)
+
+```
+ไฟล์: app/fonts/ (มี IBM Plex Sans Thai 8 ไฟล์แล้ว), app/fonts.ts,
+      tailwind.config.ts, app/globals.css
+
+1. เพิ่ม Montserrat .woff2 น้ำหนัก 400/500/600/800 ลง app/fonts/ แล้วประกาศใน app/fonts.ts
+   ด้วย next/font/local ตามแบบ plexThai เดิม — §4 (ห้าม next/font/google, ห้าม @fontsource)
+2. tailwind.config.ts: fontFamily.sans ตอนนี้เป็น ['var(--font-plex-thai)', ...]
+   เปลี่ยนเป็น stack ตาม §4 โดยให้ Montserrat มาก่อน
+3. tabular-nums ตาม §4 — ทำเป็น class กลางใน app/globals.css หรือใน lib/utils/format.ts
+   จุดเดียว ห้ามกระจายทีละ component
+4. ขนาด KPI ตาม §4 — tailwind.config.ts มี fontSize.metric / metric-lg อยู่แล้ว
+   ปรับค่าเดิม อย่าสร้างชื่อใหม่ซ้อน
+
+§8 ที่ต้องผ่าน: อื่น ๆ ข้อ 1 (ตัดเน็ตแล้วฟอนต์ยังขึ้น), อื่น ๆ ข้อ 2 (tabular-nums)
+
+จุดหยุดถาม:
+- ต้องดาวน์โหลดไฟล์ Montserrat จากอินเทอร์เน็ตบนเครื่องพัฒนา (ตัว build ยังคง self-host 100%)
+  หยุดถามก่อนดาวน์โหลด และแจ้งแหล่งที่มา + license OFL
+- ถ้าน้ำหนัก 800 ทำให้หัวข้อไทยดูหนาปลอม ให้ทำตาม §4 (ไทยหยุดที่ 700) ไม่ต้องถาม
+```
+
+---
+
+### Phase 7.3 — component กลาง: badge, status pill, ปุ่ม
+
+```
+ไฟล์: components/ui/ (6 ไฟล์ รวม badge.tsx, status-badge.tsx)
+
+1. status pill ตาม §3.4 — ต้องมีไอคอน + ข้อความเสมอ ห้ามสื่อสถานะด้วยสีอย่างเดียว
+2. ปุ่ม primary ตาม §3.5 (กติกาขนาดตัวอักษร / พื้นสำรองเมื่อปุ่มเล็ก)
+3. ผิวและ radius ของ card / dialog / input ตาม §6.2
+4. เฟสนี้คือจุดที่ให้ผลมากที่สุด: มี 144 จุดใน 47 ไฟล์ที่ใช้คลาส
+   status-ok / status-warning / status-critical / status-offline
+   ให้ยุบจุดที่ประกอบสีเองมาใช้ component กลางในเฟสนี้ให้มากที่สุด
+   ไฟล์ที่ประกอบสีสถานะเองตอนนี้: app/alerts/page.tsx, components/ui/status-badge.tsx,
+   components/pumps/pump-card.tsx, components/diagram/diagram-primitives.tsx,
+   components/alerts/recent-alerts.tsx, components/alerts/recovery-list.tsx,
+   components/ai/anomaly-card.tsx, components/ai/anomaly-type-badge.tsx,
+   components/ai/anomaly-timeline.tsx, components/control/audit-log.tsx,
+   components/tanks/tank-gauge.tsx
+   (ไฟล์ที่ไม่ใช่ components/ui/ ให้แก้ในเฟสของหน้ามันเอง เฟสนี้แค่เตรียม API ให้พร้อม)
+5. lib/config/anomaly-types.ts ใช้ tone: EntityStatus อยู่แล้ว ไม่มี hex — ไม่ต้องแก้
+   ตรวจแค่ว่า UNKNOWN_ANOMALY_TYPE ยังได้สีกลางตาม §3.7
+
+§8 ที่ต้องผ่าน: สี ข้อ 5 (status ทุกจุดใช้ pill §3.4), สี ข้อ 6 (แดง = วิกฤตเท่านั้น)
+
+จุดหยุดถาม:
+- ถ้า §3.4 ทำให้ pill กว้างขึ้นจนแถวตารางใน /alerts หรือ /devices ล้นที่ 375px
+  หยุดถามก่อนเปลี่ยนโครงตาราง (เคยแก้ overflow ที่หน้านี้มาแล้ว)
+```
+
+---
+
+### Phase 7.4 — Shell (sidebar + header + drawer)
+
+```
+ไฟล์: components/layout/ ทั้ง 11 ไฟล์ —
+      app-shell.tsx auth-gate.tsx header.tsx lang-toggle.tsx nav-items.ts
+      page-placeholder.tsx section.tsx sidebar.tsx theme-provider.tsx
+      theme-toggle.tsx user-menu.tsx
+      + components/layout/brand-logo.tsx จาก 7.1
+
+1. จัด shell ตาม wireframe §6.1 — header ต้องคง 4 อย่างที่ CLAUDE.md บังคับไว้ครบ
+   (เวลาปัจจุบัน, สถานะเชื่อมต่อ, badge "Local Mode", จำนวน alert ที่ยังไม่อ่าน)
+2. ชื่อเมนูใช้คีย์ i18n เดิมใน nav-items.ts — §6.1 สั่งว่าถ้า wireframe ต่างจากของเดิม ใช้ของเดิม
+3. กล่องสรุประบบท้าย sidebar ดึงจาก service เดิม ห้ามสร้าง service ใหม่ (§6.1)
+4. โลโก้ตาม §5.3 — ห้ามวางด้านล่างของหน้า
+5. Mobile 375px: sidebar เป็น drawer ตาม §6.1
+
+§8 ที่ต้องผ่าน: โลโก้ ข้อ 2, อื่น ๆ ข้อ 4 (light/dark ที่ 375px และ 1920px)
+
+จุดหยุดถาม:
+- ถ้า §6.1 ต้องการ element ใน header ที่ยังไม่มี service รองรับ — หยุดถาม ห้ามแต่งข้อมูลปลอมเพิ่ม
+```
+
+---
+
+### Phase 7.5a — กราฟ Recharts
+
+```
+ไฟล์: components/charts/chart-tokens.ts, components/charts/sparkline.tsx,
+      components/ai/forecast-section.tsx, components/ai/anomaly-evidence-chart.tsx,
+      components/ai/anomaly-timeline.tsx, components/environment/temp-vs-usage-chart.tsx,
+      components/billing/zone-cost-chart.tsx, components/billing/daily-usage-chart.tsx,
+      components/reports/monthly-chart.tsx, components/reports/zone-usage-chart.tsx
+
+1. chart-tokens.ts เป็นจุดเดียวที่กราฟอ่านสี — มีอยู่แล้วและไม่มี hex
+   แค่ชี้ไป token ใหม่จาก 7.0 (§3.7: ห้ามใส่ hex ใน props ของกราฟ)
+2. seriesColor() เดิม throw เมื่อเกิน 8 ชุด — คงพฤติกรรมนี้ไว้ (กฎ dataviz: ห้ามวนสีซ้ำ)
+3. รัน validator ของ dataviz กับชุดสีใหม่ทั้ง light และ dark ก่อนปิดเฟส
+4. แนวทางรายหน้าเรื่องกราฟดูที่ §7 (เส้นทึบ/เส้นประของ /ai, data-series-* ของ /reports,
+   ช่วงความเชื่อมั่นของหน้าแรก)
+5. ห้ามทำ dual-axis และห้ามเปลี่ยนชนิดกราฟ — เฟสนี้เปลี่ยนแค่สีกับเส้น
+
+§8 ที่ต้องผ่าน: สี ข้อ 1, สี ข้อ 3, สี ข้อ 4 (ไม่ใช้ opacity ทำสีอ่อน)
+
+จุดหยุดถาม:
+- ถ้า §3.1 ให้สีได้ไม่ถึง 8 ชุดที่ผ่าน CVD ΔE — หยุดถาม (ทางเลือกคือยุบชุดข้อมูลหรือแยกกราฟ
+  ไม่ใช่หยิบสีนอก CI)
+```
+
+---
+
+### Phase 7.5b — SVG ที่เขียนมือเอง
+
+```
+ไฟล์: components/tanks/tank-gauge.tsx, components/diagram/flow-diagram.tsx,
+      components/diagram/diagram-primitives.tsx
+
+1. tank gauge คือจุดเด่นเดียวของทั้งแอปตาม §6.3 — ปรับหน้าตา ห้ามเขียนใหม่
+   animation ระดับน้ำคงเดิมและต้องเคารพ prefers-reduced-motion
+2. ผังการไหลตาม §7 แถว /overview (ท่อ, node, จุดที่ AI ตรวจพบ)
+3. สีทุกค่าอ่านจาก lib/config/theme.ts ผ่าน chart-tokens.ts — §3.7
+4. ตัวเลข L และ % ใช้ขนาด KPI ตาม §4
+
+§8 ที่ต้องผ่าน: สี ข้อ 1, อื่น ๆ ข้อ 2, อื่น ๆ ข้อ 4
+
+จุดหยุดถาม:
+- ถ้าต้อง glow/effect บนผังการไหล §7 อนุญาตไว้แล้ว (กฎห้าม effect ใช้กับโลโก้เท่านั้น) ไม่ต้องถาม
+- ถ้าการเปลี่ยนสีทำให้เส้น threshold กลืนกับตัวน้ำ — หยุดถาม
+```
+
+---
+
+### Phase 7.6a — หน้า `/` ภาพรวม
+
+```
+ไฟล์: app/page.tsx (import ตรง 9 ตัว)
+      + components/tanks/ (3) components/pumps/ (2)
+        components/zones/ (4) components/environment/ (3)
+
+แนวทางหน้าตาม §7 แถว `/` และผิว/radius ตาม §6.2
+KPI ใหญ่ตาม §4 — นี่คือหน้าที่จอแขวนผนังเปิดค้างไว้
+
+§8 ที่ต้องผ่าน: สี ข้อ 2 (ไม่มีคลาสสีสำเร็จรูปของ Tailwind), สี ข้อ 4, อื่น ๆ ข้อ 2, 3, 4
+
+จุดหยุดถาม: ถ้า §7 ทำให้ต้องย้าย/ตัดข้อมูลออกจากหน้า — หยุดถาม (สเปกบอก restyle เท่านั้น
+เนื้อหาคงเดิม)
+```
+
+---
+
+### Phase 7.6b — `/control` + `/overview`
+
+```
+ไฟล์: app/control/page.tsx, app/overview/page.tsx, components/control/ (9 ไฟล์)
+
+แนวทางตาม §7 แถว /control และ /overview
+ปุ่ม emergency และปุ่มที่ถูก interlock มีกติกาสีเฉพาะใน §7 — อ่านก่อนแก้
+state machine ของคำสั่ง (sending → awaiting_feedback → …) ห้ามแตะ เปลี่ยนแค่หน้าตา
+
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 6, อื่น ๆ ข้อ 3, 4, 5
+
+จุดหยุดถาม:
+- pin-gate.tsx / confirm-dialog.tsx เป็น UI-only ตามที่ตกลงไว้ — ห้ามทำให้ดูเหมือน
+  ระบบยืนยันตัวตนจริงกว่าเดิม ถ้าสเปกดูจะสั่งแบบนั้น หยุดถาม
+```
+
+---
+
+### Phase 7.7a — `/devices` + `/alerts`
+
+```
+ไฟล์: app/devices/page.tsx, app/alerts/page.tsx,
+      components/devices/ (3), components/alerts/ (3)
+
+แนวทางตาม §7 แถว /devices และ /alerts (stat card, filter bar, side panel, severity pill)
+components/alerts/line-preview-card.tsx มี hex #06C755 อยู่ 1 จุด = สีแบรนด์ LINE
+ไม่ใช่สี CI — ตัดสินใจในเฟสนี้ว่าจะย้ายเข้า lib/config/theme.ts เป็นค่า brand ภายนอก
+หรือใส่ข้อยกเว้นใน whitelist แล้วบันทึกไว้
+
+§8 ที่ต้องผ่าน: สี ข้อ 1 (พร้อมข้อยกเว้นที่บันทึกแล้ว), สี ข้อ 2, สี ข้อ 5, อื่น ๆ ข้อ 4
+
+จุดหยุดถาม:
+- สี LINE เป็นสีแบรนด์ของบริษัทอื่น เปลี่ยนแล้ว preview จะไม่เหมือนของจริง — หยุดถาม
+```
+
+---
+
+### Phase 7.7b — `/reports`
+
+```
+ไฟล์: app/reports/page.tsx, components/reports/ (2), components/billing/ (3)
+
+แนวทางตาม §7 แถว /reports — stat card เปรียบเทียบช่วงก่อนหน้า
+ข้อความ "ช่วงวันที่ / ช่วงก่อนหน้า" ถูกแก้ให้ชัดเจนไปแล้วในเฟสก่อน — ห้ามเปลี่ยนคำกลับ
+
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, อื่น ๆ ข้อ 2, 4
+จุดหยุดถาม: ไม่มีจุดเฉพาะ ใช้จุดหยุดกลางของ RUNBOOK
+```
+
+---
+
+### Phase 7.7c — `/ai`
+
+```
+ไฟล์: app/ai/page.tsx (import ตรง 10 ตัว), components/ai/ (11 ไฟล์
+      — anomaly-evidence-chart.tsx และ anomaly-timeline.tsx ทำไปแล้วใน 7.5a)
+
+แนวทางตาม §7 แถว /ai
+UI ต้อง render ได้แม้ field ไม่ครบหรือเจอ anomaly type ที่ไม่รู้จัก (CLAUDE.md) — ห้ามทำ
+ให้ fallback หายไปตอนจัดสไตล์
+formatAnomalyScore() เป็นจุดเดียวที่แปลง 0–1 เป็น % — ห้ามคูณ 100 เพิ่มในเฟสนี้
+scenario switcher คงไว้ตาม §7
+
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 5, สี ข้อ 6, อื่น ๆ ข้อ 3, 4
+
+จุดหยุดถาม:
+- ถ้าการจัดสไตล์ทำให้ต้องเพิ่ม field ที่ทีม AI ไม่ได้ส่งมา — หยุดถาม ห้ามแก้ lib/types.ts
+```
+
+---
+
+### Phase 7.8a — `/settings`
+
+```
+ไฟล์: app/settings/page.tsx (import ตรง 15 ตัว), components/settings/ (13 ไฟล์)
+
+แนวทางตาม §7 แถว /settings — tab + ฟอร์ม, ข้อความ error ภาษาไทยมีกติกาสีเฉพาะใน §7
+ค่าตั้งต้นทั้งหมดอยู่ใน withDefaults() ตอนโหลดแล้ว — ห้ามย้ายกลับไปใส่ ?? ใน component
+
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 5, อื่น ๆ ข้อ 3, 4, 5
+จุดหยุดถาม: ไม่มีจุดเฉพาะ ใช้จุดหยุดกลางของ RUNBOOK
+```
+
+---
+
+### Phase 7.8b — `/login`
+
+```
+ไฟล์: app/login/page.tsx (import ตรง 5 ตัว), components/layout/auth-gate.tsx
+
+แนวทางตาม §7 แถว /login — split layout, ฝั่งซ้ายใช้พื้นบันไดสี ไม่ใช้ภาพจาก template
+โลโก้มุมซ้ายบนฝั่งภาพตาม §5.3
+การ์ดบัญชีทดลองคงไว้ตาม §7
+
+§8 ที่ต้องผ่าน: โลโก้ ข้อ 1–2, สี ข้อ 2, สี ข้อ 5, อื่น ๆ ข้อ 3, 4
+
+จุดหยุดถาม:
+- หน้านี้เป็น UI อย่างเดียว ไม่ใช่ระบบยืนยันตัวตนจริง ห้ามจัดสไตล์ให้ดูเหมือนของจริงกว่าเดิม
+  หรือเพิ่มช่องกรอกที่สื่อว่าเก็บรหัสผ่านจริง — ถ้าสเปกดูจะสั่งแบบนั้น หยุดถาม
+```
+
+---
+
+### Phase 7.9 — sweep + acceptance
+
+```
+1. รัน grep 2 บรรทัดใน §8 หมวด "สี" ข้อ 1 และ 2 ให้ได้ผลตามเกณฑ์
+   ค่าตั้งต้นก่อนเริ่ม Phase 7: hex 3 จุด (app/layout.tsx 2, line-preview-card.tsx 1)
+   คลาสสีสำเร็จรูปของ Tailwind 0 จุด (ต้องคง 0 ไว้)
+   app/layout.tsx: themeColor 2 ค่า ต้องอ่านจาก lib/config/theme.ts หรือย้ายเข้า whitelist
+2. เขียน test whitelist ตาม §8 สี ข้อ 3 — แปลง HSL กลับเป็น hex แล้วเทียบตาราง §3.1
+   (ยอมคลาด ±1 ต่อ channel ตาม §3.7)
+3. ตรวจ opacity ที่ใช้ทำสีอ่อน (§8 สี ข้อ 4) — ตอนนี้มี 76 จุดใน 41 ไฟล์ที่ใช้รูปแบบ /10 /20
+   ต้องแยกให้ได้ว่าจุดไหนเป็น "สีอ่อน" (ต้องแก้) จุดไหนเป็น overlay/เงา (ไม่ต้องแก้)
+4. ตรวจ light + dark ที่ 375px และ 1920px ทุก 9 หน้า (§8 อื่น ๆ ข้อ 4)
+   วัด scrollWidth เทียบ viewport ด้วย — เคยเจอ overflow ที่ /alerts มาแล้ว
+5. ตัด network ใน devtools แล้วเช็คว่าฟอนต์ยังขึ้น (§8 อื่น ๆ ข้อ 1)
+6. ตรวจ i18n th/en ครบคู่ (§8 อื่น ๆ ข้อ 3)
+7. git diff --stat ต้องไม่มีไฟล์ใน lib/services/, lib/mock/, lib/types.ts, lib/hooks/
+   (§8 อื่น ๆ ข้อ 5)
+8. npx tsc --noEmit และ npm run build ผ่าน
+9. อัปเดต docs/BRANDING_SPEC.md ตรงจุดที่โค้ดจริงต่างจากสเปก (กฎ CLAUDE.md: แก้เอกสารตามโค้ด)
+
+จุดหยุดถาม:
+- ถ้า §8 ข้อไหนไม่ผ่านและการทำให้ผ่านต้องแตะไฟล์ในรายการห้ามแก้ — หยุดถาม
+```
+
+---
+
 ## เคล็ดลับการใช้ Claude Code กับงานนี้
 
 | ปัญหาที่มักเจอ | วิธีแก้ |

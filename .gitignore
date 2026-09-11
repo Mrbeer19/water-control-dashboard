@@ -11,3 +11,6 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# เอกสาร CI ขององค์กรและภาพหน้าจอ KLC — ห้ามขึ้น repo
+docs/design-refs/
