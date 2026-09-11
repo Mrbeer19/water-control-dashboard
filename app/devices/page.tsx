@@ -72,7 +72,6 @@ function DevicesView(): JSX.Element {
       </Section>
 
       <Section
-        title={t.nav.devices}
         hint={data === null ? undefined : `${t.device.showing} ${filtered.length}/${data.length}`}
       >
         <div className="space-y-3">

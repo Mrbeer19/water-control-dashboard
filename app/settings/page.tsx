@@ -128,8 +128,7 @@ export default function SettingsPage(): JSX.Element {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t.nav.settings}</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {t.settings.updatedBy} {draft.updatedBy.displayName}
             {savedAt !== null && ` · ${t.settings.saved} ${formatDateTimeTH(savedAt, 'th')}`}
           </p>

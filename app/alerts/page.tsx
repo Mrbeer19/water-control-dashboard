@@ -113,7 +113,6 @@ export default function AlertsPage(): JSX.Element {
   return (
     <div className="space-y-8">
       <Section
-        title={t.nav.alerts}
         hint={data === null ? undefined : `${t.device.showing} ${data.page.items.length}/${data.page.total}`}
         action={
           <Button

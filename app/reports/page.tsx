@@ -64,7 +64,7 @@ export default function ReportsPage(): JSX.Element {
 
   return (
     <div className="space-y-8">
-      <Section title={t.nav.reports} hint={data === null ? undefined : `${t.reports.generatedAt} ${formatDateTimeTH(data.generatedAt, locale)}`}>
+      <Section hint={data === null ? undefined : `${t.reports.generatedAt} ${formatDateTimeTH(data.generatedAt, locale)}`}>
         <div className="space-y-4">
           {/* ตัวเลือกช่วงวันที่ */}
           <div className="flex flex-wrap items-center gap-2">

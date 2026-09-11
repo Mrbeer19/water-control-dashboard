@@ -22,6 +22,8 @@ const config: Config = {
       },
       colors: {
         border: 'hsl(var(--border))',
+        // เส้นแบ่ง "ส่วนของหน้า" (header / เมนู / เนื้อหา / ท้ายหน้า) — เข้มกว่าขอบการ์ดหนึ่งขั้น
+        'border-strong': 'hsl(var(--border-strong))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',

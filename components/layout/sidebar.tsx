@@ -13,7 +13,7 @@ import { BrandLogo } from './brand-logo';
 import { LangToggle } from './lang-toggle';
 import { ThemeToggle } from './theme-toggle';
 import { UserMenu } from './user-menu';
-import { APP_VERSION, NAV_SECTIONS } from './nav-items';
+import { NAV_SECTIONS } from './nav-items';
 
 interface SidebarProps {
   /** เปิดอยู่หรือไม่ (ใช้เฉพาะ mobile — desktop แสดงถาวร) */
@@ -23,7 +23,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
   const pathname = usePathname();
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const { data: unread } = useLiveData(getUnreadAlertCount, []);
   // กล่องสรุประบบท้าย sidebar — ดึงจาก service เดิม ห้ามสร้าง service ใหม่ (BRANDING_SPEC ข้อ 6.1)
   const { data: summary } = useLiveData<SystemSummary>(getSystemSummary, []);
@@ -42,7 +42,7 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-card transition-transform',
+          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border-strong bg-card transition-transform',
           'lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
@@ -139,14 +139,6 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
             </div>
           </div>
 
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {locale === 'th'
-              ? 'ระบบทำงานภายในโรงงาน 100% ไม่เชื่อมต่ออินเทอร์เน็ต'
-              : 'Runs fully on-premise. No internet connection.'}
-          </p>
-          <p className="tabular text-[10px] text-muted-foreground">
-            {t.nav.version} {APP_VERSION}
-          </p>
         </div>
       </aside>
     </>

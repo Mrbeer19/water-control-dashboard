@@ -216,7 +216,7 @@ function contrast(a, b) {
    *   แล้วเงียบ ๆ ไม่ให้สีอะไรเลย — เคยเกิดจริงตอนแทนที่ด้วย sed ใน Phase 7.1
    */
   const KNOWN = new Set([
-    'brand-text', 'brand-strong', 'brand-strong-foreground', 'form-error',
+    'brand-text', 'brand-strong', 'brand-strong-foreground', 'form-error', 'border-strong',
     'info', 'info-strong', 'info-strong-foreground',
     'control-checked', 'control-checked-foreground',
     'water', 'water-soft',
@@ -225,7 +225,7 @@ function contrast(a, b) {
     'status-critical', 'status-critical-foreground',
     'status-offline', 'status-offline-foreground', 'status-offline-dot',
   ]);
-  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|form-error|status)[a-z0-9-]*)/g;
+  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|form-error|border-strong|status)[a-z0-9-]*)/g;
   const bad = [];
   for (const f of sources) {
     for (const m of read(f).matchAll(TOKEN)) {

@@ -28,11 +28,6 @@ export default function FlowDiagramPage(): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.diagram.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.diagram.clickHint}</p>
-      </div>
-
       {loading && data === null ? (
         <Skeleton className="h-[520px] rounded-card" />
       ) : data === null ? (

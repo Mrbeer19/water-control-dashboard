@@ -36,6 +36,7 @@
     --destructive: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF ขาว */
     --border: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --border-strong: 345 2.6% 69.8%; /* #B4B0B1 Argent-200 — เส้นแบ่งระหว่างส่วนของหน้า ไม่ใช่ขอบการ์ด */
     --input: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
     --ring: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 */
 
@@ -107,6 +108,7 @@
     --destructive: 10.6 87.2% 69.4%; /* #F5856D Cinnabar-200 */
     --destructive-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
     --border: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --border-strong: 252 2.3% 43.3%; /* #6D6C71 Argent-800 */
     --input: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
     --ring: 213.5 46.9% 52.7%; /* #4E80BF Blue-300 */
 
