@@ -93,9 +93,10 @@ export default function LoginPage(): JSX.Element {
           {/*
             การ์ดล็อกอิน — ใช้พื้นทึบ ไม่ใช่กึ่งโปร่งแสง เพื่อให้เด่นออกมาจากภาพฉากชัด ๆ
             ★ ได้เงาของระบบ (เงาเดียวที่อนุญาตตามข้อ 6.2) เพราะทำหน้าที่เหมือน dialog ที่ลอยอยู่บนฉาก
-            ★ ring เพิ่มอีกชั้นเพื่อตัดขอบการ์ดออกจากภาพที่มีรายละเอียดเยอะ
+            ★ ring สี Cinnabar-700 หนา 2px เพื่อตัดขอบการ์ดออกจากภาพที่มีรายละเอียดเยอะ
+              ลองเทียบกับสีเทาและสีขาวแล้ว สองอันนั้นจมไปกับภาพ
           */}
-          <Card className="rounded-overlay shadow-xl ring-1 ring-border">
+          <Card className="rounded-overlay shadow-xl ring-2 ring-brand-strong">
             <CardContent className="p-6">
               <div className="mb-5 text-center">
                 <h1 className="text-2xl font-semibold tracking-tight">{t.auth.title}</h1>
