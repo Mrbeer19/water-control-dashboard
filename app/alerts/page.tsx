@@ -264,9 +264,18 @@ export default function AlertsPage(): JSX.Element {
         </div>
       </Section>
 
+      {/*
+        min-w-0 จำเป็นจริง ๆ ตรงนี้: grid item มี min-width: auto ตามค่าตั้งต้น
+        จึงหดต่ำกว่าความกว้างของเนื้อหาไม่ได้ และ LINE group id เป็นสตริงยาวไม่มีช่องว่าง
+        ทำให้การ์ดดันจนเกิด horizontal scroll ทั้งหน้าบนจอมือถือ
+      */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <LinePreviewCard preview={data?.preview ?? null} deliveries={data?.deliveries ?? []} onRetried={refresh} />
-        <RecoveryList events={data?.recoveries ?? []} />
+        <div className="min-w-0">
+          <LinePreviewCard preview={data?.preview ?? null} deliveries={data?.deliveries ?? []} onRetried={refresh} />
+        </div>
+        <div className="min-w-0">
+          <RecoveryList events={data?.recoveries ?? []} />
+        </div>
       </div>
     </div>
   );
