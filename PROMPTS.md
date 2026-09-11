@@ -382,28 +382,32 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    ตัวแปรที่ต้อง map ครบ: --background --foreground --card --popover --primary --secondary
    --muted --accent --destructive --border --input --ring --status-ok --status-warning
    --status-critical --status-offline (+ -foreground ทุกตัว) ทั้ง :root และ .dark
-3. --chart-1..8 → เหลือชุดข้อมูลตามที่ตอบ open question ข้อ 1 ของ DESIGN_PLAN
-   (ชุด 4 สีที่ตัดสินไว้เดิมไม่ผ่าน validator ทั้งสองโหมด — ดู DESIGN_PLAN ข้อ 9)
+3. --chart-1..8 → เหลือ 3 ค่าตาม §3.3: data-series-1, data-series-2, data-reference
+   (light #026BB5 / #009148 / #CBC7C8 · dark #4E80BF / #4CA062 / #6D6C71)
    --chart-seq-* → บันได Blue ตาม §3.3 (data-water / data-water-soft)
-   ★ ต้องแก้ chart-tokens.ts ให้ seriesColor() throw ที่จำนวนจริง ไม่ใช่ 8
-4. tailwind.config.ts: คงรูปแบบ hsl(var(--x)) ไว้ ห้ามใส่ hex เพิ่มชื่อ token ใหม่ที่ §3.3 ต้องการ
+   ★ ต้องแก้ chart-tokens.ts ให้ CHART_SERIES เหลือ 2 และ seriesColor() throw ที่ 2 ไม่ใช่ 8
+   ★ เพิ่ม token ใหม่ --control-checked (Argent-900 / dark Lynx White) ตาม §3.3
+   ★ แยก --ring ออกจาก --primary: --ring = Blue-500 (light) / Blue-300 (dark)
+4. ไล่ทุกจุดที่ใช้ *-primary (51 token ใน 34 บรรทัด) เข้ากลุ่มตามตารางใน §3.3
+   รายการพร้อมเลขบรรทัดอยู่ใน DESIGN_PLAN ข้อ 11 — 20 token ที่ยังจัดไม่ลงต้องได้คำตอบก่อนเริ่มเฟสนี้
+5. tailwind.config.ts: คงรูปแบบ hsl(var(--x)) ไว้ ห้ามใส่ hex เพิ่มชื่อ token ใหม่ที่ §3.3 ต้องการ
    radius ตาม §6.2 — เพิ่มเป็นตัวแปรใหม่ อย่าทับ --radius ที่ shadcn ใช้อยู่
-5. app/layout.tsx: themeColor 2 ค่า import จาก theme.ts ตาม §3.7 (นี่คือจุดเดียวที่แตะไฟล์นี้)
-6. ฟอนต์ Montserrat ตาม §4 — วิธีได้ไฟล์และ flag subset อยู่ใน §4
+6. app/layout.tsx: themeColor 2 ค่า import จาก theme.ts ตาม §3.7 (นี่คือจุดเดียวที่แตะไฟล์นี้)
+7. ฟอนต์ Montserrat ตาม §4 — วิธีได้ไฟล์และ flag subset อยู่ใน §4
    app/fonts.ts เพิ่ม localFont ตัวที่สอง, tailwind.config.ts fontFamily.sans เป็น stack ตาม §4
    ตัวเลข realtime tabular-nums ทำเป็น class กลางที่ globals.css หรือ lib/utils/format.ts จุดเดียว
    ขนาด KPI ตาม §4 — แก้ค่า fontSize.metric / metric-lg เดิม อย่าสร้างชื่อใหม่ซ้อน
-7. เขียน test 2 ตัว: whitelist hex (§8 สี ข้อ 3) และ contrast (§3.2–3.5)
+8. เขียน test 2 ตัว: whitelist hex (§8 สี ข้อ 3) และ contrast (§3.2–3.5)
    whitelist ต้องแปลง HSL กลับเป็น hex ก่อนเทียบ ยอมคลาด ±1 ต่อ channel (§3.7)
-8. จบเฟสนี้ทุกหน้าต้องยังทำงานได้ สีอาจยังผสมกันอยู่ได้ (component ยังไม่ถูกแก้)
+9. จบเฟสนี้ทุกหน้าต้องยังทำงานได้ สีอาจยังผสมกันอยู่ได้ (component ยังไม่ถูกแก้)
 
 §8 ที่ต้องผ่าน: สี ข้อ 1 (hex เหลือเฉพาะ theme.ts), สี ข้อ 3 (whitelist),
-  สี ข้อ 6 (validator dataviz), อื่น ๆ ข้อ 1 (ฟอนต์ทำงานตอนตัด network), อื่น ๆ ข้อ 2 (tabular-nums)
+  สี ข้อ 5 (จานสีกราฟ), สี ข้อ 6 (validator dataviz), สี ข้อ 8 (ไม่เหลือ *-primary กำกวม), อื่น ๆ ข้อ 1 (ฟอนต์ทำงานตอนตัด network), อื่น ๆ ข้อ 2 (tabular-nums)
 
 จุดหยุดถาม:
 - ต้องรัน pip install fonttools บนเครื่องพัฒนา — แจ้งก่อนทำ (ไม่ได้เพิ่มใน package.json)
-- ถ้าการลด --chart-1..8 เหลือ 4 ทำให้กราฟที่มีอยู่พัง — ดูลิสต์ในข้อ 7 ของ DESIGN_PLAN
-  ถ้ามีกราฟที่ไม่เข้าทางออกทั้งสองแบบใน §3.3 ให้หยุดถาม
+- ถ้าการลด --chart-1..8 เหลือ 3 ทำให้กราฟที่มีอยู่พัง — ดูลิสต์ผลกระทบท้ายข้อ 9 ของ DESIGN_PLAN
+- ถ้าเจอจุดที่ใช้ *-primary แล้วจัดเข้ากลุ่มใน §3.3 ไม่ได้ ให้หยุดถาม ห้ามเดา
 ```
 
 ---
@@ -438,11 +442,14 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
      เฟสนี้แก้เฉพาะจุดที่ยังประกอบสีเอง
 6. lib/config/anomaly-types.ts: tone ต้องชี้ semantic token (ตอนนี้ใช้ tone: EntityStatus อยู่แล้ว
    และไม่มี hex) — ตรวจว่า UNKNOWN_ANOMALY_TYPE ได้ text-secondary + ไอคอน default ตาม §3.7
+6.1 สวิตช์ที่ใช้ bg-status-ok เป็นสถานะ "เปิด" (components/settings/field.tsx:209,
+   components/control/schedule-panel.tsx:216) ต้องย้ายมาใช้ control-checked ตาม §3.3
+   ไม่งั้นสวิตช์จะสื่อว่า "สถานะปกติ" แทน "ติ๊กแล้ว" — ดู DESIGN_PLAN ข้อ 11
 7. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/ai/anomaly-type-badge.tsx (4), components/diagram/diagram-primitives.tsx (4),
    components/pumps/pump-card.tsx (1) — รวม 9 จุด
 
 §8 ที่ต้องผ่าน: โลโก้ ข้อ 1–2, สี ข้อ 4 (opacity), สี ข้อ 7 (status ใช้ pill §3.4),
-  สี ข้อ 8 (แดง = วิกฤตเท่านั้น)
+  สี ข้อ 9 (แดง = วิกฤตเท่านั้น)
 
 จุดหยุดถาม:
 - ถ้า pill ตาม §3.4 กว้างขึ้นจนตารางใน /alerts หรือ /devices ล้นที่ 375px
@@ -500,10 +507,13 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 2. แนวทางหน้าตาม §7 แถว `/` (แถว KPI, กล่อง alert ล่าสุด, กราฟพยากรณ์ + ช่วงความเชื่อมั่น)
 3. ผิวและ radius ตาม §6.2, KPI ใหญ่ตาม §4 — นี่คือหน้าที่จอแขวนผนังเปิดค้างไว้
 4. สีใน SVG และกราฟอ่านผ่าน chart-tokens.ts เท่านั้น ห้ามใส่ hex ใน props (§3.7)
+4.1 components/environment/temp-vs-usage-chart.tsx — คง dual-axis ไว้ (restyle เท่านั้น)
+   usage = Blue แกนซ้าย · temp = Green แกนขวา · ชื่อแกนทั้งสองข้างต้องมีหน่วยและใช้สีตรงกับเส้นของตัวเอง
+   การแยกเป็น small multiples เป็นงานนอกขอบเขต — DESIGN_PLAN ข้อ 12.1
 5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/zones/main-meter-section.tsx (1) — 1 จุด
    (components/pumps/pump-card.tsx แก้ไปแล้วใน 7.2)
 
-§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5 (กราฟไม่เกิน 4 สี), อื่น ๆ ข้อ 2, 4, 5
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5 (จานสีกราฟ), อื่น ๆ ข้อ 2, 4, 5
 
 จุดหยุดถาม:
 - ถ้า §7 ทำให้ต้องย้าย/ตัดข้อมูลออกจากหน้า — หยุดถาม (restyle เท่านั้น เนื้อหาคงเดิม)
@@ -530,7 +540,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    components/devices/device-detail-panel.tsx (3), components/control/confirm-dialog.tsx (1),
    components/devices/service-health-bar.tsx (1) — รวม 15 จุด
 
-§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 8, อื่น ๆ ข้อ 3, 4, 5, 6
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 9, อื่น ๆ ข้อ 3, 4, 5, 6
 
 จุดหยุดถาม:
 - pin-gate.tsx / confirm-dialog.tsx เป็น UI-only ตามที่ตกลงไว้ — ห้ามทำให้ดูเหมือนระบบ
@@ -579,7 +589,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/ai/ai-overview-widget.tsx (3), components/ai/maintenance-section.tsx (2),
    components/ai/ai-summary-card.tsx (1), components/ai/ai-metric-card.tsx (1) — รวม 7 จุด
 
-§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5, สี ข้อ 7, สี ข้อ 8, อื่น ๆ ข้อ 4, 5
+§8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5, สี ข้อ 7, สี ข้อ 9, อื่น ๆ ข้อ 4, 5
 
 จุดหยุดถาม:
 - ถ้าการจัดสไตล์ทำให้ต้องเพิ่ม field ที่ทีม AI ไม่ได้ส่งมา — หยุดถาม ห้ามแก้ lib/types.ts
