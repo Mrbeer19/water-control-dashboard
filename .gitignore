@@ -14,3 +14,6 @@ next-env.d.ts
 
 # เอกสาร CI ขององค์กรและภาพหน้าจอ KLC — ห้ามขึ้น repo
 docs/design-refs/
+
+# เครื่องมือวัด layout ตอนพัฒนา ไม่ต้องขึ้น repo และห้ามติดไปกับ build
+public/__measure.html

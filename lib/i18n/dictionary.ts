@@ -24,6 +24,10 @@ export const th = {
     sectionMonitor: 'มอนิเตอร์',
     sectionOperate: 'ปฏิบัติการ',
     sectionSystem: 'ระบบ',
+    summary: 'สรุประบบ',
+    devicesOnline: 'อุปกรณ์ออนไลน์',
+    pumpsRunning: 'ปั๊มเดินเครื่อง',
+    version: 'เวอร์ชัน',
   },
   header: {
     connected: 'เชื่อมต่อแล้ว',
@@ -563,6 +567,10 @@ export const en: Dictionary = {
     sectionMonitor: 'Monitor',
     sectionOperate: 'Operate',
     sectionSystem: 'System',
+    summary: 'System summary',
+    devicesOnline: 'Devices online',
+    pumpsRunning: 'Pumps running',
+    version: 'Version',
   },
   header: {
     connected: 'Connected',

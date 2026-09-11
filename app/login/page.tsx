@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Droplets, Info, Loader2, LogIn, ServerCog } from 'lucide-react';
+import { Info, Loader2, LogIn, ServerCog } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { demoAccounts, getSession, signIn } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LangToggle } from '@/components/layout/lang-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
+import { BrandLogo } from '@/components/layout/brand-logo';
 
 const INPUT_CLASS =
   'h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -56,7 +57,24 @@ export default function LoginPage(): JSX.Element {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-muted/30">
+    <div className="flex min-h-dvh flex-col bg-background lg:flex-row">
+      {/*
+        ฝั่งภาพ: พื้นบันไดสี Blue ตาม BRANDING_SPEC ข้อ 7 แถว /login
+        ไม่ใช้ภาพจาก template และไม่ใส่ลาย เพราะโลโก้ห้ามวางบนพื้นลาย (ข้อ 5.2)
+      */}
+      <aside className="hidden bg-info-strong text-info-strong-foreground lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:p-10">
+        <BrandLogo height={44} priority />
+        <div className="space-y-2">
+          <p className="text-2xl font-semibold leading-snug">{t.app.title}</p>
+          <p className="text-sm opacity-90">{t.auth.subtitle}</p>
+        </div>
+        <p className="flex items-center gap-1.5 text-[11px]">
+          <ServerCog className="h-3.5 w-3.5" aria-hidden />
+          {t.auth.localOnly}
+        </p>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-end gap-2 p-4">
         <LangToggle />
         <ThemeToggle />
@@ -65,8 +83,9 @@ export default function LoginPage(): JSX.Element {
       <main className="flex flex-1 items-start justify-center px-4 pb-10">
         <div className="w-full max-w-sm space-y-4">
           <div className="text-center">
-            <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <Droplets className="h-7 w-7" aria-hidden />
+            {/* บนจอเล็กไม่มีฝั่งภาพ จึงวางโลโก้ไว้เหนือฟอร์มแทน */}
+            <span className="mx-auto mb-3 flex justify-center lg:hidden">
+              <BrandLogo height={40} priority />
             </span>
             <h1 className="text-xl font-semibold tracking-tight">{t.app.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
@@ -111,12 +130,13 @@ export default function LoginPage(): JSX.Element {
                 </label>
 
                 {error !== null && (
-                  <p className="rounded-md bg-status-critical/10 px-2.5 py-2 text-xs text-status-critical" role="alert">
+                  <p className="rounded-control bg-status-critical px-2.5 py-2 text-xs text-status-critical-foreground" role="alert">
                     {error}
                   </p>
                 )}
 
-                <Button type="submit" className="w-full gap-1.5" disabled={busy}>
+                {/* CTA หลักของหน้า — size lg ทำให้ตัวอักษรเป็น 16px/600 จึงวางบน Cinnabar-500 ได้ตามข้อ 3.5 */}
+                <Button type="submit" size="lg" className="w-full gap-1.5" disabled={busy}>
                   {busy ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   ) : (
@@ -129,7 +149,7 @@ export default function LoginPage(): JSX.Element {
           </Card>
 
           {/* บอกตรง ๆ ว่านี่เป็นหน้าจอสาธิต ไม่ใช่ระบบที่ปกป้องอะไรอยู่จริง */}
-          <p className="flex gap-1.5 rounded-md bg-status-warning/10 px-2.5 py-2 text-[11px] leading-snug text-status-warning">
+          <p className="flex gap-1.5 rounded-control bg-status-warning-surface px-2.5 py-2 text-[11px] leading-snug text-status-warning">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {t.auth.demoNotice}
           </p>
@@ -163,12 +183,13 @@ export default function LoginPage(): JSX.Element {
             </Card>
           )}
 
-          <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+          <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground lg:hidden">
             <ServerCog className="h-3.5 w-3.5" aria-hidden />
             {t.auth.localOnly}
           </p>
         </div>
       </main>
+      </div>
     </div>
   );
 }

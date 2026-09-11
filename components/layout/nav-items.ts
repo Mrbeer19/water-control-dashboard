@@ -1,6 +1,9 @@
 import { Activity, Bell, Brain, FileBarChart, Gauge, Cpu, Settings, Waves } from 'lucide-react';
 import type { Dictionary } from '@/lib/i18n';
 
+/** เวอร์ชันที่แสดงท้าย sidebar ตาม BRANDING_SPEC ข้อ 6.1 */
+export const APP_VERSION = '1.0.0';
+
 export interface NavItem {
   href: string;
   icon: typeof Gauge;

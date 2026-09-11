@@ -2,12 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Droplets, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import type { SystemSummary } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { useLiveData } from '@/lib/hooks/use-live-data';
-import { getUnreadAlertCount } from '@/lib/services';
+import { getSystemSummary, getUnreadAlertCount } from '@/lib/services';
 import { cn } from '@/lib/utils';
-import { NAV_SECTIONS } from './nav-items';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { BrandLogo } from './brand-logo';
+import { LangToggle } from './lang-toggle';
+import { ThemeToggle } from './theme-toggle';
+import { UserMenu } from './user-menu';
+import { APP_VERSION, NAV_SECTIONS } from './nav-items';
 
 interface SidebarProps {
   /** เปิดอยู่หรือไม่ (ใช้เฉพาะ mobile — desktop แสดงถาวร) */
@@ -19,6 +25,8 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
   const pathname = usePathname();
   const { t, locale } = useLocale();
   const { data: unread } = useLiveData(getUnreadAlertCount, []);
+  // กล่องสรุประบบท้าย sidebar — ดึงจาก service เดิม ห้ามสร้าง service ใหม่ (BRANDING_SPEC ข้อ 6.1)
+  const { data: summary } = useLiveData<SystemSummary>(getSystemSummary, []);
 
   return (
     <>
@@ -41,13 +49,12 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
         aria-label={t.nav.overview}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
-          <Link href="/" className="flex items-center gap-2.5" onClick={onClose}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Droplets className="h-5 w-5" aria-hidden />
-            </span>
-            <span className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold">{t.app.shortTitle}</span>
-              <span className="text-[11px] text-muted-foreground">{t.app.title}</span>
+          {/* โลโก้องค์กรมุมซ้ายบน — BRANDING_SPEC ข้อ 5.3 (ห้ามวางด้านล่างของหน้า) */}
+          <Link href="/" className="flex min-w-0 items-center gap-2" onClick={onClose}>
+            <BrandLogo height={32} priority />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-sm font-semibold">{t.app.shortTitle}</span>
+              <span className="truncate text-[11px] text-muted-foreground">{t.app.title}</span>
             </span>
           </Link>
           <button
@@ -100,11 +107,45 @@ export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
           ))}
         </nav>
 
-        <div className="shrink-0 border-t px-4 py-3">
+        {/* กล่องสรุประบบ + เวอร์ชัน ตามผัง ข้อ 6.1 */}
+        <div className="shrink-0 space-y-3 border-t px-4 py-3">
+          {summary !== null && (
+            <div className="rounded-control border p-2.5">
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">{t.nav.summary}</p>
+              <StatusBadge status={summary.overallStatus} />
+              <dl className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="truncate">{t.nav.devicesOnline}</dt>
+                  <dd className="tabular shrink-0 font-medium text-foreground">
+                    {summary.devicesOnline}/{summary.devicesTotal}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="truncate">{t.nav.pumpsRunning}</dt>
+                  <dd className="tabular shrink-0 font-medium text-foreground">
+                    {summary.pumpsRunning}/{summary.pumpsTotal}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
+
+          {/* บนมือถือ header ย่อเหลือ โลโก้ + สถานะ + กระดิ่ง (ข้อ 6.1) ตัวควบคุมที่เหลือย้ายมาที่นี่ */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <LangToggle />
+            <ThemeToggle />
+            <div className="ml-auto">
+              <UserMenu />
+            </div>
+          </div>
+
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             {locale === 'th'
               ? 'ระบบทำงานภายในโรงงาน 100% ไม่เชื่อมต่ออินเทอร์เน็ต'
               : 'Runs fully on-premise. No internet connection.'}
+          </p>
+          <p className="tabular text-[10px] text-muted-foreground">
+            {t.nav.version} {APP_VERSION}
           </p>
         </div>
       </aside>

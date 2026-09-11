@@ -9,6 +9,7 @@ import { getConnectionStatus, getUnreadAlertCount } from '@/lib/services';
 import { cn, formatRelativeTime, formatTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BrandLogo } from './brand-logo';
 import { LangToggle } from './lang-toggle';
 import { ThemeToggle } from './theme-toggle';
 import { UserMenu } from './user-menu';
@@ -38,6 +39,9 @@ export function Header({ onOpenMenu }: HeaderProps): JSX.Element {
         <Menu className="h-5 w-5" aria-hidden />
       </button>
 
+      {/* โลโก้บน top bar ของมือถือ — desktop เห็นโลโก้ที่ sidebar อยู่แล้ว (ข้อ 5.3) */}
+      <BrandLogo height={32} className="lg:hidden" />
+
       {/* นาฬิกา — ตัวเลขใหญ่พอให้อ่านจากกลางห้องคอนโทรล */}
       <div className="flex min-w-0 flex-col leading-tight">
         <span className="tabular text-xl font-semibold sm:text-2xl">{now === null ? '--:--:--' : formatTime(now, locale)}</span>
@@ -56,7 +60,7 @@ export function Header({ onOpenMenu }: HeaderProps): JSX.Element {
           <span
             className={cn(
               'flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium',
-              online ? 'border-status-ok/30 text-status-ok' : 'border-status-critical/30 text-status-critical',
+              online ? 'text-status-ok' : 'text-status-critical',
             )}
           >
             {online ? <Wifi className="h-3.5 w-3.5" aria-hidden /> : <WifiOff className="h-3.5 w-3.5" aria-hidden />}
@@ -102,10 +106,16 @@ export function Header({ onOpenMenu }: HeaderProps): JSX.Element {
           </span>
         </Link>
 
-        <LangToggle />
-        <ThemeToggle />
-        <div className="hidden h-6 w-px bg-border sm:block" aria-hidden />
-        <UserMenu />
+        {/*
+          บนมือถือเหลือแค่ โลโก้ + สถานะเชื่อมต่อ + กระดิ่ง ตามข้อ 6.1
+          ตัวสลับภาษา/ธีม และเมนูผู้ใช้ ย้ายไปอยู่ท้าย drawer ของ sidebar แทน
+        */}
+        <div className="hidden items-center gap-2 sm:flex sm:gap-3">
+          <LangToggle />
+          <ThemeToggle />
+          <div className="h-6 w-px bg-border" aria-hidden />
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

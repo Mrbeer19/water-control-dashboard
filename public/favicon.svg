@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#0369a1"/>
-  <path d="M16 6c4.2 4.9 7 8.6 7 11.6a7 7 0 1 1-14 0C9 14.6 11.8 10.9 16 6z" fill="#e0f2fe"/>
+  <!--
+    คงรูปทรงเดิม (สี่เหลี่ยมมุมโค้ง + หยดน้ำ) เปลี่ยนเฉพาะสีเป็นสี CI ของ Kasetphand
+    ตาม docs/BRANDING_SPEC.md ข้อ 5.3 — พื้น Cinnabar-500 #E9242B, หยดน้ำ Lynx White #F7F7F7
+    ★ ไม่ได้ย่อโลโก้เต็มมาทำ favicon เพราะ CI ห้ามตัดส่วนใดของโลโก้
+  -->
+  <rect width="32" height="32" rx="7" fill="#E9242B"/>
+  <path d="M16 6c4.2 4.9 7 8.6 7 11.6a7 7 0 1 1-14 0C9 14.6 11.8 10.9 16 6z" fill="#F7F7F7"/>
 </svg>
