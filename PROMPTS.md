@@ -386,10 +386,15 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    (light #026BB5 / #009148 / #CBC7C8 · dark #4E80BF / #4CA062 / #6D6C71)
    --chart-seq-* → บันได Blue ตาม §3.3 (data-water / data-water-soft)
    ★ ต้องแก้ chart-tokens.ts ให้ CHART_SERIES เหลือ 2 และ seriesColor() throw ที่ 2 ไม่ใช่ 8
-   ★ เพิ่ม token ใหม่ --control-checked (Argent-900 / dark Lynx White) ตาม §3.3
+   ★ เพิ่ม token ใหม่ 3 ตัวตาม §3.3:
+     --control-checked  Argent-900 #515558  / dark Lynx White #F7F7F7
+     --info             Blue-500  #026BB5   / dark Blue-100   #A5AECF
+     --info-strong      Blue-800  #536281   (ข้อความ Lynx White) ใช้เฉพาะชิปที่ต้องมีพื้น
    ★ แยก --ring ออกจาก --primary: --ring = Blue-500 (light) / Blue-300 (dark)
-4. ไล่ทุกจุดที่ใช้ *-primary (51 token ใน 34 บรรทัด) เข้ากลุ่มตามตารางใน §3.3
-   รายการพร้อมเลขบรรทัดอยู่ใน DESIGN_PLAN ข้อ 11 — 20 token ที่ยังจัดไม่ลงต้องได้คำตอบก่อนเริ่มเฟสนี้
+4. ไล่ทุกจุดที่ใช้ *-primary (51 token ใน 34 บรรทัด / 23 ไฟล์) เข้ากลุ่มตามตารางใน §3.3
+   ปลายทางของทุกบรรทัดระบุไว้แล้วใน DESIGN_PLAN ข้อ 11:
+     brand 18 · info 19 · data-water 7 · Argent-900 (progress งาน) 4 · control-checked 3 · status-ok 1
+   ชิป info ไม่มีพื้นเป็นค่าตั้งต้น (§3.3) — ห้ามทำพื้นอ่อนจาก opacity
 5. tailwind.config.ts: คงรูปแบบ hsl(var(--x)) ไว้ ห้ามใส่ hex เพิ่มชื่อ token ใหม่ที่ §3.3 ต้องการ
    radius ตาม §6.2 — เพิ่มเป็นตัวแปรใหม่ อย่าทับ --radius ที่ shadcn ใช้อยู่
 6. app/layout.tsx: themeColor 2 ค่า import จาก theme.ts ตาม §3.7 (นี่คือจุดเดียวที่แตะไฟล์นี้)
@@ -407,7 +412,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 จุดหยุดถาม:
 - ต้องรัน pip install fonttools บนเครื่องพัฒนา — แจ้งก่อนทำ (ไม่ได้เพิ่มใน package.json)
 - ถ้าการลด --chart-1..8 เหลือ 3 ทำให้กราฟที่มีอยู่พัง — ดูลิสต์ผลกระทบท้ายข้อ 9 ของ DESIGN_PLAN
-- ถ้าเจอจุดที่ใช้ *-primary แล้วจัดเข้ากลุ่มใน §3.3 ไม่ได้ ให้หยุดถาม ห้ามเดา
+- ถ้าเจอจุดที่ใช้ *-primary นอกเหนือจาก 34 บรรทัดที่ลิสต์ไว้ และจัดเข้ากลุ่มใน §3.3 ไม่ได้ ให้หยุดถาม ห้ามเดา
 ```
 
 ---
@@ -443,7 +448,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 6. lib/config/anomaly-types.ts: tone ต้องชี้ semantic token (ตอนนี้ใช้ tone: EntityStatus อยู่แล้ว
    และไม่มี hex) — ตรวจว่า UNKNOWN_ANOMALY_TYPE ได้ text-secondary + ไอคอน default ตาม §3.7
 6.1 สวิตช์ที่ใช้ bg-status-ok เป็นสถานะ "เปิด" (components/settings/field.tsx:209,
-   components/control/schedule-panel.tsx:216) ต้องย้ายมาใช้ control-checked ตาม §3.3
+   components/control/schedule-panel.tsx:216) ย้ายมาใช้ control-checked ตาม §3.3 — ตัดสินแล้ว
    ไม่งั้นสวิตช์จะสื่อว่า "สถานะปกติ" แทน "ติ๊กแล้ว" — ดู DESIGN_PLAN ข้อ 11
 7. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/ai/anomaly-type-badge.tsx (4), components/diagram/diagram-primitives.tsx (4),
    components/pumps/pump-card.tsx (1) — รวม 9 จุด

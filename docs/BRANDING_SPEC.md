@@ -116,6 +116,8 @@ Neutral: Lynx White `#F7F7F7` (พื้นหน้า), `#FFFFFF` (พื้�
 | `data-series-2` | Green-500 `#009148` (dark: Green-300 `#4CA062`) | ชุดที่สองเมื่อเป็นตัวแปรคนละชนิด |
 | `data-reference` | Argent-100 `#CBC7C8` (dark: Argent-800 `#6D6C71`) | ชุดอ้างอิง/ช่วงก่อนหน้า ที่ต้องถอยหลังฉาก |
 | `control-checked` | Argent-900 `#515558` (dark: Lynx White `#F7F7F7`) | Switch / Checkbox / Radio / Slider สถานะติ๊กแล้ว |
+| `info` | Blue-500 `#026BB5` (dark: **Blue-100 `#A5AECF`**) | ข้อความ/ไอคอนเชิงแจ้งให้ทราบและสถานะ "กำลังดำเนินการ" ในพื้นที่ข้อมูล |
+| `info-strong` | Blue-800 `#536281` + ข้อความ Lynx White | พื้นของชิป info เมื่อจำเป็นต้องมีพื้นจริง ๆ (5.71 : 1) |
 | `focus-ring` | Blue-500 `#026BB5` | keyboard focus |
 
 **กฎการใช้แดง:** แดงใน chrome (โลโก้, nav active, ปุ่ม primary) = แบรนด์ ส่วนแดงในพื้นที่ข้อมูล (การ์ด, กราฟ, ตาราง) = วิกฤตเท่านั้น ห้ามใช้แดงตกแต่งในพื้นที่ข้อมูล
@@ -127,10 +129,15 @@ Neutral: Lynx White `#F7F7F7` (พื้นหน้า), `#FFFFFF` (พื้�
 | ใช้ที่ | token ใหม่ |
 |---|---|
 | ปุ่ม primary, nav active, tabs, ลิงก์หลัก | `brand` (Cinnabar) |
-| focus ring | `--ring` = Blue-500 |
+| focus ring | `--ring` = Blue-500 (dark: Blue-300) |
 | Switch / Checkbox / Radio / Slider สถานะติ๊กแล้ว | `control-checked` = Argent-900 (dark: Lynx White) |
 | Progress ที่แสดงปริมาณน้ำ | `data-water` |
 | Progress ของงาน (OTA, export) | Argent-900 |
+| ข้อความ/ไอคอนแจ้งให้ทราบ, สถานะ "กำลังส่ง / รอผลตอบกลับ", กล่องคำแนะนำ | `info` |
+
+**ชิป `info` ไม่มีพื้นเป็นค่าตั้งต้น** — ใช้ไอคอน + ข้อความสี `info` บนผิวการ์ด (มี `border` ได้)
+รูปแบบเดียวกับ pill "ปกติ/offline" ในข้อ 3.4 เพราะไม่มีคู่ในบันได Blue ที่ให้ contrast ถึง 4.5 : 1
+(Blue-900 บน Blue-100 ได้แค่ 3.74 : 1) ถ้าจำเป็นต้องมีพื้นจริง ๆ ให้ใช้ `info-strong`
 
 รายการทุกจุดในโค้ดพร้อมจำนวน อยู่ใน `docs/DESIGN_PLAN.md` ข้อ 11
 

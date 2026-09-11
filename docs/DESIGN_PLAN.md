@@ -2,7 +2,8 @@
 
 > ผลของ **Phase 7.0** ตาม `PROMPTS.md` — เอกสารอย่างเดียว ยังไม่แก้ UI
 > สเปกอยู่ที่ `docs/BRANDING_SPEC.md` ไฟล์นี้อ้างอิงด้วยเลขข้อ ไม่คัดลอกเนื้อหา
-> จัดทำ 2026-09-11 · แก้รอบสอง 2026-09-11 หลังได้คำตอบ open question ข้อ 1, 2, 6, 7
+> จัดทำ 2026-09-11 · แก้รอบสอง–สาม 2026-09-11 หลังได้คำตอบ open question ข้อ 1, 2, 3, 4, 8
+> **เหลือ open question ที่ยังค้าง 3 ข้อ (5, 6, 7) ซึ่งเป็นเรื่องที่ต้องถามองค์กร ไม่บล็อก Phase 7.1**
 
 ---
 
@@ -402,7 +403,7 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 
 ---
 
-## 11. การแยกความหมายของ `--primary` — ★ มีจุดที่จัดไม่ลง ต้องตัดสินใจ
+## 11. การแยกความหมายของ `--primary` — ★ ตัดสินแล้วครบ 51 token
 
 นับด้วย `grep -rnE "\b[a-z]+-primary(-foreground)?(/[0-9]{1,3})?\b" app components --include='*.tsx'`
 → **51 token ใน 34 บรรทัด / 23 ไฟล์**
@@ -413,7 +414,8 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 | Switch / Checkbox / Radio / Slider ติ๊กแล้ว | `control-checked` | **3** |
 | Progress / ตัวเลขที่เป็นปริมาณน้ำ | `data-water` | **7** |
 | Progress ของงาน (OTA, export) | Argent-900 | **4** |
-| **จัดไม่ลงทั้ง 4 กลุ่ม** | — | **20** |
+| ข้อความ/ไอคอนแจ้งให้ทราบ, สถานะกำลังดำเนินการ | `info` *(token ใหม่)* | **19** |
+| แท่งคะแนน anomaly ช่วงต่ำ | `status-ok` | **1** |
 
 ### รายละเอียดกลุ่มที่จัดได้
 
@@ -436,45 +438,62 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 **Argent-900 progress งาน (4)** — `components/devices/device-detail-panel.tsx:204` (ข้อความ OTA) ·
 `app/reports/page.tsx:148` (ข้อความ export)
 
-### ★ 20 token ที่จัดไม่ลง
+### ★ 20 token ที่เหลือ — ตัดสิน 2026-09-11 ใช้ทางเลือก (ก)
 
-**(i) ข้อมูลเชิงแจ้งให้ทราบ / กำลังดำเนินการ ที่อยู่ในพื้นที่ข้อมูล — 17 token / 9 บรรทัด**
+**เพิ่ม token ใหม่ `info`** แล้วให้กลุ่ม (i) ทั้งหมดไปใช้
 
-| ไฟล์:บรรทัด | token | ใช้ทำอะไร |
-|---|---|---|
-| `components/control/command-status.tsx:22` | 3 | สถานะคำสั่ง "กำลังส่ง / รอผลตอบกลับ" คู่กับ ok/warning/critical |
-| `components/control/audit-log.tsx:14,15` | 2 | สีของ `sending` และ `awaiting_feedback` ใน audit log |
-| `components/ai/ai-overview-widget.tsx:45` | 2 | ชิปสรุปตอน**ไม่มี**เรื่องวิกฤต (คู่กับ `bg-status-critical/15`) |
-| `components/control/confirm-dialog.tsx:86` | 2 | กล่องยืนยันแบบ**ไม่ทำลาย** (คู่กับ `bg-status-critical/15`) |
-| `components/ai/anomaly-card.tsx:150` | 2 | กล่องคำแนะนำจาก AI |
-| `components/ai/ai-summary-card.tsx:57` | 2 | ไอคอนหัวการ์ดสรุป AI |
-| `components/environment/environment-card.tsx:107` | 2 | ชิป "ฝนตก" |
-| `components/control/pin-gate.tsx:79` | 2 | ไอคอนใน dialog ใส่ PIN |
+| ไฟล์:บรรทัด | token | ใช้ทำอะไร | ปลายทาง |
+|---|---|---|---|
+| `components/control/command-status.tsx:22` | 3 | สถานะ "กำลังส่ง / รอผลตอบกลับ" | `info` |
+| `components/control/audit-log.tsx:14,15` | 2 | `sending` / `awaiting_feedback` ใน audit log | `info` |
+| `components/ai/ai-overview-widget.tsx:45` | 2 | ชิปสรุปตอนไม่มีเรื่องวิกฤต | `info` |
+| `components/control/confirm-dialog.tsx:86` | 2 | กล่องยืนยันแบบไม่ทำลาย | `info` |
+| `components/ai/anomaly-card.tsx:150` | 2 | กล่องคำแนะนำจาก AI | `info` |
+| `components/ai/ai-summary-card.tsx:57` | 2 | ไอคอนหัวการ์ดสรุป AI | `info` |
+| `components/environment/environment-card.tsx:107` | 2 | ชิป "ฝนตก" | `info` |
+| `components/control/pin-gate.tsx:79` | 2 | ไอคอนใน dialog ใส่ PIN | `info` |
+| `components/control/valve-control-card.tsx:90` | 1 | ลายทางตอนวาล์วกำลังเคลื่อน | `info` |
+| `components/ai/anomaly-card.tsx:118` | 1 | แท่งคะแนน anomaly ช่วง < 50% | `status-ok` |
+| `components/control/valve-control-card.tsx:54` | 1 | ขอบการ์ดโซน VIP | `brand` |
 
-ทั้งหมดนี้เป็นสีน้ำเงิน**โดยบังเอิญ** เพราะ `--primary` เดิมเป็นน้ำเงิน
-ถ้าปล่อยให้กลายเป็น Cinnabar จะได้แดงในพื้นที่ข้อมูล ซึ่ง **§3.3 ห้ามไว้ชัดเจน** (แดง = วิกฤตเท่านั้น)
-และห้าหกจุดในนั้นวางคู่กับ `status-critical` โดยตรง → จะแยกไม่ออกว่าอันไหนวิกฤตอันไหนไม่
+→ `info` 19 token · `status-ok` 1 · `brand` 1 (รวมเข้ากลุ่ม brand เดิมเป็น 18)
 
-**(ii) การเน้นที่ไม่ใช่แบรนด์ — 3 token / 3 บรรทัด**
+### ค่าของ `info` และสิ่งที่ต้องแก้จากคำแนะนำเดิม
 
-| ไฟล์:บรรทัด | token | ใช้ทำอะไร |
-|---|---|---|
-| `components/ai/anomaly-card.tsx:118` | 1 | แท่งคะแนน anomaly ช่วง **< 50%** (คู่กับ warning ที่ ≥50 และ critical ที่ ≥80) |
-| `components/control/valve-control-card.tsx:54` | 1 | ขอบการ์ดของโซน **VIP** |
-| `components/control/valve-control-card.tsx:90` | 1 | ลายทางตอนวาล์ว**กำลังเคลื่อน** (ใช้ `currentColor`) |
+คำแนะนำเดิมเสนอ dark = Blue-300 **ซึ่งใช้ไม่ได้** เมื่อเอาไปเป็นสีข้อความบนการ์ดของ dark mode
 
-### ทางเลือก
+| ขั้น | บนขาว | บน Argent-950 `#36383A` | บน Argent-1000 `#202123` |
+|---|---|---|---|
+| Blue-500 `#026BB5` | **5.57** ✓ | 2.12 ✗ | 2.90 ✗ |
+| Blue-300 `#4E80BF` | 4.07 ✗ | 2.90 ✗ | 3.96 ✗ |
+| Blue-200 `#8290B5` | 3.18 ✗ | 3.70 ✗ | 5.07 ✓ |
+| **Blue-100 `#A5AECF`** | 2.20 ✗ | **5.36** ✓ | **7.33** ✓ |
 
-- **(ก) เพิ่ม token `info` = Blue-500** (dark: Blue-300) แล้วให้กลุ่ม (i) ทั้ง 17 token ไปใช้
-  Blue-500 มี contrast 5.57 : 1 บนพื้นขาว · ไม่ชนกับสถานะใด ๆ · ไม่ชนกับ `data-water` เพราะอยู่คนละบริบท
-  (i) จบครบ ส่วน (ii): คะแนน < 50% → `status-ok`, ขอบ VIP → `brand`, ลายวาล์วกำลังเคลื่อน → `info`
-- **(ข) ใช้ `data-water` (Blue) กับกลุ่ม (i) เลย ไม่เพิ่ม token ใหม่** — สีเดียวกับ (ก) แต่ชื่อ token สื่อ "ข้อมูลน้ำ"
-  ซึ่งผิดความหมายเมื่อใช้กับ dialog PIN หรือ audit log
-- **(ค) ใช้ `text-secondary` (Argent-800) กับกลุ่ม (i) ทั้งหมด** — ไม่ต้องเพิ่ม token
-  แต่สถานะ "กำลังส่ง / รอผลตอบกลับ" จะกลายเป็นเทาเหมือน offline ซึ่งสื่อผิด
+**ค่าที่ใช้จริง: `info` = Blue-500 `#026BB5` (light) / Blue-100 `#A5AECF` (dark)**
+เป็นรูปแบบเดียวกับที่สีอื่นในระบบทำ — dark mode ไม่ได้พลิกค่าอัตโนมัติ แต่เลือกขั้นที่ตรวจกับพื้นมืดแยกต่างหาก
 
-**แนะนำ (ก)** — น้ำเงินคือสีที่จุดเหล่านี้ใช้อยู่แล้ว ผู้ใช้เห็นภาพเดิม และแยก `info` ออกจาก `data-water`
-ทำให้ test whitelist กับการไล่ตรวจในเฟสถัด ๆ ไปตรวจได้ว่าใครใช้ token ผิดบริบท
+### พื้นของชิป `info`
+
+จุดเหล่านี้ 8 ใน 11 บรรทัดใช้ `bg-primary/10` เป็นพื้นอ่อนอยู่ ซึ่งกฎ opacity ใหม่ให้เปลี่ยนไปใช้ขั้นจากบันได
+แต่**ไม่มีคู่ใดในบันได Blue ที่ให้ contrast ถึง 4.5 : 1**
+
+| ข้อความ / พื้น | contrast |
+|---|---|
+| Blue-900 `#4B4E5F` บน Blue-100 `#A5AECF` | 3.74 : 1 |
+| Blue-800 `#536281` บน Blue-100 | 2.78 : 1 |
+| Blue-500 `#026BB5` บน Blue-100 | 2.53 : 1 |
+| Lynx White `#F7F7F7` บน Blue-800 `#536281` | **5.71 : 1** ✓ |
+
+**ทางออกที่เลือก: ชิป `info` ไม่มีพื้นเป็นค่าตั้งต้น** — ไอคอน + ข้อความสี `info` บนผิวการ์ด มี `border` ได้
+รูปแบบเดียวกับ pill "ปกติ / offline" ในข้อ 3.4 ที่ไม่มีพื้นเหมือนกัน
+ถ้าจุดไหนจำเป็นต้องมีพื้นจริง ๆ ให้ใช้ `info-strong` = พื้น Blue-800 + ข้อความ Lynx White (5.71 : 1)
+
+### สวิตช์ที่ใช้ `bg-status-ok` เป็นสถานะ "เปิด"
+
+ยืนยันให้ย้ายมาใช้ `control-checked` ทั้ง 2 จุด (`components/settings/field.tsx:209`,
+`components/control/schedule-panel.tsx:216`) — สวิตช์บอก "ติ๊กแล้ว" ไม่ใช่ "สถานะปกติ"
+ถ้าปล่อยเป็นเขียวจะชนกับความหมายของ status pill ในข้อ 3.4
+contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10.99 : 1
 
 ---
 
@@ -501,9 +520,9 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 | 1 | สีชุดข้อมูลของกราฟ | **ปิดแล้ว** — เลือก (ก) 2 สีหลัก + Argent อ้างอิง (ข้อ 9) |
 | 2 | สัดส่วนกล่องโลโก้ | **ปิดแล้ว** — extract ใหม่จากหน้า 11 ได้ 1.4017 (ข้อ 4) |
 | 3 | `temp-vs-usage-chart` dual-axis | **ปิดแล้ว** — คงไว้ใน Phase 7 เปิดเป็นงานแยก (ข้อ 10, 12.1) |
-| 4 | การแยกความหมาย `--primary` | **ปิดบางส่วน** — 31/51 token จัดเข้ากลุ่มแล้ว **เหลือ 20 token ที่ต้องตัดสิน** (ข้อ 11) |
+| 4 | การแยกความหมาย `--primary` | **ปิดแล้ว** — 51/51 token จัดเข้ากลุ่มครบ เพิ่ม token `info` (ข้อ 11) |
 | 5 | ไฟล์โลโก้ต้นฉบับ | **ค้าง** — ที่ได้เป็น JPEG สีกล่องคลาด 8/255 ควรขอไฟล์ ai/svg/png จากองค์กร |
 | 6 | Favicon | **ค้าง** — คงรูปทรงเดิมเปลี่ยนสีใน 7.3 แล้ว แต่ยังต้องถามว่าองค์กรมี favicon ทางการหรือไม่ |
 | 7 | Argent-950 / Argent-1000 | **ค้าง** — 2 ค่าที่อยู่นอก CI ต้องแจ้งเจ้าของแบรนด์ |
-| 8 | สวิตช์ที่ใช้ `bg-status-ok` เป็นสถานะ "เปิด" | **ค้าง** — 2 จุด ต้องย้ายมาใช้ `control-checked` ตามกติกาใหม่หรือไม่ (ข้อ 11) |
+| 8 | สวิตช์ที่ใช้ `bg-status-ok` เป็นสถานะ "เปิด" | **ปิดแล้ว** — ย้ายมาใช้ `control-checked` ทั้ง 2 จุด ทำใน 7.2 (ข้อ 11) |
 | 9 | ความจางของชุดอ้างอิงใน light mode | **เฝ้าดู** — Argent-100 ได้ 1.67 : 1 ถ้าอ่านไม่ออกบนจอแขวนผนัง ให้หยุดรายงาน (ข้อ 9) |
