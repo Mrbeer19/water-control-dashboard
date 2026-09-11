@@ -23,7 +23,7 @@ export function UsersSection({ draft, onChange }: SettingsSectionProps): JSX.Ele
 
   return (
     <div className="space-y-5">
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <ToggleField
           label={t.settings.requirePin}
           checked={security.requirePinForControl}

@@ -237,5 +237,20 @@ function contrast(a, b) {
   else fail('ชื่อ token สี', `ไม่มีชื่อนี้ใน tailwind.config.ts:\n         ${[...new Set(bad)].join('\n         ')}`);
 }
 
+/* ---------- 7. Cinnabar-500 ใช้เป็นพื้นได้เฉพาะปุ่มขนาด lg ---------- */
+{
+  /*
+   * ข้อ 3.5: ตัวอักษรบนพื้น Cinnabar-500 (`bg-primary`) ต้อง ≥ 16px / weight 600
+   * ที่เดียวที่การันตีขนาดนั้นได้คือ compoundVariant ของปุ่มขนาด lg
+   * ที่อื่นให้ใช้ `bg-brand-strong` (Cinnabar-700) ซึ่งผ่าน 4.8:1 ทุกขนาด
+   */
+  const ALLOWED = 'components/ui/button.tsx';
+  const offenders = sources
+    .filter((f) => f !== ALLOWED)
+    .flatMap((f) => ((read(f).match(/\bbg-primary\b(?!\/)/g) ?? []).map(() => f)));
+  if (offenders.length === 0) pass('พื้น Cinnabar-500 (ข้อ 3.5)', `ใช้เฉพาะใน ${ALLOWED}`);
+  else fail('พื้น Cinnabar-500 (ข้อ 3.5)', `ใช้นอกปุ่มขนาด lg — ตัวอักษรอาจเล็กกว่า 16px:\n         ${[...new Set(offenders)].join('\n         ')}`);
+}
+
 console.log(failed === 0 ? '\nสีผ่านทุกข้อ\n' : `\nไม่ผ่าน ${failed} ข้อ\n`);
 process.exit(failed === 0 ? 0 : 1);

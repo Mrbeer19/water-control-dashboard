@@ -46,7 +46,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         />
       </div>
 
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <p className="mb-2 text-sm font-semibold">{t.settings.quietHours}</p>
         <ToggleField
           label={t.settings.quietHours}
@@ -83,7 +83,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         )}
       </div>
 
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <p className="mb-1 text-sm font-semibold">{t.alerts.delivery}</p>
         {CHANNELS.map((channel) => (
           <ToggleField
@@ -102,7 +102,7 @@ export function AlertsSection({ draft, onChange }: SettingsSectionProps): JSX.El
         ))}
       </div>
 
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <ToggleField
           label={t.alerts.acknowledgedBy}
           hint={draft.notifications.notifyDepartmentManager ? 'ส่งให้หัวหน้าแผนกที่รับผิดชอบด้วย' : 'ส่งเฉพาะช่องทางกลาง'}

@@ -615,9 +615,9 @@ contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10
 
 | รายการ | ผล |
 |---|---|
-| `npm run check:colors` | ผ่านทั้ง 6 ข้อ — hex เหลือเฉพาะ `theme.ts` · Tailwind palette 0 · whitelist 86/86 · contrast 29/29 · **opacity 0 จุด** · ชื่อ token 22/22 |
+| `npm run check:colors` | ผ่านทั้ง **7 ข้อ** — hex เหลือเฉพาะ `theme.ts` · Tailwind palette 0 · whitelist 86/86 · contrast 29/29 · **opacity 0 จุด** · ชื่อ token 22/22 · พื้น Cinnabar-500 อยู่ในปุ่ม lg เท่านั้น |
 | `npx tsc --noEmit` / `npm run lint` / `npm run build` | ผ่านทั้งหมด |
-| scrollWidth ที่ 375 px | ทั้ง 9 หน้า = 375/375 **ไม่ล้น** (เดิม 404 ล้น 29 px) |
+| scrollWidth ที่ 375 px | ทั้ง 9 หน้า = 375/375 **ไม่ล้น** ทั้งโหมดสว่างและมืด (เดิม 404 ล้น 29 px) |
 | scrollWidth ที่ 1920 px | ทั้ง 9 หน้า = 1920/1920 ไม่ล้น |
 | ฟอนต์ | `@font-face` ทุกตัวชี้ไป `/_next/static/media/…` ไม่มี URL ภายนอกใน CSS ที่ build ออกมา |
 | i18n | th 514 คีย์ · en 514 คีย์ · ไม่มีคีย์ที่มีข้างเดียว |
@@ -636,3 +636,16 @@ contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10
 `public/__measure.html` (อยู่ใน `.gitignore`) เป็นหน้าเปล่าที่ฝัง iframe ความกว้างคงที่แล้ววัด `scrollWidth`
 ใช้คู่กับ Chrome headless `--dump-dom` เพราะหน้าต่าง Chrome บน macOS ย่อต่ำกว่า 500 px ไม่ได้
 และ `--screenshot --window-size` ที่ความกว้างแคบให้ผลไม่ตรง (เรนเดอร์ที่ความกว้างเดิมแล้วค่อยครอป)
+
+### รอบรีวิวตัวเอง (หลังปิด 7.8b)
+
+ไล่ตรวจงานของตัวเองอีกรอบแล้วแก้เพิ่ม 3 จุด
+
+1. **`scenario-switcher.tsx` วางตัวอักษร 12px บนพื้น Cinnabar-500** ซึ่งผิดข้อ 3.5
+   แก้เป็น `bg-brand-strong` (Cinnabar-700) แล้วเพิ่มข้อที่ 7 ใน `check-colors.mjs`
+   บังคับว่า `bg-primary` ใช้ได้เฉพาะใน `components/ui/button.tsx` (compoundVariant ของขนาด lg)
+2. **`rounded-section` ประกาศไว้แต่ไม่มีใครใช้** — เอาไปใช้กับแผงในหน้าตั้งค่า 11 จุด
+   ซึ่งเป็น "Section container" ตามนิยามข้อ 6.2 จริง ๆ
+3. **แผนที่สีสถานะที่ยังเหลือ 5 จุด** (`diagram-primitives.tsx` 4 แผนที่ + `anomaly-timeline.tsx` 1)
+   ตรวจแล้วว่าถูกต้อง — เป็นบริบท SVG/Recharts ที่ใช้ `<StatusBadge>` แทนไม่ได้
+   ทั้งหมดอ้าง token ไม่มี hex และรวมศูนย์อยู่หัวไฟล์ของตัวเอง

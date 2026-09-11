@@ -45,7 +45,7 @@ export function ScenarioSwitcher({
             className={cn(
               'rounded px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              current === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+              current === option.value ? 'bg-brand-strong text-brand-strong-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {locale === 'th' ? option.labelTh : option.labelEn}

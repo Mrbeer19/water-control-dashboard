@@ -66,7 +66,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
 
   return (
     <div className="space-y-5">
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <ToggleField
           label={t.settings.lineEnabled}
           checked={line.enabled}
@@ -83,7 +83,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* กลุ่มปลายทาง */}
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold">{t.settings.lineGroups}</p>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={addGroup}>
@@ -200,7 +200,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* เปิด/ปิดรายประเภทเหตุการณ์ */}
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <p className="mb-1 text-sm font-semibold">{t.settings.byCode}</p>
         <div className="grid gap-x-6 sm:grid-cols-2">
           {Object.entries(line.enabledCodes).map(([code, enabled]) => (
@@ -215,7 +215,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       </div>
 
       {/* ประวัติการส่ง */}
-      <div className="rounded-card border p-4">
+      <div className="rounded-section border p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold">{t.settings.deliveryHistory}</p>
           <p className="tabular text-xs text-muted-foreground">
