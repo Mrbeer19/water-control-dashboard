@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { plexThai } from './fonts';
 import { LocaleProvider } from '@/lib/i18n';
-import { AppShell } from '@/components/layout/app-shell';
+import { AuthGate } from '@/components/layout/auth-gate';
 import { THEME_INIT_SCRIPT, ThemeProvider } from '@/components/layout/theme-provider';
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
       <body className={`${plexThai.variable} font-sans`}>
         <ThemeProvider>
           <LocaleProvider>
-            <AppShell>{children}</AppShell>
+            <AuthGate>{children}</AuthGate>
           </LocaleProvider>
         </ThemeProvider>
       </body>

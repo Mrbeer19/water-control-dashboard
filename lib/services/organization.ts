@@ -4,6 +4,7 @@ import type { Department, DepartmentUsage, User } from '@/lib/types';
 import { CURRENT_USER_ID } from '@/lib/mock';
 import { currentBillingPeriod, round, splitIntoTiers } from '@/lib/utils/calculation';
 import { respond } from './internal';
+import { getSession } from './auth';
 
 /**
  * TODO(backend): GET /api/departments
@@ -20,10 +21,14 @@ export async function getUsers(): Promise<User[]> {
 }
 
 /**
- * ผู้ใช้ที่ล็อกอินอยู่ — Phase 0 ยังไม่มีระบบล็อกอินจริง จึงคืนผู้ใช้สมมติ
+ * ผู้ใช้ที่ล็อกอินอยู่ — อ่านจากเซสชันของหน้าล็อกอิน
+ * ถอยไปใช้ผู้ใช้สมมติเมื่อยังไม่มีเซสชัน เพื่อให้หน้าอื่นยังทดสอบได้โดยไม่ต้องล็อกอิน
+ *
  * TODO(backend): GET /api/auth/me  (คืน User + สิทธิ์ที่มีผลจาก departmentScopedAccess)
  */
 export async function getCurrentUser(): Promise<User | null> {
+  const session = await getSession();
+  if (session !== null) return session.user;
   return respond((state) => state.users.find((user) => user.id === CURRENT_USER_ID) ?? null);
 }
 

@@ -218,6 +218,30 @@ export interface User {
   active: boolean;
 }
 
+/**
+ * เซสชันของผู้ใช้ที่ล็อกอินอยู่
+ *
+ * ★ ระบบนี้เป็น frontend อย่างเดียว การล็อกอินจึงเป็น UI เท่านั้น
+ *   ไม่มีการตรวจรหัสผ่านจริงและไม่มีการเก็บรหัสผ่านไว้ที่ไหนทั้งสิ้น
+ *   เมื่อต่อหลังบ้าน token ต้องออกจากเซิร์ฟเวอร์และเก็บใน httpOnly cookie
+ *   ห้ามเก็บใน localStorage เพราะสคริปต์ในหน้าอ่านได้
+ */
+export interface AuthSession {
+  user: User;
+  signedInAt: ISODateTime;
+  /** หมดอายุตาม SecuritySettings.sessionTimeoutMinutes */
+  expiresAt: ISODateTime;
+}
+
+/** ผลการพยายามล็อกอิน */
+export interface SignInResult {
+  ok: boolean;
+  session: AuthSession | null;
+  /** ข้อความอธิบายเมื่อล็อกอินไม่ผ่าน — null เมื่อสำเร็จ */
+  errorTh: string | null;
+  errorEn: string | null;
+}
+
 /** ผู้กระทำที่บันทึกไว้ในเรกคอร์ด — เก็บชื่อคู่มาเพื่อให้ log อ่านได้โดยไม่ต้อง join */
 export interface ActorRef {
   userId: string;

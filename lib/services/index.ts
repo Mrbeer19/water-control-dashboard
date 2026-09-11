@@ -3,6 +3,7 @@
  * ★ component ต้อง import จากที่นี่เท่านั้น ห้ามแตะ lib/mock/ โดยตรง
  */
 
+export * from './auth';
 export * from './subscription';
 export * from './organization';
 export * from './tanks';

@@ -73,6 +73,21 @@ Frontend ของระบบมอนิเตอร์และควบค�
 | GET | `/api/departments/usage?from=&to=` | `DepartmentUsage[]` |
 | GET | `/api/users` | `User[]` |
 | GET | `/api/auth/me` | `User` — คืนสิทธิ์ที่มีผลจริงหลังคิด `departmentScopedAccess` แล้ว |
+| POST | `/api/auth/login` body `{ username, password }` | `AuthSession` |
+| POST | `/api/auth/logout` | — |
+| GET | `/api/auth/session` | `AuthSession` \| `null` |
+| POST | `/api/auth/refresh` | `AuthSession` |
+
+> **★★ หน้า `/login` ตอนนี้เป็น UI อย่างเดียว ไม่ใช่ระบบยืนยันตัวตนจริง ★★**
+> รหัสผ่านไม่ถูกตรวจและไม่ถูกเก็บที่ไหนเลย เซสชันอยู่ใน `localStorage` ซึ่งสคริปต์ในหน้าอ่านได้
+> การกั้นหน้าใน `components/layout/auth-gate.tsx` ก็เป็นการกั้นฝั่งหน้าจอเท่านั้น เปิด devtools ก็ข้ามได้
+>
+> **ตอนต่อของจริงต้องเปลี่ยนทั้งหมดนี้:**
+> 1. ตรวจรหัสผ่านที่เซิร์ฟเวอร์ ห้ามตรวจที่หน้าจอ
+> 2. ออก token จากเซิร์ฟเวอร์แล้วเก็บใน **httpOnly cookie** ห้ามเก็บใน `localStorage`
+> 3. กั้นด้วย middleware ที่ตรวจ cookie **ก่อนส่ง HTML ออกมา** ไม่ใช่กั้นหลังโหลดหน้า
+> 4. ให้เซิร์ฟเวอร์เป็นคนกำหนดและต่ออายุเซสชัน ไม่ใช่ให้หน้าจอคำนวณวันหมดอายุเอง
+> 5. `demoAccounts()` ใน `lib/services/auth.ts` ต้องลบทิ้ง
 
 ### 2.3 สภาพแวดล้อม
 
@@ -268,6 +283,7 @@ service ให้ยิง endpoint ตามตารางข้างบน *
 | 3 | `lib/services/*.ts` (14 ไฟล์โดเมน) | เปลี่ยน body ของแต่ละฟังก์ชันให้ยิง endpoint จริง |
 | 4 | `lib/services/settings.ts` | `readOverrides`/`writeOverrides` → GET/PATCH `/api/settings` |
 | 5 | `lib/services/ai.ts` | **ลบ `getScenario` / `setScenario` / `SCENARIO_OPTIONS` ทิ้ง** — ของจริงไม่มีปุ่มสลับสถานการณ์ |
+| 6 | `lib/services/auth.ts` | **เขียนใหม่ทั้งไฟล์** — ดูข้อควรระวังในหัวข้อ 2.2 และลบ `demoAccounts()` ทิ้ง |
 
 ### 4.3 ไฟล์ที่ลบได้ทั้งหมดเมื่อต่อของจริงแล้ว
 
@@ -275,6 +291,8 @@ service ให้ยิง endpoint ตามตารางข้างบน *
 lib/mock/                          ทั้งโฟลเดอร์ (13 ไฟล์)
 components/ai/scenario-switcher.tsx
 ```
+
+ส่วนการ์ด "บัญชีสำหรับทดลอง" ในหน้า `/login` ต้องเอาออกด้วยเมื่อมี auth จริง
 
 ตอนลบ `lib/mock/` ต้องเอา import ที่เหลือออกด้วย — ค้นด้วย `grep -rn "lib/mock" lib/`
 (ตอนนี้ `components/` และ `app/` ไม่มี import จาก `lib/mock` เลย ตรวจแล้วเป็น 0)

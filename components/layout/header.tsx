@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LangToggle } from './lang-toggle';
 import { ThemeToggle } from './theme-toggle';
+import { UserMenu } from './user-menu';
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -103,6 +104,8 @@ export function Header({ onOpenMenu }: HeaderProps): JSX.Element {
 
         <LangToggle />
         <ThemeToggle />
+        <div className="hidden h-6 w-px bg-border sm:block" aria-hidden />
+        <UserMenu />
       </div>
     </header>
   );
