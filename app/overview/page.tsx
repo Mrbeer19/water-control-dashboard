@@ -61,7 +61,7 @@ export default function FlowDiagramPage(): JSX.Element {
           <Legend className="bg-status-critical" label={t.status.critical} />
           <Legend className="bg-status-offline" label={t.status.offline} />
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-6 rounded-full border-2 border-dashed border-status-critical" aria-hidden />
+            <span className="inline-block h-1.5 w-6 rounded-full border-2 border-dashed border-primary" aria-hidden />
             {t.diagram.anomalyHere}
           </span>
           <span>{t.diagram.flowSpeed}</span>

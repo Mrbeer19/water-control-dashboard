@@ -29,9 +29,15 @@ const NODE_SUB: Record<EntityStatus, string> = {
   offline: 'fill-muted-foreground',
 };
 
+/**
+ * สีเส้นน้ำในท่อ — BRANDING_SPEC ข้อ 7 แถว /overview กำหนดให้ท่อใช้บันไดสีน้ำ
+ * สถานะของอุปกรณ์สื่อผ่านกล่อง node ไม่ใช่ผ่านสีของท่อ
+ * ★ ยกเว้นสองกรณีที่ท่อต้องบอกเองเพราะไม่มี node กำกับ: วิกฤต (แดง = วิกฤตเท่านั้น ข้อ 3.3)
+ *   และ offline (ไม่รู้ว่ามีน้ำไหลจริงไหม จึงไม่ควรวาดเป็นสีน้ำ)
+ */
 const STROKE: Record<EntityStatus, string> = {
-  ok: 'stroke-status-ok',
-  warning: 'stroke-status-warning',
+  ok: 'stroke-water',
+  warning: 'stroke-water',
   critical: 'stroke-status-critical',
   offline: 'stroke-status-offline',
 };
@@ -122,7 +128,8 @@ export function DiagramNode({
           height={height + 8}
           rx={10}
           fill="none"
-          className="node-alarm stroke-status-critical"
+          // จุดที่ AI ตรวจพบใช้ Cinnabar-500 ตามข้อ 7 (glow บนผังอนุญาต)
+          className="node-alarm stroke-primary"
         />
       )}
       <rect width={width} height={height} rx={8} strokeWidth={1.5} className={NODE_FILL[status]} />

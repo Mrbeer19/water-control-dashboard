@@ -272,9 +272,10 @@ export function FlowDiagram({ data }: { data: FlowDiagramData }): JSX.Element {
               }
             }}
           >
-            <rect width={140} height={44} rx={8} strokeWidth={1.5} className="fill-muted/40 stroke-border" />
+            <rect width={140} height={44} rx={8} strokeWidth={1.5} className="fill-secondary stroke-border" />
             <foreignObject x={7} y={9} width={16} height={16}>
-              <Thermometer className="h-4 w-4 text-status-warning" aria-hidden />
+              {/* ไอคอนบอกชนิดค่าที่วัด ไม่ใช่สถานะ จึงไม่ใช้สีสถานะ (ข้อ 3.3) */}
+              <Thermometer className="h-4 w-4 text-muted-foreground" aria-hidden />
             </foreignObject>
             <foreignObject x={7} y={25} width={16} height={16}>
               <Droplet className="h-4 w-4 text-water" aria-hidden />
