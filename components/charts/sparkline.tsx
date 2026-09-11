@@ -3,6 +3,7 @@
 import { Area, AreaChart, ResponsiveContainer, YAxis } from 'recharts';
 import type { TimeSeriesPoint } from '@/lib/types';
 import { CHART } from './chart-tokens';
+import { ChartDetail } from './chart-detail';
 
 /**
  * จำนวนจุดสูงสุดที่วาด — กราฟกว้างราว 150 px การอัดพันจุดลงไปได้แค่กลุ่มเส้นหยึกหยัก
@@ -17,13 +18,24 @@ interface SparklineProps {
   height?: number;
   /** ป้ายกำกับสำหรับ screen reader — กราฟจิ๋วไม่มีแกนให้อ่าน */
   label: string;
+  /** หน่วยของค่า ใช้ในหน้าต่างดูข้อมูลละเอียด */
+  unit?: string;
+  /** ทศนิยมในหน้าต่างดูข้อมูลละเอียด */
+  decimals?: number;
 }
 
 /**
  * กราฟเส้นจิ๋วไม่มีแกน ใช้บอกแนวโน้มในการ์ด
  * ต้องมีจุดอย่างน้อย 2 จุดจึงจะวาด ไม่งั้นแสดงเส้นประแทนเพื่อไม่ให้การ์ดยุบ
  */
-export function Sparkline({ points, color = CHART.water, height = 40, label }: SparklineProps): JSX.Element {
+export function Sparkline({
+  points,
+  color = CHART.water,
+  height = 40,
+  label,
+  unit = '',
+  decimals = 1,
+}: SparklineProps): JSX.Element {
   if (points.length < 2) {
     return (
       <div
@@ -49,6 +61,12 @@ export function Sparkline({ points, color = CHART.water, height = 40, label }: S
   const gradientId = `spark-${label.replace(/\W/g, '')}`;
 
   return (
+    <ChartDetail
+      title={label}
+      unit={unit}
+      decimals={decimals}
+      points={points.map((point) => ({ timestamp: point.timestamp, value: point.value }))}
+    >
     <div className="w-full min-w-0 overflow-hidden" style={{ height }} role="img" aria-label={label}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={sampled} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -71,5 +89,6 @@ export function Sparkline({ points, color = CHART.water, height = 40, label }: S
         </AreaChart>
       </ResponsiveContainer>
     </div>
+    </ChartDetail>
   );
 }

@@ -6,6 +6,7 @@ import { getAnomalyTypeConfig } from '@/lib/config/anomaly-types';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatDate, formatNumber } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 const SEVERITY_COLOR: Record<AlertSeverity, string> = {
   critical: CHART.critical,
@@ -62,6 +63,12 @@ export function AnomalyTimeline({
   const rows = days.map((point) => ({ timestamp: point.timestamp, cubicMeters: point.cubicMeters }));
 
   return (
+    <ChartDetail
+      title={t.ai.timeline}
+      unit="m³"
+      points={rows.map((row) => ({ timestamp: row.timestamp, value: row.cubicMeters }))}
+      decimals={1}
+    >
     <div>
       <p className="mb-1 text-[11px] text-muted-foreground">{t.ai.timelineHint}</p>
       <div className="h-[150px] w-full">
@@ -104,5 +111,6 @@ export function AnomalyTimeline({
         </ResponsiveContainer>
       </div>
     </div>
+    </ChartDetail>
   );
 }

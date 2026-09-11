@@ -13,7 +13,7 @@ export interface DetailPoint {
   value: number;
 }
 
-type Grain = 'day' | 'month' | 'year';
+type Grain = 'hour' | 'day' | 'month' | 'year';
 
 interface Bucket {
   key: string;
@@ -25,22 +25,41 @@ interface Bucket {
 
 /** ช่วงที่เลือกได้ของแต่ละความละเอียด — จำนวน bucket ย้อนหลัง */
 const RANGES: Record<Grain, number[]> = {
+  hour: [12, 24, 72],
   day: [7, 30, 90],
   month: [6, 12, 24],
   year: [0], // 0 = ทั้งหมดที่มี
 };
 
+/**
+ * เลือกระดับความละเอียดที่ "มีความหมาย" จากช่วงเวลาของข้อมูลจริง
+ * ★ กราฟจิ๋วในการ์ดมีข้อมูล 24 ชม. ถ้าให้เลือกรายปีจะได้แท่งเดียว ไม่มีประโยชน์
+ *   กลับกัน ข้อมูลย้อนหลังเป็นปีถ้าให้ดูรายชั่วโมงก็จะมีเป็นพันแท่ง
+ */
+function autoGrains(points: DetailPoint[]): Grain[] {
+  if (points.length < 2) return ['day'];
+  const first = points[0]?.timestamp ?? 0;
+  const last = points[points.length - 1]?.timestamp ?? 0;
+  const days = Math.abs(last - first) / 86_400_000;
+  if (days <= 3) return ['hour'];
+  if (days <= 14) return ['hour', 'day'];
+  if (days <= 120) return ['day', 'month'];
+  return ['day', 'month', 'year'];
+}
+
 function bucketKey(grain: Grain, date: Date): string {
   const y = date.getFullYear();
   const m = `${date.getMonth() + 1}`.padStart(2, '0');
   const d = `${date.getDate()}`.padStart(2, '0');
+  const h = `${date.getHours()}`.padStart(2, '0');
   if (grain === 'year') return `${y}`;
   if (grain === 'month') return `${y}-${m}`;
+  if (grain === 'hour') return `${y}-${m}-${d}-${h}`;
   return `${y}-${m}-${d}`;
 }
 
 function bucketLabel(grain: Grain, key: string, locale: 'th' | 'en'): string {
-  const [y, m, d] = key.split('-');
+  const [y, m, d, h] = key.split('-');
   const year = Number(y);
   // ปี พ.ศ. เฉพาะภาษาไทย ให้ตรงกับที่ formatDateTimeTH ใช้ทั้งแอป
   const shownYear = locale === 'th' ? year + 543 : year;
@@ -49,6 +68,7 @@ function bucketLabel(grain: Grain, key: string, locale: 'th' | 'en'): string {
     new Date(year, Number(m) - 1, 1),
   );
   if (grain === 'month') return `${monthName} ${shownYear}`;
+  if (grain === 'hour') return `${Number(d)} ${monthName} ${h}:00`;
   return `${Number(d)} ${monthName}`;
 }
 
@@ -89,10 +109,16 @@ interface ChartDetailProps {
   decimals?: number;
   /**
    * ความละเอียดที่เลือกได้ — ค่าตั้งต้นคือครบทั้งสามระดับ
-   * ★ กราฟที่ข้อมูลดิบเป็นรายเดือนอยู่แล้วต้องส่ง ['month','year'] มา
+   * ★ ไม่ส่งมา = เลือกให้อัตโนมัติจากช่วงเวลาของข้อมูล (ดู autoGrains)
+   *   กราฟที่ข้อมูลดิบเป็นรายเดือนอยู่แล้วต้องส่ง ['month','year'] มาเอง
    *   ไม่งั้นระดับ "รายวัน" จะเอายอดทั้งเดือนไปแปะไว้ที่วันที่ 1 ซึ่งอ่านผิด
    */
   grains?: Grain[];
+  /**
+   * โหมดหมวดหมู่ — ใช้กับกราฟที่แกนนอนไม่ใช่เวลา เช่น แยกตามโซน
+   * ★ ส่งมาแล้วจะไม่มีตัวสลับ วัน/เดือน/ปี เพราะข้อมูลไม่มีมิติเวลาให้รวม
+   */
+  categories?: { label: string; value: number }[];
   /** กราฟตัวเล็กที่แสดงอยู่บนการ์ด */
   children: ReactNode;
 }
@@ -110,11 +136,13 @@ export function ChartDetail({
   points,
   loadPoints,
   decimals = 1,
-  grains = ['day', 'month', 'year'],
+  grains,
+  categories,
   children,
 }: ChartDetailProps): JSX.Element {
   const { t, locale } = useLocale();
-  const firstGrain = grains[0] ?? 'day';
+  const resolvedGrains = useMemo(() => grains ?? autoGrains(points), [grains, points]);
+  const firstGrain = resolvedGrains[0] ?? 'day';
   const [open, setOpen] = useState(false);
   const [grain, setGrain] = useState<Grain>(firstGrain);
   const [range, setRange] = useState<number>(RANGES[firstGrain][0] ?? 0);
@@ -160,9 +188,18 @@ export function ChartDetail({
   }, []);
 
   const buckets = useMemo(() => {
+    if (categories !== undefined) {
+      return categories.map((item) => ({
+        key: item.label,
+        label: item.label,
+        total: item.value,
+        count: 1,
+        peak: item.value,
+      }));
+    }
     const all = aggregate(source, grain, locale);
     return range > 0 ? all.slice(-range) : all;
-  }, [source, grain, range, locale]);
+  }, [categories, source, grain, range, locale]);
 
   const summary = useMemo(() => {
     const total = buckets.reduce((sum, b) => sum + b.total, 0);
@@ -172,7 +209,8 @@ export function ChartDetail({
 
   const rangeLabel = (n: number): string => {
     if (grain === 'year') return t.chart.allYears;
-    const template = grain === 'day' ? t.chart.lastDays : t.chart.lastMonths;
+    const template =
+      grain === 'hour' ? t.chart.lastHours : grain === 'day' ? t.chart.lastDays : t.chart.lastMonths;
     return template.replace('{n}', String(n));
   };
 
@@ -213,7 +251,7 @@ export function ChartDetail({
           <div className="min-w-0">
             <h2 className="truncate text-lg font-semibold tracking-tight">{title}</h2>
             <p className="text-xs text-muted-foreground">
-              {t.chart.points} {formatNumber(source.length, locale, 0)} · {unit}
+              {t.chart.points} {formatNumber(categories?.length ?? source.length, locale, 0)} · {unit}
               {loading && ` · ${t.common.loading}`}
             </p>
           </div>
@@ -230,9 +268,10 @@ export function ChartDetail({
         </div>
 
         <div className="space-y-4 p-4">
+          {categories === undefined && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-control border bg-secondary p-0.5" role="group">
-              {grains.map((option) => (
+              {resolvedGrains.map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -247,7 +286,13 @@ export function ChartDetail({
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {option === 'day' ? t.chart.byDay : option === 'month' ? t.chart.byMonth : t.chart.byYear}
+                  {option === 'hour'
+                    ? t.chart.byHour
+                    : option === 'day'
+                      ? t.chart.byDay
+                      : option === 'month'
+                        ? t.chart.byMonth
+                        : t.chart.byYear}
                 </button>
               ))}
             </div>
@@ -275,6 +320,7 @@ export function ChartDetail({
               </div>
             )}
           </div>
+          )}
 
           {buckets.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">{t.common.empty}</p>
@@ -323,7 +369,7 @@ export function ChartDetail({
                     </tr>
                   </thead>
                   <tbody>
-                    {[...buckets].reverse().map((bucket) => (
+                    {(categories === undefined ? [...buckets].reverse() : buckets).map((bucket) => (
                       <tr key={bucket.key} className="border-b last:border-0">
                         <td className="px-3 py-1.5">{bucket.label}</td>
                         <td className="tabular px-3 py-1.5 text-right font-medium">

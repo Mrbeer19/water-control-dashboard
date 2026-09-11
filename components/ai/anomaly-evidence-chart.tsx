@@ -5,6 +5,7 @@ import type { AnomalyExpectedBand, TimeSeriesPoint } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatNumber, formatTime } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * ค่าจริงช่วงที่เกิดเหตุ พร้อมแถบช่วงที่โมเดลคาดไว้
@@ -35,6 +36,12 @@ export function AnomalyEvidenceChart({
   const hasBand = rows.some((row) => row.band !== undefined);
 
   return (
+    <ChartDetail
+      title={t.ai.evidence}
+      unit={unit ?? ''}
+      points={rows.map((row) => ({ timestamp: row.timestamp, value: row.value }))}
+      decimals={2}
+    >
     <div>
       <div className="h-[124px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -101,5 +108,6 @@ export function AnomalyEvidenceChart({
         )}
       </div>
     </div>
+    </ChartDetail>
   );
 }

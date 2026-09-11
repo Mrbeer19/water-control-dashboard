@@ -5,6 +5,7 @@ import type { ZoneCost } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatBaht, formatCubicMeters, formatNumber } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * ค่าน้ำแยกโซน — แท่งนอนเรียงจากมากไปน้อย
@@ -14,7 +15,7 @@ import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-toke
  * โซนที่มีสถานะผิดปกติเท่านั้นที่เปลี่ยนสีเป็นสีสถานะ
  */
 export function ZoneCostChart({ costs }: { costs: ZoneCost[] }): JSX.Element {
-  const { locale } = useLocale();
+  const { t, locale } = useLocale();
   // ชื่อเต็มอย่าง "โซน 1 — อาคารผลิต A" ยาวเกินกว่าแกนจะรับไหว ตัดเหลือส่วนหน้า
   // แล้วเก็บชื่อเต็มไว้ให้ tooltip แทน
   const rows = [...costs]
@@ -26,6 +27,16 @@ export function ZoneCostChart({ costs }: { costs: ZoneCost[] }): JSX.Element {
   const maxCost = Math.max(...rows.map((row) => row.costBaht), 1);
 
   return (
+    <ChartDetail
+      title={t.billing.byZone}
+      unit={t.units.baht}
+      points={[]}
+      categories={rows.map((row) => ({
+        label: locale === 'th' ? row.name : row.nameEn,
+        value: row.costBaht,
+      }))}
+      decimals={0}
+    >
     <div style={{ height: rows.length * 32 + 16 }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 52, bottom: 0, left: 0 }} barCategoryGap={6}>
@@ -69,5 +80,6 @@ export function ZoneCostChart({ costs }: { costs: ZoneCost[] }): JSX.Element {
         </BarChart>
       </ResponsiveContainer>
     </div>
+    </ChartDetail>
   );
 }

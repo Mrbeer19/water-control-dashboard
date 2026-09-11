@@ -5,6 +5,7 @@ import type { UsageReportRow } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatNumber } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE, seriesColor } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * เปรียบเทียบการใช้น้ำรายโซนกับช่วงก่อนหน้า
@@ -21,6 +22,16 @@ export function ZoneUsageChart({ rows }: { rows: UsageReportRow[] }): JSX.Elemen
   }));
 
   return (
+    <ChartDetail
+      title={t.reports.byZoneTable}
+      unit="m³"
+      points={[]}
+      categories={data.map((row) => ({
+        label: locale === 'th' ? row.name : row.nameEn,
+        value: row.cubicMeters,
+      }))}
+      decimals={1}
+    >
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }} barGap={2}>
@@ -50,5 +61,6 @@ export function ZoneUsageChart({ rows }: { rows: UsageReportRow[] }): JSX.Elemen
         </BarChart>
       </ResponsiveContainer>
     </div>
+    </ChartDetail>
   );
 }

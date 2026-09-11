@@ -316,6 +316,7 @@ export const th = {
   chart: {
     detail: 'ดูข้อมูลละเอียด',
     detailHint: 'กดที่กราฟเพื่อดูข้อมูลรายวัน รายเดือน และรายปี',
+    byHour: 'รายชั่วโมง',
     byDay: 'รายวัน',
     byMonth: 'รายเดือน',
     byYear: 'รายปี',
@@ -326,6 +327,7 @@ export const th = {
     peak: 'สูงสุด',
     points: 'จำนวนจุดข้อมูล',
     close: 'ปิด',
+    lastHours: 'ย้อนหลัง {n} ชม.',
     lastDays: 'ย้อนหลัง {n} วัน',
     lastMonths: 'ย้อนหลัง {n} เดือน',
     allYears: 'ทุกปีที่มีข้อมูล',
@@ -883,6 +885,7 @@ export const en: Dictionary = {
   chart: {
     detail: 'View details',
     detailHint: 'Click a chart to see daily, monthly and yearly figures',
+    byHour: 'Hourly',
     byDay: 'Daily',
     byMonth: 'Monthly',
     byYear: 'Yearly',
@@ -893,6 +896,7 @@ export const en: Dictionary = {
     peak: 'Peak',
     points: 'Data points',
     close: 'Close',
+    lastHours: 'Last {n} h',
     lastDays: 'Last {n} days',
     lastMonths: 'Last {n} months',
     allYears: 'All available years',
