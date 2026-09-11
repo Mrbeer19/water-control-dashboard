@@ -10,7 +10,6 @@ import {
   formatMinutes,
   formatPercent,
   formatRelativeTime,
-  STATUS_TEXT_CLASS,
 } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -34,7 +33,8 @@ export function TankCard({ tank }: { tank: Tank }): JSX.Element {
     tank.minutesToEmpty !== null
       ? { label: t.tank.toEmpty, value: formatMinutes(tank.minutesToEmpty, locale), tone: 'text-status-warning' }
       : tank.minutesToFull !== null
-        ? { label: t.tank.toFull, value: formatMinutes(tank.minutesToFull, locale), tone: 'text-status-ok' }
+        ? // "จะเต็มในอีก…" ไม่ใช่สถานะที่ดีหรือแย่ จึงใช้สีข้อความปกติ ไม่ใช่สีสถานะ (ข้อ 3.3)
+          { label: t.tank.toFull, value: formatMinutes(tank.minutesToFull, locale), tone: 'text-foreground' }
         : null;
 
   return (
@@ -56,7 +56,8 @@ export function TankCard({ tank }: { tank: Tank }): JSX.Element {
           </div>
 
           <div className="mt-2">
-            <p className={cn('tabular text-metric leading-none', STATUS_TEXT_CLASS[tank.status])}>
+            {/* ตัวเลข KPI ของข้อมูลน้ำใช้ data-water ตามข้อ 3.3 และ 4 — สถานะสื่อผ่าน StatusBadge กับเส้นเกณฑ์ */}
+            <p className="tabular text-metric leading-none text-water">
               {formatPercent(tank.percentFull, locale, 1)}
             </p>
             <p className="tabular mt-1 text-sm font-medium">
@@ -67,12 +68,13 @@ export function TankCard({ tank }: { tank: Tank }): JSX.Element {
 
           <dl className="mt-auto grid grid-cols-2 gap-x-3 gap-y-1 pt-3 text-xs">
             <div className="flex items-center gap-1">
-              <ArrowDown className="h-3 w-3 text-status-ok" aria-hidden />
+              {/* ทิศทางสื่อด้วยรูปลูกศรอยู่แล้ว ไม่ต้องใช้สีสถานะมาช่วย (ข้อ 3.3) */}
+              <ArrowDown className="h-3 w-3 text-muted-foreground" aria-hidden />
               <dt className="sr-only">{t.tank.inflow}</dt>
               <dd className="tabular">{formatFlow(tank.inflowLpm, locale, 0)}</dd>
             </div>
             <div className="flex items-center gap-1">
-              <ArrowUp className="h-3 w-3 text-status-warning" aria-hidden />
+              <ArrowUp className="h-3 w-3 text-muted-foreground" aria-hidden />
               <dt className="sr-only">{t.tank.outflow}</dt>
               <dd className="tabular">{formatFlow(tank.outflowLpm, locale, 0)}</dd>
             </div>

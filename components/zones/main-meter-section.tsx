@@ -5,7 +5,7 @@ import type { Locale, MainMeter, TimeSeriesPoint, UnaccountedWater } from '@/lib
 import { useLiveData } from '@/lib/hooks/use-live-data';
 import { getMainMeter, getMeterHistory, getUnaccountedWater } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
-import { cn, formatCubicMeters, formatFlow, formatNumber, formatPercent, formatPressure, STATUS_TEXT_CLASS } from '@/lib/utils';
+import { cn, formatCubicMeters, formatFlow, formatNumber, formatPercent, formatPressure, kpiToneClass } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -103,7 +103,8 @@ export function MainMeterSection(): JSX.Element {
       </Card>
 
       {/* น้ำสูญหาย — ตัวชี้วัดการรั่วหลักของระบบ */}
-      <Card className={cn(unaccounted.status !== 'ok' && 'border-status-warning/40')}>
+      {/* ขอบของสถานะห้ามทำจางด้วย opacity (กฎ opacity ข้อ 3) — ใช้ขอบทึบสีสถานะแทน */}
+      <Card className={cn(unaccounted.status !== 'ok' && 'border-status-warning')}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-2">
             <p className="inline-flex items-center gap-1.5 font-semibold leading-tight">
@@ -113,7 +114,7 @@ export function MainMeterSection(): JSX.Element {
             <StatusBadge status={unaccounted.status} />
           </div>
 
-          <p className={cn('tabular mt-3 text-metric leading-none', STATUS_TEXT_CLASS[unaccounted.status])}>
+          <p className={cn('tabular mt-3 text-metric leading-none', kpiToneClass(unaccounted.status))}>
             {formatPercent(unaccounted.unaccountedPercent, locale, 1)}
           </p>
           <p className="tabular mt-1 text-sm font-medium">

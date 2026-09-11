@@ -146,8 +146,9 @@ function ForecastCard({ forecast }: { forecast: AIForecast }): JSX.Element {
                     ];
                   }}
                 />
+                {/* ช่วงความเชื่อมั่นใช้ data-water-soft ตามข้อ 3.3 ไม่ทำจางด้วย fillOpacity */}
                 {hasBand && (
-                  <Area dataKey="band" stroke="none" fill={CHART.water} fillOpacity={0.16} isAnimationActive={false} connectNulls />
+                  <Area dataKey="band" stroke="none" fill={CHART.waterSoft} isAnimationActive={false} connectNulls />
                 )}
                 <Line dataKey="actual" stroke={CHART.water} strokeWidth={2} dot={false} isAnimationActive={false} name="actual" />
                 <Line

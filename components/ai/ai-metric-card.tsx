@@ -4,7 +4,7 @@ import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import type { AIMetric } from '@/lib/types';
 import { getMetricConfig, isUnknownMetric } from '@/lib/config/ai-metrics';
 import { useLocale } from '@/lib/i18n';
-import { cn, formatBaht, formatMinutes, formatNumber, formatPercent, formatRatio, STATUS_TEXT_CLASS } from '@/lib/utils';
+import { cn, formatBaht, formatMinutes, formatNumber, formatPercent, formatRatio, kpiToneClass } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkline } from '@/components/charts/sparkline';
 import { CHART } from '@/components/charts/chart-tokens';
@@ -61,7 +61,7 @@ export function AiMetricCard({ metric }: { metric: AIMetric }): JSX.Element {
           )}
         </div>
 
-        <p className={cn('tabular text-2xl font-semibold leading-none', STATUS_TEXT_CLASS[status])}>{display}</p>
+        <p className={cn('tabular text-2xl font-semibold leading-none', kpiToneClass(status))}>{display}</p>
 
         {metric.target !== undefined && metric.target !== null && (
           <p className="tabular text-[11px] text-muted-foreground">

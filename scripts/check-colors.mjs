@@ -174,7 +174,6 @@ function contrast(a, b) {
    *   ถ้าไฟล์ไหนเกินยอดค้าง หรือมีไฟล์ใหม่โผล่มา จะถือว่าไม่ผ่านทันที
    */
   const PENDING = {
-    'components/zones/main-meter-section.tsx': 1, // 7.4
     'components/control/command-status.tsx': 6, // 7.5
     'components/control/emergency-panel.tsx': 4, // 7.5
     'components/control/confirm-dialog.tsx': 1, // 7.5

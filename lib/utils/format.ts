@@ -241,6 +241,17 @@ export const STATUS_TEXT_CLASS: Record<EntityStatus, string> = {
   offline: 'text-status-offline',
 };
 
+/**
+ * สีของ "ตัวเลข KPI" ที่ต้องสื่อสถานะไปด้วย — docs/BRANDING_SPEC.md ข้อ 3.3 และ 4
+ *
+ * ★ ตอนปกติคืนค่าว่าง ให้ตัวเลขใช้สีข้อความปกติ
+ *   ถ้าย้อมเขียวตอนทุกอย่างปกติ จอแขวนผนังจะเต็มไปด้วยสีที่ไม่ได้บอกอะไร
+ *   แล้วตอนมีเรื่องจริงสีจะไม่สะดุดตา — สีสถานะจึงโผล่เฉพาะตอน เตือน/วิกฤต/offline
+ */
+export function kpiToneClass(status: EntityStatus): string {
+  return status === 'ok' ? '' : STATUS_TEXT_CLASS[status];
+}
+
 export const STATUS_BG_CLASS: Record<EntityStatus, string> = {
   ok: 'bg-status-ok',
   warning: 'bg-status-warning',

@@ -88,8 +88,7 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           <Area
             dataKey="band"
             stroke="none"
-            fill={CHART.water}
-            fillOpacity={0.16}
+            fill={CHART.waterSoft}
             isAnimationActive={false}
             name={t.billing.confidenceBand}
             connectNulls

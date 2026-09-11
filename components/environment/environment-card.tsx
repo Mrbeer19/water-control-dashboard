@@ -5,7 +5,7 @@ import type { EnvironmentSensor, TimeSeriesPoint } from '@/lib/types';
 import { useLiveData } from '@/lib/hooks/use-live-data';
 import { getEnvironmentHistory } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
-import { cn, formatNumber, formatPercent, formatRelativeTime, formatTemperature, STATUS_TEXT_CLASS } from '@/lib/utils';
+import { cn, formatNumber, formatPercent, formatRelativeTime, formatTemperature, kpiToneClass } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
@@ -47,7 +47,7 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
 
         <div className="flex items-end gap-4">
           <div>
-            <p className={cn('tabular text-metric leading-none', STATUS_TEXT_CLASS[sensor.status])}>
+            <p className={cn('tabular text-metric leading-none', kpiToneClass(sensor.status))}>
               {formatTemperature(reading.temperatureCelsius, locale)}
             </p>
             <p className="tabular mt-1 inline-flex items-center gap-1 text-sm text-muted-foreground">
