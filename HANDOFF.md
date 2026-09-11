@@ -87,7 +87,9 @@ Frontend ของระบบมอนิเตอร์และควบค�
 > 2. ออก token จากเซิร์ฟเวอร์แล้วเก็บใน **httpOnly cookie** ห้ามเก็บใน `localStorage`
 > 3. กั้นด้วย middleware ที่ตรวจ cookie **ก่อนส่ง HTML ออกมา** ไม่ใช่กั้นหลังโหลดหน้า
 > 4. ให้เซิร์ฟเวอร์เป็นคนกำหนดและต่ออายุเซสชัน ไม่ใช่ให้หน้าจอคำนวณวันหมดอายุเอง
-> 5. `demoAccounts()` ใน `lib/services/auth.ts` ต้องลบทิ้ง
+> 5. `demoAccounts()` ถูกลบออกไปแล้ว
+> 6. **ลบบัญชีสาธิตที่ hardcode ไว้** — `DEMO_USERNAME` / `DEMO_PASSWORD` ที่หัวไฟล์ `lib/services/auth.ts`
+>    ตอนนี้หน้าจอเทียบรหัสผ่านเองเพื่อให้สาธิตได้ ซึ่งใครเปิด bundle ก็เห็นรหัส ห้ามใช้แบบนี้ของจริง
 
 ### 2.3 สภาพแวดล้อม
 
@@ -283,7 +285,7 @@ service ให้ยิง endpoint ตามตารางข้างบน *
 | 3 | `lib/services/*.ts` (14 ไฟล์โดเมน) | เปลี่ยน body ของแต่ละฟังก์ชันให้ยิง endpoint จริง |
 | 4 | `lib/services/settings.ts` | `readOverrides`/`writeOverrides` → GET/PATCH `/api/settings` |
 | 5 | `lib/services/ai.ts` | **ลบ `getScenario` / `setScenario` / `SCENARIO_OPTIONS` ทิ้ง** — ของจริงไม่มีปุ่มสลับสถานการณ์ |
-| 6 | `lib/services/auth.ts` | **เขียนใหม่ทั้งไฟล์** — ดูข้อควรระวังในหัวข้อ 2.2 และลบ `demoAccounts()` ทิ้ง |
+| 6 | `lib/services/auth.ts` | **เขียนใหม่ทั้งไฟล์** — ดูข้อควรระวังในหัวข้อ 2.2 และลบบัญชีสาธิตที่ hardcode ไว้ |
 
 ### 4.3 ไฟล์ที่ลบได้ทั้งหมดเมื่อต่อของจริงแล้ว
 

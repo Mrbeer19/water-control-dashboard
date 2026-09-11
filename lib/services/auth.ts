@@ -12,7 +12,7 @@
  *   - ต่ออายุเซสชันที่เซิร์ฟเวอร์ ไม่ใช่ให้หน้าจอคำนวณวันหมดอายุเอง
  */
 
-import type { AuthSession, SignInResult, User } from '@/lib/types';
+import type { AuthSession, SignInResult } from '@/lib/types';
 import { USERS } from '@/lib/mock';
 import { respond } from './internal';
 
@@ -54,10 +54,22 @@ export async function getSession(): Promise<AuthSession | null> {
 }
 
 /**
+ * บัญชีเดียวสำหรับสาธิต
+ *
+ * ★★ นี่ไม่ใช่การยืนยันตัวตนจริง ★★
+ *   รหัสผ่านถูกเทียบที่ฝั่งหน้าจอและเขียนไว้ตรง ๆ ในโค้ด ใครเปิด bundle ก็เห็น
+ *   มีไว้เพื่อให้หน้าจอสาธิตมีขั้นตอนล็อกอินที่ทำงานได้เท่านั้น
+ *   ตอนต่อ backend จริงต้องลบทั้งบล็อกนี้ แล้วให้เซิร์ฟเวอร์เป็นคนตรวจ (ดู HANDOFF.md ข้อ 2.2)
+ */
+const DEMO_USERNAME = 'admin';
+const DEMO_PASSWORD = 'admin1234';
+/** ผู้ใช้ใน mock ที่ผูกกับบัญชีสาธิตข้างบน */
+const DEMO_USER_ID = 'user-admin';
+
+/**
  * เข้าสู่ระบบ
  *
- * ★ รหัสผ่านไม่ถูกตรวจ ขอแค่ไม่ว่าง — ตั้งใจให้ชัดว่านี่คือหน้าจอสาธิต
- *   ไม่ใช่ระบบที่แกล้งทำเป็นตรวจรหัสผ่านจริง
+ * ★ รับได้บัญชีเดียวคือบัญชีสาธิตข้างบน — ดูคำเตือนตรงนั้นประกอบ
  *
  * TODO(backend): POST /api/auth/login  body: { username, password }
  *   ตอบกลับเป็น httpOnly cookie พร้อม session ที่เซิร์ฟเวอร์เป็นคนกำหนดวันหมดอายุ
@@ -83,19 +95,18 @@ export async function signIn(username: string, password: string): Promise<SignIn
       };
     }
 
-    const user = USERS.find(
-      (item) => item.id.toLowerCase() === trimmed || item.displayName.toLowerCase() === trimmed,
-    );
-
-    if (user === undefined) {
+    // ตอบข้อความเดียวกันทั้งกรณีชื่อผู้ใช้ผิดและรหัสผ่านผิด จะได้ไม่บอกใบ้ว่าชื่อไหนมีอยู่จริง
+    if (trimmed !== DEMO_USERNAME || password !== DEMO_PASSWORD) {
       return {
         ok: false,
         session: null,
-        errorTh: 'ไม่พบชื่อผู้ใช้นี้ในระบบ',
-        errorEn: 'No such user',
+        errorTh: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+        errorEn: 'Incorrect username or password',
       };
     }
-    if (!user.active) {
+
+    const user = USERS.find((item) => item.id === DEMO_USER_ID);
+    if (user === undefined || !user.active) {
       return {
         ok: false,
         session: null,
@@ -141,7 +152,3 @@ export async function refreshSession(): Promise<AuthSession | null> {
   });
 }
 
-/** รายชื่อบัญชีสาธิต สำหรับแสดงใต้ฟอร์มให้ผู้ทดสอบเลือกใช้ */
-export function demoAccounts(): User[] {
-  return USERS.filter((user) => user.active);
-}

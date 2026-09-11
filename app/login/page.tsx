@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Info, Loader2, LogIn, ServerCog } from 'lucide-react';
-import type { User } from '@/lib/types';
-import { demoAccounts, getSession, signIn } from '@/lib/services';
+import { getSession, signIn } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LangToggle } from '@/components/layout/lang-toggle';
@@ -32,11 +30,9 @@ export default function LoginPage(): JSX.Element {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [accounts, setAccounts] = useState<User[]>([]);
   const [succeeded, setSucceeded] = useState(false);
 
   useEffect(() => {
-    setAccounts(demoAccounts());
     // ล็อกอินค้างอยู่แล้วก็ไม่ต้องให้กรอกซ้ำ
     void getSession().then((session) => {
       if (session !== null) router.replace('/');
@@ -79,7 +75,7 @@ export default function LoginPage(): JSX.Element {
         ฉากบังแสง — โหมดสว่างบาง ๆ พอให้การ์ดเด่นขึ้น โหมดมืดเข้มกว่าเพราะภาพสว่างจัด
         (opacity ตรงนี้เป็น backdrop ซึ่งกฎ opacity ในข้อ 3 อนุญาต)
       */}
-      <div className="absolute inset-0 bg-background/25 dark:bg-background/75" aria-hidden />
+      <div className="absolute inset-0 bg-background/45 dark:bg-background/80" aria-hidden />
 
       {/*
         แถบบน: โลโก้ซ้าย ตัวสลับภาษา/ธีมขวา — ไม่มีเมนูนำทาง เพราะหน้านี้ยังไม่ได้ล็อกอิน
@@ -95,16 +91,14 @@ export default function LoginPage(): JSX.Element {
       <main className="relative flex flex-1 items-center justify-center px-4 pb-10">
         <div className="w-full max-w-sm space-y-4">
           {/*
-            การ์ดกลางจอแบบกึ่งโปร่งแสง + เบลอฉากหลัง
-            ★ ความทึบ 90% เป็นค่าต่ำสุดที่ยังปลอดภัย — คำนวณกรณีแย่ที่สุด (การ์ดทับพิกเซลขาวล้วน
-              ของภาพในโหมดมืด) ได้ข้อความหลัก 8.0 : 1 และข้อความรอง 5.2 : 1
-              ถ้าลดถึง 80% ข้อความรองจะเหลือ 3.8 : 1 ซึ่งตก
-            ★ opacity ตรงนี้ใช้กับ "ผิวการ์ด" ไม่ใช่สีสถานะ/สีชุดข้อมูล/สีข้อความ จึงไม่ขัดกฎในข้อ 3
+            การ์ดล็อกอิน — ใช้พื้นทึบ ไม่ใช่กึ่งโปร่งแสง เพื่อให้เด่นออกมาจากภาพฉากชัด ๆ
+            ★ ได้เงาของระบบ (เงาเดียวที่อนุญาตตามข้อ 6.2) เพราะทำหน้าที่เหมือน dialog ที่ลอยอยู่บนฉาก
+            ★ ring เพิ่มอีกชั้นเพื่อตัดขอบการ์ดออกจากภาพที่มีรายละเอียดเยอะ
           */}
-          <Card className="bg-card/90 backdrop-blur-sm">
-            <CardContent className="p-5">
-              <div className="mb-4 text-center">
-                <h1 className="text-xl font-semibold tracking-tight">{t.auth.title}</h1>
+          <Card className="rounded-overlay shadow-xl ring-1 ring-border">
+            <CardContent className="p-6">
+              <div className="mb-5 text-center">
+                <h1 className="text-2xl font-semibold tracking-tight">{t.auth.title}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">{t.auth.subtitle}</p>
               </div>
               {succeeded ? (
@@ -143,7 +137,6 @@ export default function LoginPage(): JSX.Element {
                     }}
                     className={cn(INPUT_CLASS, error !== null && 'border-status-critical')}
                   />
-                  <span className="block text-[11px] text-muted-foreground">{t.auth.demoPasswordHint}</span>
                 </label>
 
                 {error !== null && (
@@ -172,35 +165,6 @@ export default function LoginPage(): JSX.Element {
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
               {t.auth.demoNotice}
             </p>
-          )}
-
-          {!succeeded && accounts.length > 0 && (
-            <Card className="bg-card/90 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <p className="mb-2 text-xs font-medium">{t.auth.demoAccounts}</p>
-                <ul className="space-y-1">
-                  {accounts.map((account) => (
-                    <li key={account.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUsername(account.id);
-                          setPassword('demo');
-                          setError(null);
-                        }}
-                        className="flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
-                      >
-                        <span className="min-w-0 flex-1 truncate">{account.displayName}</span>
-                        <code className="shrink-0 text-[10px] text-muted-foreground">{account.id}</code>
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
-                          {account.role}
-                        </Badge>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
           )}
 
           {!succeeded && (
