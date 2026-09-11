@@ -3,119 +3,138 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * โทเคนสีทั้งระบบ — ค่าทุกค่ามาจากบันไดสี CI ของ Kasetphand ใน docs/BRANDING_SPEC.md ข้อ 3.1
+   * hex ต้นฉบับอยู่ใน lib/config/theme.ts (จุดเดียวในโค้ดที่มี hex)
+   * ที่นี่เก็บเป็น HSL แบบ "H S% L%" ตามที่ shadcn ต้องการ และมีคอมเมนต์ hex กำกับทุกตัว
+   * sampled from CI p.13/p.17 — confirm with brand owner
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    /* พื้นหน้าและพื้นการ์ด */
+    --background: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --card: 0 0% 100%; /* #FFFFFF ขาว */
+    --card-foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --popover: 0 0% 100%; /* #FFFFFF ขาว */
+    --popover-foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    /* แบรนด์ */
+    --primary: 357.9 81.7% 52.7%; /* #E9242B Cinnabar-500 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --brand-text: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 */
+    --brand-strong: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 — พื้นแบรนด์สำหรับตัวอักษร < 16px (ข้อ 3.5) */
+    --brand-strong-foreground: 0 0% 100%; /* #FFFFFF ขาว */
 
-    --primary: 201 96% 32%;
-    --primary-foreground: 0 0% 100%;
+    /* ผิวรองและข้อความรอง */
+    --secondary: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --secondary-foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --muted: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --muted-foreground: 252 2.3% 43.3%; /* #6D6C71 Argent-800 */
+    --accent: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --accent-foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --destructive: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --border: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --input: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --ring: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 */
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* แจ้งให้ทราบ และ control */
+    --info: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 */
+    --info-strong: 220.4 21.7% 41.6%; /* #536281 Blue-800 */
+    --info-strong-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --control-checked: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --control-checked-foreground: 0 0% 100%; /* #FFFFFF ขาว */
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 42%;
-
-    --accent: 210 40% 94%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214 32% 88%;
-    --input: 214 32% 88%;
-    --ring: 201 96% 32%;
-
-    --status-ok: 142 71% 33%;
-    --status-ok-foreground: 0 0% 100%;
-    --status-warning: 38 92% 42%;
-    --status-warning-foreground: 0 0% 100%;
-    --status-critical: 0 72% 45%;
-    --status-critical-foreground: 0 0% 100%;
-    --status-offline: 215 14% 46%;
-    --status-offline-foreground: 0 0% 100%;
+    /* สถานะ */
+    --status-ok: 130.7 14.6% 37.6%; /* #526E57 Green-800 */
+    --status-ok-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --status-ok-dot: 149.8 100% 28.4%; /* #009148 Green-500 */
+    --status-warning: 41.7 13.3% 33.9%; /* #625B4B Marigold-900 */
+    --status-warning-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --status-warning-surface: 35.3 95.7% 81.6%; /* #FDD8A3 Marigold-100 */
+    --status-critical: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 */
+    --status-critical-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --status-offline: 252 2.3% 43.3%; /* #6D6C71 Argent-800 */
+    --status-offline-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --status-offline-dot: 0 0% 53.3%; /* #888888 Argent-500 */
 
     --radius: 0.625rem;
 
     /*
-     * สีสำหรับกราฟ — ชุดที่ผ่านการตรวจ colorblind safety แล้วทั้งโหมดสว่างและมืด
-     * (lightness band, chroma floor, CVD separation, normal-vision floor)
-     * โหมดมืดไม่ได้พลิกค่าอัตโนมัติ แต่เป็นคนละ step ที่ตรวจกับพื้นมืดแยกต่างหาก
+     * สีของกราฟและ SVG — เก็บเป็น hex เพราะใส่ลง attribute ของ SVG ได้ตรง ๆ
+     * จานสีตาม BRANDING_SPEC ข้อ 3.3: 2 สีหลัก + 1 สีอ้างอิง
+     * โหมดมืดไม่ได้พลิกค่าอัตโนมัติ แต่เป็นคนละขั้นที่ตรวจกับพื้นมืดแยกต่างหาก
      */
-    --chart-1: #2a78d6;
-    --chart-2: #eb6834;
-    --chart-3: #1baf7a;
-    --chart-4: #eda100;
-    --chart-5: #e87ba4;
-    --chart-6: #008300;
-    --chart-7: #4a3aa7;
-    --chart-8: #e34948;
-
-    /* ไล่เฉดสีเดียวสำหรับค่าเชิงปริมาณ (อ่อน → เข้ม) */
-    --chart-seq-100: #cde2fb;
-    --chart-seq-250: #86b6ef;
-    --chart-seq-400: #3987e5;
-    --chart-seq-550: #1c5cab;
+    --data-water: #026BB5; /* Blue-500 */
+    --data-water-soft: #A5AECF; /* Blue-100 */
+    --chart-series-2: #009148; /* Green-500 */
+    --chart-reference: #CBC7C8; /* Argent-100 */
+    --chart-series-1: var(--data-water);
   }
 
   .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 96%;
 
-    --card: 222 44% 10%;
-    --card-foreground: 210 40% 96%;
+    /* พื้นหน้าและพื้นการ์ด */
+    --background: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --card: 210 3.6% 22%; /* #36383A Argent-950 */
+    --card-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --popover: 210 3.6% 22%; /* #36383A Argent-950 */
+    --popover-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
 
-    --popover: 222 44% 10%;
-    --popover-foreground: 210 40% 96%;
+    /* แบรนด์ */
+    --primary: 357.9 81.7% 52.7%; /* #E9242B Cinnabar-500 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --brand-text: 10.6 87.2% 69.4%; /* #F5856D Cinnabar-200 */
+    --brand-strong: 7.9 48% 49.8%; /* #BC5242 Cinnabar-700 — ค่าเดียวกันทั้งสองโหมด (ข้อ 3.5) */
+    --brand-strong-foreground: 0 0% 100%; /* #FFFFFF ขาว */
 
-    --primary: 199 89% 55%;
-    --primary-foreground: 222 47% 8%;
+    /* ผิวรองและข้อความรอง */
+    --secondary: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --secondary-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --muted: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --muted-foreground: 345 3.7% 78.8%; /* #CBC7C8 Argent-100 */
+    --accent: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --accent-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --destructive: 10.6 87.2% 69.4%; /* #F5856D Cinnabar-200 */
+    --destructive-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --border: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --input: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
+    --ring: 213.5 46.9% 52.7%; /* #4E80BF Blue-300 */
 
-    --secondary: 217 33% 16%;
-    --secondary-foreground: 210 40% 96%;
+    /* แจ้งให้ทราบ และ control */
+    --info: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 */
+    --info-strong: 220.4 21.7% 41.6%; /* #536281 Blue-800 */
+    --info-strong-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --control-checked: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --control-checked-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
 
-    --muted: 217 33% 16%;
-    --muted-foreground: 215 20% 68%;
+    /* สถานะ */
+    --status-ok: 126.3 27.5% 59.4%; /* #7BB481 Green-200 */
+    --status-ok-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --status-ok-dot: 135.7 35.6% 46.3%; /* #4CA062 Green-300 */
+    --status-warning: 38.2 91.4% 63.3%; /* #F7B94C Marigold-300 */
+    --status-warning-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --status-warning-surface: 41.7 13.3% 33.9%; /* #625B4B Marigold-900 */
+    --status-critical: 10.6 87.2% 69.4%; /* #F5856D Cinnabar-200 */
+    --status-critical-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --status-offline: 345 2.6% 69.8%; /* #B4B0B1 Argent-200 */
+    --status-offline-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
+    --status-offline-dot: 0 0% 61.2%; /* #9C9C9C Argent-300 */
 
-    --accent: 217 33% 20%;
-    --accent-foreground: 210 40% 96%;
+    --radius: 0.625rem;
 
-    --destructive: 0 84% 62%;
-    --destructive-foreground: 222 47% 8%;
-
-    --border: 217 33% 20%;
-    --input: 217 33% 22%;
-    --ring: 199 89% 55%;
-
-    /* ห้องคอนโทรลเปิดจอทิ้งไว้ — เพิ่ม lightness ให้ contrast พอบนพื้นมืด */
-    --status-ok: 142 66% 48%;
-    --status-ok-foreground: 222 47% 8%;
-    --status-warning: 41 96% 56%;
-    --status-warning-foreground: 222 47% 8%;
-    --status-critical: 0 84% 62%;
-    --status-critical-foreground: 222 47% 8%;
-    --status-offline: 215 18% 58%;
-    --status-offline-foreground: 222 47% 8%;
-
-    --chart-1: #3987e5;
-    --chart-2: #d95926;
-    --chart-3: #199e70;
-    --chart-4: #c98500;
-    --chart-5: #d55181;
-    --chart-6: #008300;
-    --chart-7: #9085e9;
-    --chart-8: #e66767;
-
-    --chart-seq-100: #104281;
-    --chart-seq-250: #1c5cab;
-    --chart-seq-400: #3987e5;
-    --chart-seq-550: #86b6ef;
+    /*
+     * สีของกราฟและ SVG — เก็บเป็น hex เพราะใส่ลง attribute ของ SVG ได้ตรง ๆ
+     * จานสีตาม BRANDING_SPEC ข้อ 3.3: 2 สีหลัก + 1 สีอ้างอิง
+     * โหมดมืดไม่ได้พลิกค่าอัตโนมัติ แต่เป็นคนละขั้นที่ตรวจกับพื้นมืดแยกต่างหาก
+     */
+    --data-water: #4E80BF; /* Blue-300 */
+    --data-water-soft: #536281; /* Blue-800 */
+    --chart-series-2: #4CA062; /* Green-300 */
+    --chart-reference: #6D6C71; /* Argent-800 */
+    --chart-series-1: var(--data-water);
   }
 }
 

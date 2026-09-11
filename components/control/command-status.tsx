@@ -19,7 +19,7 @@ export function CommandStatus({ result, className }: { result: CommandResult | n
   const pending = result.state === 'sending' || result.state === 'awaiting_feedback';
 
   const tone = pending
-    ? 'border-primary/30 bg-primary/10 text-primary'
+    ? 'border-info/30 bg-info/10 text-info'
     : result.state === 'success'
       ? 'border-status-ok/30 bg-status-ok/10 text-status-ok'
       : result.state === 'timeout'

@@ -66,7 +66,7 @@ export function ZoneTable({ rows }: { rows: ZoneRow[] }): JSX.Element {
                   <div className="flex items-center justify-end gap-2">
                     <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
                       <div
-                        className={cn('h-full rounded-full bg-primary transition-[width] duration-700')}
+                        className={cn('h-full rounded-full bg-water transition-[width] duration-700')}
                         style={{ width: `${Math.min(100, cost?.sharePercent ?? 0)}%` }}
                       />
                     </div>

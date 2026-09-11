@@ -55,7 +55,7 @@ export function ZoneCostChart({ costs }: { costs: ZoneCost[] }): JSX.Element {
           />
           <Bar dataKey="costBaht" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={20}>
             {rows.map((row) => (
-              <Cell key={row.zoneId} fill={CHART.sequential} />
+              <Cell key={row.zoneId} fill={CHART.water} />
             ))}
             {/* ติดตัวเลขที่ปลายแท่งทุกแท่ง เพราะกราฟนี้มีไม่กี่แท่งและตัวเลขคือสิ่งที่คนมาอ่าน */}
             <LabelList

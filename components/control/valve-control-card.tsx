@@ -86,8 +86,8 @@ export function ValveControlCard({
             <div
               className={cn(
                 'h-full rounded-full transition-[width] duration-700',
-                valve.position === 'fault' ? 'bg-status-critical' : 'bg-primary',
-                moving && 'animate-pulse bg-[repeating-linear-gradient(45deg,currentColor,currentColor_6px,transparent_6px,transparent_12px)] text-primary',
+                valve.position === 'fault' ? 'bg-status-critical' : 'bg-water',
+                moving && 'animate-pulse bg-[repeating-linear-gradient(45deg,currentColor,currentColor_6px,transparent_6px,transparent_12px)] text-water',
               )}
               style={{ width: `${Math.max(2, valve.openPercent)}%` }}
             />
@@ -151,7 +151,7 @@ export function ValveControlCard({
               onChange={(event) => {
                 setDraftPercent(Number(event.target.value));
               }}
-              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-primary disabled:opacity-50"
+              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-control-checked disabled:opacity-50"
               aria-label={t.control.openPercent}
             />
             <Button

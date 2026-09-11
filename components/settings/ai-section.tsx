@@ -49,7 +49,7 @@ export function AiSection({ draft, errors, onChange }: SettingsSectionProps): JS
           step={0.05}
           value={ai.anomalySensitivity}
           onChange={(event) => { set({ anomalySensitivity: Number(event.target.value) }); }}
-          className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+          className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-control-checked"
         />
         <p className="mt-1 text-[11px] text-muted-foreground">{t.settings.sensitivityHint}</p>
         {sensitivityError !== undefined && (

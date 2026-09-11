@@ -145,7 +145,7 @@ export default function ReportsPage(): JSX.Element {
           </div>
 
           {exportMessage !== null && (
-            <p className="rounded-md bg-primary/10 px-2.5 py-1.5 text-xs text-primary">{exportMessage}</p>
+            <p className="rounded-md border px-2.5 py-1.5 text-xs text-foreground">{exportMessage}</p>
           )}
 
           {loading && data === null ? (

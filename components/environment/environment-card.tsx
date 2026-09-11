@@ -9,7 +9,7 @@ import { cn, formatNumber, formatPercent, formatRelativeTime, formatTemperature,
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
-import { CHART } from '@/components/charts/chart-tokens';
+import { seriesColor } from '@/components/charts/chart-tokens';
 
 /** การ์ดเซนเซอร์หนึ่งจุด — จุดกลางแจ้งมีค่าเพิ่มที่จุดในอาคารไม่มี */
 export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.Element {
@@ -56,7 +56,7 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
             </p>
           </div>
           <div className="min-w-[80px] flex-1">
-            <Sparkline points={tempHistory ?? []} color={CHART.sequential} height={38} label={t.env.last24h} />
+            <Sparkline points={tempHistory ?? []} color={seriesColor(1)} height={38} label={t.env.last24h} />
             <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{t.env.last24h}</p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
               icon={CloudRain}
               label={t.env.rainToday}
               value={`${formatNumber(reading.rainfallTodayMm, locale, 1)} mm`}
-              tone={reading.rainDetected === true ? 'text-primary' : undefined}
+              tone={reading.rainDetected === true ? 'text-water' : undefined}
             />
           )}
           {reading.rainfallMonthMm !== null && (
@@ -104,7 +104,7 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
         </dl>
 
         {reading.rainDetected === true && (
-          <p className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] text-primary">
+          <p className="inline-flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-[11px] text-info">
             <CloudRain className="h-3.5 w-3.5" aria-hidden />
             {t.env.raining} · {formatNumber(reading.rainfallMmPerHour ?? 0, locale, 1)} mm/h
           </p>

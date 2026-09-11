@@ -27,7 +27,7 @@ export function RecentAlerts(): JSX.Element {
       <CardHeader className="flex-row items-center justify-end space-y-0 pb-2">
         <Link
           href="/alerts"
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-medium text-brand-text hover:underline"
         >
           {t.overview.viewAll}
           <ArrowRight className="h-3 w-3" aria-hidden />

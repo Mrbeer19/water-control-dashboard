@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
-import { CHART } from '@/components/charts/chart-tokens';
+import { CHART, seriesColor } from '@/components/charts/chart-tokens';
 import { kindLabel, roleLabel } from './device-labels';
 
 /**
@@ -162,7 +162,7 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
                   <Signal className="h-3 w-3" aria-hidden />
                   {t.device.rssi} · dBm
                 </p>
-                <Sparkline points={rssiHistory} color={CHART.sequential} height={56} label={`${t.device.rssi} ${device.nameEn}`} />
+                <Sparkline points={rssiHistory} color={seriesColor(0)} height={56} label={`${t.device.rssi} ${device.nameEn}`} />
               </div>
             )}
 
@@ -201,7 +201,7 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
               </p>
             )}
             {otaMessage !== null && (
-              <p className="rounded-md bg-primary/10 px-2.5 py-2 text-xs text-primary">{otaMessage}</p>
+              <p className="rounded-md border px-2.5 py-2 text-xs text-foreground">{otaMessage}</p>
             )}
           </div>
 

@@ -482,6 +482,10 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 4. โลโก้ตาม §5.3 — ห้ามวางด้านล่างของหน้า
 5. nav active pill ใช้กติกาเดียวกับปุ่ม primary ใน §3.5 (≥16px / weight 600)
 6. Mobile 375px: sidebar เป็น drawer ตาม §6.1
+6.1 ★ header ล้นจอ 29px ที่ 375px ทุกหน้า (วัดจริงได้ scrollWidth 404)
+   ต้นเหตุคือแถวควบคุมมุมขวาบนกว้าง 328px — ย่อ header ตาม §6.1 ให้เหลือ
+   โลโก้ + สถานะเชื่อมต่อ + กระดิ่ง บนมือถือ แล้ววัดซ้ำให้ scrollWidth ≤ 375
+   รายละเอียดการวัดอยู่ใน DESIGN_PLAN ข้อ 12.1
 7. /login ตาม §7 แถว /login — split layout, ฝั่งซ้ายพื้นบันไดสี ไม่ใช้ภาพจาก template,
    การ์ดบัญชีทดลองคงไว้, โลโก้มุมซ้ายบนฝั่งภาพ (§5.3)
 8. favicon ตาม §5.3 — คงรูปทรงเดิมของ public/favicon.svg เปลี่ยนเฉพาะสีเป็นสี CI
@@ -512,9 +516,9 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 2. แนวทางหน้าตาม §7 แถว `/` (แถว KPI, กล่อง alert ล่าสุด, กราฟพยากรณ์ + ช่วงความเชื่อมั่น)
 3. ผิวและ radius ตาม §6.2, KPI ใหญ่ตาม §4 — นี่คือหน้าที่จอแขวนผนังเปิดค้างไว้
 4. สีใน SVG และกราฟอ่านผ่าน chart-tokens.ts เท่านั้น ห้ามใส่ hex ใน props (§3.7)
-4.1 components/environment/temp-vs-usage-chart.tsx — คง dual-axis ไว้ (restyle เท่านั้น)
-   usage = Blue แกนซ้าย · temp = Green แกนขวา · ชื่อแกนทั้งสองข้างต้องมีหน่วยและใช้สีตรงกับเส้นของตัวเอง
-   การแยกเป็น small multiples เป็นงานนอกขอบเขต — DESIGN_PLAN ข้อ 12.1
+4.1 components/environment/temp-vs-usage-chart.tsx — ทำสีไปแล้วใน 7.1
+   ไฟล์นี้เป็น small multiples 2 ชั้นที่แชร์แกนเวลาอยู่แล้ว ไม่ใช่กราฟแกนคู่ (DESIGN_PLAN ข้อ 10)
+   usage = Blue · temp = Green · ป้ายชั้นมีหน่วยและใช้สีตรงกับเส้นของตัวเอง — เฟสนี้แค่ตรวจซ้ำ
 5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/zones/main-meter-section.tsx (1) — 1 จุด
    (components/pumps/pump-card.tsx แก้ไปแล้วใน 7.2)
 

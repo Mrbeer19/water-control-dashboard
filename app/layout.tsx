@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { plexThai } from './fonts';
+import { montserrat, plexThai } from './fonts';
+import { themeColor } from '@/lib/config/theme';
 import { LocaleProvider } from '@/lib/i18n';
 import { AuthGate } from '@/components/layout/auth-gate';
 import { THEME_INIT_SCRIPT, ThemeProvider } from '@/components/layout/theme-provider';
@@ -13,9 +14,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // ค่าสีมาจาก lib/config/theme.ts จุดเดียว ห้ามเขียน hex ซ้ำที่นี่ (BRANDING_SPEC ข้อ 3.7)
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a1120' },
+    { media: '(prefers-color-scheme: light)', color: themeColor.light },
+    { media: '(prefers-color-scheme: dark)', color: themeColor.dark },
   ],
 };
 
@@ -26,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
         {/* ทาธีมก่อน React hydrate เพื่อไม่ให้จอขาววาบในห้องคอนโทรลที่เปิดจอทิ้งไว้ */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${plexThai.variable} font-sans`}>
+      <body className={`${montserrat.variable} ${plexThai.variable} font-sans`}>
         <ThemeProvider>
           <LocaleProvider>
             <AuthGate>{children}</AuthGate>

@@ -99,8 +99,12 @@ Contrast ที่คำนวณแล้ว:
 | `--status-warning` | `38 92% 42%` | §3.4 เตือน | `#625B4B` Marigold-900 (พื้น `#FDD8A3`) |
 | `--status-critical` | `0 72% 45%` | §3.4 วิกฤต | `#BC5242` Cinnabar-700 |
 | `--status-offline` | `215 14% 46%` | §3.4 offline | `#6D6C71` Argent-800 (จุด `#888888`) |
-| `--chart-1..8` (8 ค่า hex) | `#2a78d6 …` | `data-series-1`, `data-series-2`, `data-reference` | เหลือ **3 ค่า** ดูข้อ 9 |
-| *(ใหม่)* | — | `control-checked` | `#515558` Argent-900 (dark: `#F7F7F7`) ดูข้อ 11 |
+| `--chart-1..8` (8 ค่า hex) | `#2a78d6 …` | `--data-water`, `--chart-series-2`, `--chart-reference` | เหลือ **3 ค่า** (`--chart-series-1` เป็น alias ของ `--data-water`) ดูข้อ 9 |
+| `--chart-seq-100/250/400/550` | `#cde2fb …` | `--data-water`, `--data-water-soft` | เหลือ 2 ค่า — โค้ดจริงเรียกใช้แค่ `seq-400` กับ `seq-250` บันไดไล่เฉด 4 ขั้นไม่มีใครใช้ |
+| *(ใหม่)* | — | `--control-checked` | `#515558` Argent-900 (dark: `#F7F7F7`) ดูข้อ 11 |
+| *(ใหม่)* | — | `--info`, `--info-strong` | `#026BB5` Blue-500 (dark: `#A5AECF`) / `#536281` Blue-800 ดูข้อ 11 |
+| *(ใหม่)* | — | `--brand-text` | `#BC5242` Cinnabar-700 (dark: `#F5856D` Cinnabar-200) — แบรนด์ตอนเป็น **ข้อความ** |
+| *(ใหม่)* | — | `--brand-strong` | `#BC5242` Cinnabar-700 ทั้งสองโหมด — พื้นแบรนด์สำหรับตัวอักษร < 16px (ข้อ 3.5) |
 | `--chart-seq-100/250/400/550` | `#cde2fb …` | `data-water*` | บันได Blue: `#A5AECF` `#4E80BF` `#026BB5` `#44699D` |
 
 **หมายเหตุ `--primary` เปลี่ยนความหมาย:** เดิมเป็นสีน้ำเงินและถูกใช้ปนกัน 5 ความหมาย ใหม่เป็นสีแบรนด์แดงอย่างเดียว
@@ -220,11 +224,11 @@ pdfimages -png -f 11 -l 11 "docs/design-refs/Corporate Identity_compressed.pdf" 
 | รูปแบบ | จำนวน | ใช้ทำอะไร | ขั้นที่ควรใช้แทน |
 |---|---|---|---|
 | `bg-muted/30,40,60` | 18 | พื้นรองของแถว/กล่อง | Argent-100 |
-| `bg-primary/10` | 10 | ชิปข้อความ, nav active | Cinnabar-100 หรือ `bg-card` + ขอบ |
+| `bg-info/10` *(เดิม `bg-primary/10` — เปลี่ยนชื่อตอน 7.1)* | 8 | ชิปข้อความเชิงแจ้งให้ทราบ | ไม่มีพื้น + ขอบ ตามข้อ 3.3 |
 | `bg-accent/40,60` | 8 | พื้น hover ของแถว | Argent-100 |
 | `fill-muted/40` | 3 | พื้นถังเปล่าใน tank gauge, กล่อง node ในผัง | Argent-100 |
 | `bg-muted-foreground/40` | 2 | รางสวิตช์สถานะ "ปิด" | Argent-200 |
-| `border-primary/30,40` | 2 | ขอบไฮไลต์ | Cinnabar-100 |
+| `border-info/30` *(เดิม `border-primary/30`)*, `border-primary/40` | 2 | ขอบไฮไลต์ / ขอบการ์ด VIP | ขั้นจากบันไดสี |
 | `bg-secondary/80` | 1 | พื้นรอง | Argent-100 |
 
 ### อนุญาต — ไม่ต้องแตะ : **8 จุด**
@@ -248,7 +252,7 @@ pdfimages -png -f 11 -l 11 "docs/design-refs/Corporate Identity_compressed.pdf" 
 |---|---|---|
 | `components/ai/forecast-section.tsx` | 3 (Area + Line×2) | ค่าจริง / คาดการณ์ / ช่วงความเชื่อมั่น |
 | `components/billing/daily-usage-chart.tsx` | 3 (Area + Line×2) | |
-| `components/environment/temp-vs-usage-chart.tsx` | 2 (Bar + Line) | **มี `<YAxis>` 2 ตัว — ดูข้อ 10** |
+| `components/environment/temp-vs-usage-chart.tsx` | 2 (Bar + Line) | เป็น small multiples 2 กราฟ ไม่ใช่แกนคู่ — ดูข้อ 10 |
 | `components/ai/anomaly-timeline.tsx` | 2 (Bar + Scatter) | `<Cell>` 1 จุด ใช้สีสถานะ |
 | `components/ai/anomaly-evidence-chart.tsx` | 2 (Area + Line) | |
 | `components/reports/zone-usage-chart.tsx` | 2 (Bar×2) | ช่วงก่อนหน้าใช้ `CHART.offline` = เทา |
@@ -389,17 +393,21 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 
 ---
 
-## 10. `temp-vs-usage-chart.tsx` — คง dual-axis ใน Phase 7
+## 10. `temp-vs-usage-chart.tsx` — ไม่ใช่กราฟแกนคู่ (แก้ข้อสรุปเดิม)
 
-**ตัดสิน 2026-09-11:** Phase 7 เป็น restyle เท่านั้น จึง**คงโครง dual-axis ไว้ตามเดิม** ไม่แตะรูปแบบกราฟ
+**ข้อสรุปใน DESIGN_PLAN รอบแรกผิด** — ที่นับได้ว่ามี `<YAxis>` 2 ตัวนั้นไม่ใช่แกนคู่ในกราฟเดียว
+แต่เป็น **small multiples 2 กราฟที่แชร์แกนเวลาเดียวกัน** อยู่แล้ว (`<LineChart>` ชั้นบน + `<BarChart>` ชั้นล่าง)
+ซึ่งตรงกับข้อเสนอที่เคยบันทึกไว้เป็น "งานนอกขอบเขต" พอดี — คอมเมนต์ในไฟล์อธิบายเหตุผลไว้เองด้วย
 
-| ชุดข้อมูล | สี | แกน |
+**สิ่งที่ทำจริงใน 7.1 (ปรับสีอย่างเดียว ไม่แตะโครง)**
+
+| ชุดข้อมูล | สีเดิม | สีใหม่ |
 |---|---|---|
-| การใช้น้ำ (usage) | Blue (`data-series-1`) | แกนซ้าย |
-| อุณหภูมิ (temp) | Green (`data-series-2`) | แกนขวา |
+| การใช้น้ำ (ชั้นล่าง) | `CHART.sequential` | `seriesColor(0)` = Blue |
+| อุณหภูมิ (ชั้นบน) | `CHART.warning` (สีเตือน) | `seriesColor(1)` = Green |
 
-- ชื่อแกนทั้งสองข้าง **ต้องมีหน่วยกำกับ** และ **ใช้สีเดียวกับเส้นของตัวเอง** เพื่อให้รู้ว่าแกนไหนคู่กับเส้นไหน
-- ทำใน Phase 7.4 (ไฟล์อยู่ใน `components/environment/`)
+ป้ายชื่อของทั้งสองชั้นมีหน่วยกำกับอยู่แล้ว (`· °C` และ `· m³`) และเปลี่ยนจาก `text-muted-foreground`
+มาใช้สีเดียวกับเส้นของชั้นตัวเอง ตามที่ตัดสินไว้
 
 ---
 
@@ -452,11 +460,14 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 | `components/ai/ai-summary-card.tsx:57` | 2 | ไอคอนหัวการ์ดสรุป AI | `info` |
 | `components/environment/environment-card.tsx:107` | 2 | ชิป "ฝนตก" | `info` |
 | `components/control/pin-gate.tsx:79` | 2 | ไอคอนใน dialog ใส่ PIN | `info` |
-| `components/control/valve-control-card.tsx:90` | 1 | ลายทางตอนวาล์วกำลังเคลื่อน | `info` |
+| `components/control/valve-control-card.tsx:90` | 1 | ลายทางตอนวาล์วกำลังเคลื่อน | **`data-water`** (แก้จาก `info`) |
 | `components/ai/anomaly-card.tsx:118` | 1 | แท่งคะแนน anomaly ช่วง < 50% | `status-ok` |
 | `components/control/valve-control-card.tsx:54` | 1 | ขอบการ์ดโซน VIP | `brand` |
 
-→ `info` 19 token · `status-ok` 1 · `brand` 1 (รวมเข้ากลุ่ม brand เดิมเป็น 18)
+→ `info` 18 token · `data-water` 1 · `status-ok` 1 · `brand` 1 (รวมเข้ากลุ่ม brand เดิมเป็น 18)
+
+**แก้จากที่วางแผนไว้ 1 จุด:** ลายทางของวาล์วที่กำลังเคลื่อนใช้ `currentColor` ทับลงบนแท่งเดียวกับ
+ตัวบอกตำแหน่งวาล์ว ถ้าให้เป็น `info` ลายจะเป็นคนละสีกับแท่งที่มันวางทับอยู่ จึงใช้ `data-water` ให้ตรงกัน
 
 ### ค่าของ `info` และสิ่งที่ต้องแก้จากคำแนะนำเดิม
 
@@ -497,19 +508,19 @@ contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10
 
 ---
 
-## 12. นอกขอบเขต Phase 7
+## 12. งานที่พบระหว่างทำ แต่เป็นของเฟสอื่น
 
-งานที่เห็นระหว่างสำรวจแต่**เกินขอบเขต restyle** ไม่ทำในเฟสนี้ เปิดเป็นงานแยก
+### 12.1 Header ล้นจอ 29 px ที่ 375 px — เป็นของ Phase 7.3
 
-### 12.1 `temp-vs-usage-chart.tsx` ควรเลิก dual-axis
+วัดด้วย iframe กว้าง 375 px จริง (หน้าต่าง Chrome บน macOS ย่อต่ำกว่า 500 px ไม่ได้)
+ทุกหน้ารวมทั้ง `/login` ได้ `scrollWidth = 404` เท่ากันหมด
 
-- **ปัญหา:** กราฟมี `<YAxis>` 2 ตัว (การใช้น้ำ L/min กับอุณหภูมิ °C) ซึ่งเป็นข้อห้ามหลักของ skill `dataviz`
-  แกนสองสเกลทำให้ "จุดตัด" ของสองเส้นดูเหมือนมีความหมาย ทั้งที่ขึ้นกับการเลือกช่วงแกนล้วน ๆ
-- **ข้อเสนอ:** แยกเป็น **small multiples 2 กราฟซ้อนกัน แชร์แกนเวลาเดียวกัน** — บน = การใช้น้ำ (Blue), ล่าง = อุณหภูมิ (Green)
-  ความสัมพันธ์ยังอ่านได้จากการเรียงแนวตั้ง โดยไม่ต้องมีสองสเกลในกรอบเดียว
-- **ต้องทำอะไรก่อน:** แก้สเปก **`PROMPTS.md` Phase 1.7 (สภาพแวดล้อม)** ให้ระบุรูปแบบใหม่ก่อน
-  แล้วค่อยแก้โค้ด — ตามกฎ "เอกสารต้องสะท้อนโค้ดจริงเสมอ" ใน `RUNBOOK.md`
-- **ผลกระทบ:** เปลี่ยนความสูงของกราฟในหน้าแรก ต้องตรวจ layout ที่ 375px ใหม่
+- ต้นเหตุ: แถวควบคุมมุมขวาบนของ header (`ml-auto flex items-center gap-2 sm:gap-3`) กว้าง 328 px
+  แต่เหลือที่ให้แค่ ~299 px หลังหักส่วนซ้าย
+- **ไม่ใช่ผลจาก Phase 7.1** — ทดสอบโดยบังคับ `font-family: system-ui` ในหน้าเดียวกันได้ 405 px
+  (แย่กว่าเดิม 1 px) และ `git diff` ยืนยันว่า `components/layout/header.tsx` ไม่ถูกแตะเลยในเฟสนี้
+- น่าจะมาตั้งแต่ตอนเพิ่มหน้า login ซึ่งเติมบล็อกผู้ใช้ (ชื่อ + เวลาเซสชัน + บทบาท + ปุ่มออกจากระบบ) เข้า header
+- §6.1 กำหนดไว้แล้วว่า mobile ต้องย่อ header เหลือ โลโก้ + สถานะเชื่อมต่อ + กระดิ่ง → แก้พร้อมกันใน 7.3
 
 ---
 
@@ -519,10 +530,40 @@ contrast: Argent-900 บนขาว 7.53 : 1 · Lynx White บน Argent-950 10
 |---|---|---|
 | 1 | สีชุดข้อมูลของกราฟ | **ปิดแล้ว** — เลือก (ก) 2 สีหลัก + Argent อ้างอิง (ข้อ 9) |
 | 2 | สัดส่วนกล่องโลโก้ | **ปิดแล้ว** — extract ใหม่จากหน้า 11 ได้ 1.4017 (ข้อ 4) |
-| 3 | `temp-vs-usage-chart` dual-axis | **ปิดแล้ว** — คงไว้ใน Phase 7 เปิดเป็นงานแยก (ข้อ 10, 12.1) |
+| 3 | `temp-vs-usage-chart` dual-axis | **ปิดแล้ว — ข้อสรุปเดิมผิด** ไฟล์เป็น small multiples อยู่แล้ว ไม่มีงานค้าง (ข้อ 10) |
 | 4 | การแยกความหมาย `--primary` | **ปิดแล้ว** — 51/51 token จัดเข้ากลุ่มครบ เพิ่ม token `info` (ข้อ 11) |
 | 5 | ไฟล์โลโก้ต้นฉบับ | **ค้าง** — ที่ได้เป็น JPEG สีกล่องคลาด 8/255 ควรขอไฟล์ ai/svg/png จากองค์กร |
 | 6 | Favicon | **ค้าง** — คงรูปทรงเดิมเปลี่ยนสีใน 7.3 แล้ว แต่ยังต้องถามว่าองค์กรมี favicon ทางการหรือไม่ |
 | 7 | Argent-950 / Argent-1000 | **ค้าง** — 2 ค่าที่อยู่นอก CI ต้องแจ้งเจ้าของแบรนด์ |
 | 8 | สวิตช์ที่ใช้ `bg-status-ok` เป็นสถานะ "เปิด" | **ปิดแล้ว** — ย้ายมาใช้ `control-checked` ทั้ง 2 จุด ทำใน 7.2 (ข้อ 11) |
 | 9 | ความจางของชุดอ้างอิงใน light mode | **เฝ้าดู** — Argent-100 ได้ 1.67 : 1 ถ้าอ่านไม่ออกบนจอแขวนผนัง ให้หยุดรายงาน (ข้อ 9) |
+| 10 | Header ล้น 29 px ที่ 375 px | **ค้าง** — เป็นของ Phase 7.3 ไม่ใช่ของ 7.1 (ข้อ 12.1) |
+
+---
+
+## 14. สิ่งที่เปลี่ยนจริงใน Phase 7.1
+
+| เรื่อง | ผล |
+|---|---|
+| ตัวแปรสีใน `app/globals.css` | 84 ค่าผ่าน whitelist ทุกค่า (`npm run check:colors`) |
+| contrast ตามข้อ 3.2–3.5 | ผ่านครบ 27 คู่ · ข้อยกเว้นปุ่ม primary ยังอยู่ที่ 4.42 : 1 ตามที่บันทึกไว้ |
+| hex ที่ hard-code | เหลือเฉพาะ `lib/config/theme.ts` (สี LINE ย้ายไป `thirdParty.line` แล้ว) |
+| class สีสำเร็จรูปของ Tailwind | 0 จุด |
+| `*-primary` | 51 → 11 token ที่เหลือเป็นพื้นแบรนด์ล้วน (ปุ่ม, badge, tabs, กล่องโลโก้ชั่วคราว, ขอบการ์ด VIP) |
+| ฟอนต์ | Montserrat 4 น้ำหนักใน `app/fonts/` + `OFL.txt` · build มี woff2 12 ไฟล์ · ไม่มี URL ภายนอก |
+| ขนาด KPI | วัดจริงได้ 32 px ที่ 375 px และ 48 px ที่ 1920 px ตามข้อ 4 |
+
+### สองเรื่องที่ต้องรู้
+
+**1. `next/font` แทรก fallback กลาง stack** — ถ้าใส่ `fallback: ['system-ui', ...]` ในตัวฟอนต์แต่ละตัว
+`var(--font-montserrat)` จะขยายเป็น `__montserrat, __montserrat_Fallback, system-ui, sans-serif`
+ทำให้ `system-ui` ไปอยู่**ก่อน** IBM Plex Sans Thai แล้วอักษรไทยตกไปที่ฟอนต์ระบบแทน
+แก้โดยเอา `fallback` ออกจากทั้งสองตัว + ตั้ง `adjustFontFallback: false` ให้ Montserrat
+แล้วปล่อยให้ `fontFamily.sans` ใน `tailwind.config.ts` กำหนดลำดับจุดเดียว
+ตรวจด้วยการวัดความกว้างข้อความ: ละตินได้ 218.2 px (Montserrat) ไม่ใช่ 198.7 px (system-ui)
+และไทยได้ 243.3 px (Plex) ไม่ใช่ 244.1 px (system-ui)
+
+**2. บันไดสี Blue ของ CI ไล่เฉดไม่ได้** — ขั้น 700 กับ 500 มี OKLCH L เท่ากันที่ 0.517
+`validateOrdinal` จึง FAIL ที่ "Adjacent ΔL" ทุกชุด 4 ขั้นที่ประกอบได้
+โชคดีที่โค้ดจริงเรียกใช้แค่ 2 ขั้น จึงตัดบันได 4 ขั้นทิ้ง เหลือ `--data-water` กับ `--data-water-soft`
+ตามที่ข้อ 3.3 กำหนดไว้พอดี

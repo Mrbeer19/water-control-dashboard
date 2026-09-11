@@ -171,7 +171,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
                       checked={line.severityRouting[severity].includes(group.id)}
                       aria-label={`${severity} → ${group.name}`}
                       onChange={() => { toggleRoute(severity, group.id); }}
-                      className="h-4 w-4 accent-primary"
+                      className="h-4 w-4 accent-control-checked"
                     />
                   </td>
                 ))}

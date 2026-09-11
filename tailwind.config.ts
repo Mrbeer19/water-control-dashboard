@@ -11,7 +11,14 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-plex-thai)', 'system-ui', 'sans-serif'],
+        // ละตินและตัวเลขเป็น Montserrat ตาม CI ส่วนอักษรไทยตกไปที่ IBM Plex Sans Thai
+        // ทั้งสองตัว self-host อยู่ใน app/fonts/ — BRANDING_SPEC ข้อ 4
+        sans: [
+          'var(--font-montserrat)',
+          'var(--font-plex-thai)',
+          'system-ui',
+          'sans-serif',
+        ],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -47,16 +54,44 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // สีแบรนด์เมื่อใช้เป็น "ข้อความ" — Cinnabar-500 ได้ contrast แค่ 4.4:1 จึงใช้ขั้นที่เข้ม/สว่างกว่า
+        // ดู BRANDING_SPEC ข้อ 3.2 และ 3.5
+        'brand-text': 'hsl(var(--brand-text))',
+        // พื้นแบรนด์ที่ใช้ได้กับตัวอักษรเล็กกว่า 16px — Cinnabar-700 ได้ 4.8:1 กับตัวอักษรขาว
+        'brand-strong': {
+          DEFAULT: 'hsl(var(--brand-strong))',
+          foreground: 'hsl(var(--brand-strong-foreground))',
+        },
+        // สีของข้อมูลน้ำ — เป็น hex ตรง ๆ ใช้ opacity modifier ไม่ได้ ซึ่งตั้งใจให้เป็นแบบนั้น
+        water: {
+          DEFAULT: 'var(--data-water)',
+          soft: 'var(--data-water-soft)',
+        },
+        // ข้อความ/ไอคอนเชิงแจ้งให้ทราบ และสถานะ "กำลังดำเนินการ" — BRANDING_SPEC ข้อ 3.3
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          strong: 'hsl(var(--info-strong))',
+          'strong-foreground': 'hsl(var(--info-strong-foreground))',
+        },
+        // Switch / Checkbox / Radio / Slider สถานะติ๊กแล้ว — BRANDING_SPEC ข้อ 3.3
+        'control-checked': {
+          DEFAULT: 'hsl(var(--control-checked))',
+          foreground: 'hsl(var(--control-checked-foreground))',
+        },
         // สีสถานะตาม CLAUDE.md: เขียว=ปกติ เหลือง=เตือน แดง=วิกฤต เทา=offline
+        // รูปทรง pill (พื้น/จุด/ไอคอน) อยู่ใน BRANDING_SPEC ข้อ 3.4
         status: {
           ok: 'hsl(var(--status-ok))',
           'ok-foreground': 'hsl(var(--status-ok-foreground))',
+          'ok-dot': 'hsl(var(--status-ok-dot))',
           warning: 'hsl(var(--status-warning))',
           'warning-foreground': 'hsl(var(--status-warning-foreground))',
+          'warning-surface': 'hsl(var(--status-warning-surface))',
           critical: 'hsl(var(--status-critical))',
           'critical-foreground': 'hsl(var(--status-critical-foreground))',
           offline: 'hsl(var(--status-offline))',
           'offline-foreground': 'hsl(var(--status-offline-foreground))',
+          'offline-dot': 'hsl(var(--status-offline-dot))',
         },
       },
       borderRadius: {
@@ -65,9 +100,11 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontSize: {
-        // ตัวเลขสำหรับจอแขวนผนัง — อ่านจากระยะไกล
-        metric: ['2.5rem', { lineHeight: '1.1', fontWeight: '600' }],
-        'metric-lg': ['3.5rem', { lineHeight: '1.05', fontWeight: '700' }],
+        // ตัวเลขสำหรับจอแขวนผนัง — BRANDING_SPEC ข้อ 4 กำหนด ≥ 48px ที่ 1920px และ ≥ 32px ที่ 375px
+        // metric ใช้กับ KPI ทั่วไป (32px → 48px) ส่วน metric-lg ใช้กับตัวเลขเด่นของหน้าภาพรวม
+        // ค่าปรับตามความกว้างจอด้วย clamp: metric 32px ที่ 375px → 48px ที่ 1920px
+        metric: ['clamp(2rem, 1.5rem + 1.5vw, 3rem)', { lineHeight: '1.1', fontWeight: '700' }],
+        'metric-lg': ['clamp(2.5rem, 1.75rem + 3vw, 4rem)', { lineHeight: '1.05', fontWeight: '800' }],
       },
       keyframes: {
         'accordion-down': {

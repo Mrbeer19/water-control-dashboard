@@ -147,12 +147,12 @@ function ForecastCard({ forecast }: { forecast: AIForecast }): JSX.Element {
                   }}
                 />
                 {hasBand && (
-                  <Area dataKey="band" stroke="none" fill={CHART.sequential} fillOpacity={0.16} isAnimationActive={false} connectNulls />
+                  <Area dataKey="band" stroke="none" fill={CHART.water} fillOpacity={0.16} isAnimationActive={false} connectNulls />
                 )}
-                <Line dataKey="actual" stroke={CHART.sequential} strokeWidth={2} dot={false} isAnimationActive={false} name="actual" />
+                <Line dataKey="actual" stroke={CHART.water} strokeWidth={2} dot={false} isAnimationActive={false} name="actual" />
                 <Line
                   dataKey="predicted"
-                  stroke={CHART.sequential}
+                  stroke={CHART.water}
                   strokeWidth={2}
                   strokeDasharray="5 4"
                   dot={false}

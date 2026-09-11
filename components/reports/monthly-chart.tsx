@@ -40,9 +40,9 @@ export function MonthlyChart({ points }: { points: MonthlyUsagePoint[] }): JSX.E
             {rows.map((row) => (
               <Cell
                 key={row.month}
-                fill={CHART.sequential}
+                fill={CHART.water}
                 fillOpacity={row.partial ? 0.38 : 1}
-                stroke={row.partial ? CHART.sequential : undefined}
+                stroke={row.partial ? CHART.water : undefined}
                 strokeDasharray={row.partial ? '4 3' : undefined}
               />
             ))}

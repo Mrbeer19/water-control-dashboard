@@ -10,7 +10,7 @@ import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-toke
 const SEVERITY_COLOR: Record<AlertSeverity, string> = {
   critical: CHART.critical,
   warning: CHART.warning,
-  info: CHART.sequential,
+  info: CHART.info,
 };
 
 /**
@@ -94,7 +94,7 @@ export function AnomalyTimeline({
                 return [formatCubicMeters(Number(value), locale), t.billing.dailyUsage];
               }}
             />
-            <Bar dataKey="cubicMeters" fill={CHART.sequential} fillOpacity={0.45} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={30} />
+            <Bar dataKey="cubicMeters" fill={CHART.water} fillOpacity={0.45} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={30} />
             <Scatter data={markers} dataKey="marker" isAnimationActive={false} shape="circle">
               {markers.map((marker, index) => (
                 <Cell key={`${marker.timestamp}-${index}`} fill={SEVERITY_COLOR[marker.severity]} />

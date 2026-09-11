@@ -83,7 +83,7 @@ export function ConfirmDialog({
           <span
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-              destructive ? 'bg-status-critical/15 text-status-critical' : 'bg-primary/10 text-primary',
+              destructive ? 'bg-status-critical/15 text-status-critical' : 'bg-info/10 text-info',
             )}
           >
             {secondStage ? <ShieldAlert className="h-4.5 w-4.5" aria-hidden /> : <AlertTriangle className="h-4.5 w-4.5" aria-hidden />}

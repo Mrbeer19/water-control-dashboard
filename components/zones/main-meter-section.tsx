@@ -76,13 +76,13 @@ export function MainMeterSection(): JSX.Element {
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground">{t.meter.flowNow}</p>
-              <p className="tabular text-metric leading-none text-primary">{formatNumber(meter.flowLpm, locale, 0)}</p>
+              <p className="tabular text-metric leading-none text-water">{formatNumber(meter.flowLpm, locale, 0)}</p>
               <p className="text-[11px] text-muted-foreground">L/min</p>
             </div>
           </div>
 
           <div className="mt-3 border-t pt-3">
-            <Sparkline points={history} color={CHART.primary} height={44} label={t.meter.flowNow} />
+            <Sparkline points={history} color={CHART.water} height={44} label={t.meter.flowNow} />
           </div>
 
           <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">

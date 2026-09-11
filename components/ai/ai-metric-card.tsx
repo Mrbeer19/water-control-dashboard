@@ -72,7 +72,7 @@ export function AiMetricCard({ metric }: { metric: AIMetric }): JSX.Element {
         {metric.series !== undefined && metric.series.length > 1 && (
           <Sparkline
             points={metric.series}
-            color={status === 'critical' ? CHART.critical : CHART.sequential}
+            color={status === 'critical' ? CHART.critical : CHART.water}
             height={32}
             label={`${label} trend`}
           />

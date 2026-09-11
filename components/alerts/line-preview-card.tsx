@@ -5,6 +5,7 @@ import type { NotificationDelivery, NotificationPreview } from '@/lib/types';
 import { retryNotificationDelivery } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import { cn, formatRelativeTime } from '@/lib/utils';
+import { thirdParty } from '@/lib/config/theme';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -37,7 +38,17 @@ export function LinePreviewCard({
         ) : (
           <>
             {/* กล่องข้อความหน้าตาแบบแชท เพื่อให้เห็นว่าคนปลายทางจะเห็นอะไรจริง ๆ */}
-            <div className="rounded-lg rounded-tl-sm bg-[#06C755]/10 p-3 ring-1 ring-[#06C755]/25">
+            {/*
+              สีแบรนด์ของ LINE ไม่ใช่สี CI ของ Kasetphand — เป็นข้อยกเว้นเดียวตาม BRANDING_SPEC ข้อ 3.7
+              อ่านจาก lib/config/theme.ts คีย์ thirdParty.line และใช้ได้เฉพาะไฟล์นี้
+            */}
+            <div
+              className="rounded-lg rounded-tl-sm p-3 ring-1"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${thirdParty.line} 10%, transparent)`,
+                '--tw-ring-color': `color-mix(in srgb, ${thirdParty.line} 25%, transparent)`,
+              } as React.CSSProperties}
+            >
               <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 LINE · {preview.recipient}
               </p>

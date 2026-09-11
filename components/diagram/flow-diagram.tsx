@@ -277,7 +277,7 @@ export function FlowDiagram({ data }: { data: FlowDiagramData }): JSX.Element {
               <Thermometer className="h-4 w-4 text-status-warning" aria-hidden />
             </foreignObject>
             <foreignObject x={7} y={25} width={16} height={16}>
-              <Droplet className="h-4 w-4 text-primary" aria-hidden />
+              <Droplet className="h-4 w-4 text-water" aria-hidden />
             </foreignObject>
             <text x={28} y={21} className="tabular fill-foreground text-[11px] font-semibold">
               {formatTemperature(sensor.latest.temperatureCelsius, locale)}
@@ -323,7 +323,7 @@ function DataPath({ y }: { y: number }): JSX.Element {
           cx={stop.x + 30}
           cy={20}
           r={4}
-          className="data-pulse fill-primary"
+          className="data-pulse fill-water"
           style={{ ['--data-distance' as string]: '280px', animationDelay: `${index * 0.45}s` }}
         />
       ))}

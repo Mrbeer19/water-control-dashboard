@@ -11,8 +11,8 @@ const STATE_CLASS = {
   success: 'text-status-ok',
   timeout: 'text-status-warning',
   failed: 'text-status-critical',
-  sending: 'text-primary',
-  awaiting_feedback: 'text-primary',
+  sending: 'text-info',
+  awaiting_feedback: 'text-info',
   idle: 'text-muted-foreground',
 } as const;
 

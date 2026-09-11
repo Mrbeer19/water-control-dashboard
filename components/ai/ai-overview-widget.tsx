@@ -42,7 +42,7 @@ export function AiOverviewWidget(): JSX.Element {
         <span
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-            hasCritical ? 'bg-status-critical/15 text-status-critical' : 'bg-primary/10 text-primary',
+            hasCritical ? 'bg-status-critical/15 text-status-critical' : 'bg-info/10 text-info',
           )}
         >
           {hasCritical ? <TriangleAlert className="h-4.5 w-4.5" aria-hidden /> : <Brain className="h-4.5 w-4.5" aria-hidden />}
@@ -60,7 +60,7 @@ export function AiOverviewWidget(): JSX.Element {
 
         <Link
           href="/ai"
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-text hover:underline"
         >
           {t.overview.viewAll}
           <ArrowRight className="h-3 w-3" aria-hidden />

@@ -115,7 +115,7 @@ export function AnomalyCard({
               <div
                 className={cn(
                   'h-full rounded-full transition-[width] duration-700',
-                  scorePercent >= 80 ? 'bg-status-critical' : scorePercent >= 50 ? 'bg-status-warning' : 'bg-primary',
+                  scorePercent >= 80 ? 'bg-status-critical' : scorePercent >= 50 ? 'bg-status-warning' : 'bg-status-oky',
                 )}
                 style={{ width: `${Math.max(2, scorePercent)}%` }}
               />
@@ -147,7 +147,7 @@ export function AnomalyCard({
         )}
 
         {anomaly.suggestedAction !== undefined && (
-          <p className="flex gap-1.5 rounded-md bg-primary/10 px-2.5 py-2 text-xs leading-relaxed text-primary">
+          <p className="flex gap-1.5 rounded-md bg-info/10 px-2.5 py-2 text-xs leading-relaxed text-info">
             <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>
               <span className="font-medium">{t.ai.suggestedAction}: </span>
@@ -202,7 +202,7 @@ export function AnomalyCard({
           {href !== null && (
             <Link
               href={href}
-              className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+              className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-brand-text hover:underline"
             >
               {t.overview.viewAll}
               <ArrowRight className="h-3 w-3" aria-hidden />

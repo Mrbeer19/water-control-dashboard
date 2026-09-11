@@ -54,7 +54,7 @@ export function AiSummaryCard({ status, loading }: { status: AIServiceStatus | n
       <CardContent className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-info/10 text-infary">
               <Brain className="h-4.5 w-4.5" aria-hidden />
             </span>
             <div className="min-w-0">

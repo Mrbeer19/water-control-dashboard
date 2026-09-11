@@ -71,7 +71,7 @@ export function BillingSection(): JSX.Element {
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground">{t.billing.forecastToMonthEnd}</p>
-              <p className="tabular text-metric leading-none text-primary">
+              <p className="tabular text-metric leading-none text-water">
                 {formatBaht(estimate.projectedTotalBaht, locale, 0)}
               </p>
               <p className="text-[11px] text-muted-foreground">{t.billing.forecastLabel}</p>

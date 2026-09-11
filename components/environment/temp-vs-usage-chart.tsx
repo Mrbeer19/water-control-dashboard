@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import type { DailyUsagePoint } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatDate, formatTemperature } from '@/lib/utils';
-import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { AXIS_PROPS, TOOLTIP_STYLE, seriesColor } from '@/components/charts/chart-tokens';
 
 /**
  * อุณหภูมิภายนอก เทียบ การใช้น้ำรายวัน
@@ -31,7 +31,7 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
     <div className="space-y-1">
       {/* ชั้นบน: อุณหภูมิ */}
       <div>
-        <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+        <p className="mb-0.5 text-[11px] font-medium" style={{ color: seriesColor(1) }}>
           {t.env.temperature} · °C
         </p>
         <div className="h-[112px] w-full">
@@ -48,7 +48,7 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
               />
               <Line
                 dataKey="avgTemperatureCelsius"
-                stroke={CHART.warning}
+                stroke={seriesColor(1)}
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
@@ -60,7 +60,7 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
 
       {/* ชั้นล่าง: การใช้น้ำ — แกนเวลาเดียวกัน ตำแหน่งวันจึงตรงกันในแนวตั้ง */}
       <div>
-        <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+        <p className="mb-0.5 text-[11px] font-medium" style={{ color: seriesColor(0) }}>
           {t.billing.dailyUsage} · m³
         </p>
         <div className="h-[124px] w-full">
@@ -83,7 +83,7 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
                 labelFormatter={(value) => formatDate(Number(value), locale)}
                 formatter={(value) => [formatCubicMeters(Number(value), locale), t.billing.dailyUsage]}
               />
-              <Bar dataKey="cubicMeters" fill={CHART.sequential} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="cubicMeters" fill={seriesColor(0)} radius={[4, 4, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>

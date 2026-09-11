@@ -64,7 +64,7 @@ export function PumpCard({ pump }: { pump: Pump }): JSX.Element {
           <div className="min-w-[92px] flex-1">
             <Sparkline
               points={history ?? []}
-              color={tone === 'critical' ? CHART.critical : CHART.primary}
+              color={tone === 'critical' ? CHART.critical : CHART.water}
               height={38}
               label={`${t.pump.energy24h} ${pump.nameEn}`}
             />

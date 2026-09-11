@@ -23,7 +23,7 @@ interface SparklineProps {
  * กราฟเส้นจิ๋วไม่มีแกน ใช้บอกแนวโน้มในการ์ด
  * ต้องมีจุดอย่างน้อย 2 จุดจึงจะวาด ไม่งั้นแสดงเส้นประแทนเพื่อไม่ให้การ์ดยุบ
  */
-export function Sparkline({ points, color = CHART.primary, height = 40, label }: SparklineProps): JSX.Element {
+export function Sparkline({ points, color = CHART.water, height = 40, label }: SparklineProps): JSX.Element {
   if (points.length < 2) {
     return (
       <div

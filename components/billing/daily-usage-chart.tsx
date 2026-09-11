@@ -88,7 +88,7 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           <Area
             dataKey="band"
             stroke="none"
-            fill={CHART.sequential}
+            fill={CHART.water}
             fillOpacity={0.16}
             isAnimationActive={false}
             name={t.billing.confidenceBand}
@@ -96,7 +96,7 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           />
           <Line
             dataKey="actual"
-            stroke={CHART.sequential}
+            stroke={CHART.water}
             strokeWidth={2}
             dot={false}
             isAnimationActive={false}
@@ -104,7 +104,7 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           />
           <Line
             dataKey="forecast"
-            stroke={CHART.sequential}
+            stroke={CHART.water}
             strokeWidth={2}
             strokeDasharray="5 4"
             dot={false}
@@ -119,7 +119,7 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <svg width="18" height="8" aria-hidden>
-            <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.sequential} strokeWidth="2" />
+            <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.water} strokeWidth="2" />
           </svg>
           {t.billing.actualLabel}
         </span>
@@ -127,14 +127,14 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           <>
             <span className="inline-flex items-center gap-1.5">
               <svg width="18" height="8" aria-hidden>
-                <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.sequential} strokeWidth="2" strokeDasharray="5 4" />
+                <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.water} strokeWidth="2" strokeDasharray="5 4" />
               </svg>
               {t.billing.forecastLabel}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span
                 className="inline-block h-2.5 w-4 rounded-sm"
-                style={{ background: CHART.sequential, opacity: 0.16 }}
+                style={{ background: CHART.water, opacity: 0.16 }}
                 aria-hidden
               />
               {t.billing.confidenceBand}
