@@ -1854,6 +1854,168 @@ export interface ZoneCost {
  * ยอดรวมรายวัน ใช้กับกราฟเส้นการใช้น้ำรายวัน
  * และกราฟซ้อนอุณหภูมิภายนอก vs การใช้น้ำ
  */
+// ═════════════════════════════════════════════════════════════
+// ข้อมูลกราฟแบบรวมช่วงเวลา (chart explorer)
+// ★ ของใหม่ทั้งก้อน ไม่ได้แก้ field เดิมของ TimeSeriesPoint
+//   TimeSeriesPoint = "ข้อมูลดิบ" ใช้กับ sparkline และ endpoint /history เดิม
+//   AggregatedSeriesPoint = "ข้อมูลที่รวมช่วงแล้ว" ใช้กับ endpoint /api/metrics/series
+// ═════════════════════════════════════════════════════════════
+
+/** ชนิดของค่าที่วัด — ตัวกำหนดว่าจะรวมข้อมูลยังไงและแสดงสถิติอะไร */
+export type MetricKind = 'gauge' | 'counter' | 'amount' | 'level' | 'state';
+
+/**
+ * ความละเอียดของการรวมช่วง
+ * ★ สะกดเต็มคำ ห้ามใช้ '1m' / '1M' เพราะแยกนาทีกับเดือนไม่ออก
+ */
+export type SeriesGranularity =
+  | 'raw'
+  | 'minute_5'
+  | 'minute_15'
+  | 'hour'
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'year';
+
+/** โหมดเปรียบเทียบกับช่วงอื่น */
+export type SeriesCompareMode = 'none' | 'previous' | 'last_year';
+
+/** มุมมองรายเดือน — เดือนปฏิทิน หรือ รอบจดมิเตอร์ตาม settings */
+export type MonthAnchor = 'calendar' | 'meter_reading';
+
+/** ชนิดของแหล่งข้อมูล — ใช้ชุดเดียวกับ Alert เพื่อไม่ให้มี union ซ้ำซ้อน */
+export type MetricSourceType = AlertSourceType;
+
+interface BucketBase {
+  /** epoch ms ของ "ต้นช่วง" — ข้อตกลงเดียวกับจุดกราฟเดิม */
+  timestamp: EpochMs;
+  /** จำนวนตัวอย่างจริงที่ตกในช่วงนี้ */
+  count: number;
+  /** จำนวนที่ควรมีถ้าเซนเซอร์ส่งครบ — ใช้คิดเปอร์เซ็นต์ความครบ */
+  expectedCount: number;
+  /** true = ช่วงนี้ยังไม่จบ (ชั่วโมง/วัน/เดือนปัจจุบัน) */
+  isPartial: boolean;
+}
+
+/**
+ * ค่าที่วัด ณ ขณะหนึ่ง เช่น °C, %RH, bar, V, A, W, L/min
+ * ★ ไม่มี field รวม (sum) โดยเจตนา — การรวมอุณหภูมิไม่มีความหมาย
+ */
+export interface GaugeBucket extends BucketBase {
+  kind: 'gauge';
+  /** ค่าเฉลี่ยถ่วงน้ำหนักด้วย count — null เมื่อช่วงนี้ไม่มีข้อมูล */
+  avg: number | null;
+  min: number | null;
+  max: number | null;
+  /** เวลาที่ค่าต่ำสุด/สูงสุดเกิดขึ้นจริง ใช้บอกว่า "ร้อนสุดตอนบ่ายสาม" */
+  minAt: EpochMs | null;
+  maxAt: EpochMs | null;
+}
+
+/**
+ * ตัวนับสะสม เช่น kWh, เลขหน้าปัดมิเตอร์, pulse count
+ * ★ delta = last − first ของช่วง ถ้าตัวนับรีเซ็ตกลางช่วงให้นับต่อจากค่าใหม่ ผลต้องไม่ติดลบ
+ */
+export interface CounterBucket extends BucketBase {
+  kind: 'counter';
+  delta: number | null;
+  /** true = เจอค่าลดลงกลางช่วง (อุปกรณ์รีบูตหรือเปลี่ยนมิเตอร์) */
+  resetDetected: boolean;
+}
+
+/** ปริมาณที่บวกกันได้ตรง ๆ เช่น ฝน mm */
+export interface AmountBucket extends BucketBase {
+  kind: 'amount';
+  sum: number | null;
+  max: number | null;
+}
+
+/** ระดับ ณ เวลาหนึ่ง เช่น ระดับน้ำในถัง — สนใจค่าปลายช่วงกับช่วงแกว่ง */
+export interface LevelBucket extends BucketBase {
+  kind: 'level';
+  last: number | null;
+  min: number | null;
+  max: number | null;
+}
+
+/**
+ * สถานะที่กินเวลา เช่น ปั๊ม running/stopped/fault, อุปกรณ์ online/offline
+ * ★ key เป็น string เปิด (แนวเดียวกับ AnomalyType) mapping ป้าย/สีอยู่ใน registry ฝั่งหน้าบ้าน
+ */
+export interface StateBucket extends BucketBase {
+  kind: 'state';
+  /** เวลารวมที่อยู่ในแต่ละสถานะ (ms) ภายในช่วงนี้ */
+  durationsMs: Partial<Record<string, number>>;
+  /** จำนวนครั้งที่ "เข้า" สถานะนั้น — จำนวนสตาร์ทปั๊ม = entries ของสถานะเดินเครื่อง */
+  entries: Partial<Record<string, number>>;
+}
+
+export type AggregatedSeriesPoint =
+  | GaugeBucket
+  | CounterBucket
+  | AmountBucket
+  | LevelBucket
+  | StateBucket;
+
+/**
+ * ผลลัพธ์ของ GET /api/metrics/series — หนึ่ง request ต่อหนึ่ง series
+ * ★ หลังบ้านเป็นคนรวมข้อมูล จึงเป็นคนบอก kind มาใน response
+ *   registry ฝั่งหน้าบ้านใช้แค่ ป้าย/หน่วย/สี/threshold/ชนิดกราฟ
+ */
+export interface MetricSeries<K extends MetricKind = MetricKind> {
+  sourceType: MetricSourceType;
+  sourceId: string;
+  metric: MetricKey;
+  unit: string;
+  kind: K;
+  granularity: SeriesGranularity;
+  /** ชื่อเขตเวลาแบบ IANA ที่ใช้ตัดขอบช่วง เช่น "Asia/Bangkok" */
+  timezone: string;
+  /** ISO 8601 พร้อม offset */
+  from: ISODateTime;
+  to: ISODateTime;
+  points: Extract<AggregatedSeriesPoint, { kind: K }>[];
+  /** ช่วงเปรียบเทียบ — null เมื่อไม่ได้ขอ */
+  compare: {
+    from: ISODateTime;
+    to: ISODateTime;
+    points: Extract<AggregatedSeriesPoint, { kind: K }>[];
+  } | null;
+}
+
+/** พารามิเตอร์ของ GET /api/metrics/series */
+export interface MetricSeriesQuery {
+  sourceType: MetricSourceType;
+  sourceId: string;
+  metric: MetricKey;
+  from: EpochMs;
+  to: EpochMs;
+  granularity: SeriesGranularity;
+  compare?: SeriesCompareMode;
+  /** ใช้เฉพาะมุมมองรายเดือนของมิเตอร์น้ำ */
+  monthAnchor?: MonthAnchor;
+}
+
+/**
+ * ช่วงเวลาที่อยู่ในสถานะหนึ่ง — สถานะเป็น "ช่วง" ไม่ใช่ "จุด" จึงไม่ใช้ TimeSeriesPoint
+ *
+ * ★ span ต้องต่อกันไม่มีรู ช่วงที่ไม่มีข้อมูลใช้ state 'no_data'
+ *   ผลรวม durationMs ต้องเท่ากับความยาวช่วงที่ขอพอดี
+ * ★ span ที่คร่อมขอบช่วงให้ตัดให้อยู่ใน from–to
+ */
+export interface StateSpan {
+  from: EpochMs;
+  /** null = ยังอยู่ในสถานะนี้ → durationMs คิดถึงเวลาที่ตอบ */
+  to: EpochMs | null;
+  /** string เปิด ใช้ค่าจาก PumpRunState / ValvePosition / EntityStatus ที่มีอยู่แล้ว */
+  state: string;
+  durationMs: number;
+}
+
+/** state พิเศษที่ใช้อุดช่วงที่ไม่มีข้อมูล ไม่ได้มาจากอุปกรณ์ */
+export const NO_DATA_STATE = 'no_data';
+
 export interface DailyUsagePoint {
   /** วันที่แบบ "YYYY-MM-DD" ตามเวลาท้องถิ่น */
   date: string;
