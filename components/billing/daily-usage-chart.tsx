@@ -11,9 +11,12 @@ import {
   YAxis,
 } from 'recharts';
 import type { DailyUsagePoint } from '@/lib/types';
+import { useCallback } from 'react';
+import { getDailyUsage } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatDate } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 interface Row {
   timestamp: number;
@@ -31,6 +34,18 @@ interface Row {
  */
 export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.Element {
   const { t, locale } = useLocale();
+
+  // ข้อมูลที่ส่งให้หน้าต่าง "ดูข้อมูลละเอียด" — เอาเฉพาะวันที่เกิดขึ้นจริง ไม่รวมวันที่พยากรณ์
+  const detailPoints = points
+    .filter((point) => !point.projected)
+    .map((point) => ({ timestamp: point.timestamp, value: point.cubicMeters }));
+  const loadDeepHistory = useCallback(
+    async () =>
+      (await getDailyUsage(false, 400))
+        .filter((point) => !point.projected)
+        .map((point) => ({ timestamp: point.timestamp, value: point.cubicMeters })),
+    [],
+  );
 
   const lastActualIndex = points.findLastIndex((point) => !point.projected);
   // หน้ารายงานส่งมาเฉพาะวันที่เกิดขึ้นจริง — ไม่ต้องมีตำนานสีของเส้นที่ไม่ได้วาด
@@ -58,6 +73,13 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
   }
 
   return (
+    <ChartDetail
+      title={t.billing.dailyUsage}
+      unit="m³"
+      points={detailPoints}
+      loadPoints={loadDeepHistory}
+      decimals={1}
+    >
     <div className="h-[240px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -142,5 +164,6 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
         )}
       </div>
     </div>
+    </ChartDetail>
   );
 }

@@ -7,6 +7,7 @@ import { formatDateTimeTH, formatNumber, formatPercent, formatRatio, formatTime 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * C — ผลพยากรณ์ทั้งหมด จัดกลุ่มตาม target
@@ -120,6 +121,12 @@ function ForecastCard({ forecast }: { forecast: AIForecast }): JSX.Element {
         {rows.length < 2 ? (
           <p className="py-8 text-center text-xs text-muted-foreground">{t.common.empty}</p>
         ) : (
+          <ChartDetail
+            title={forecast.targetName ?? forecast.targetId ?? forecast.target}
+            unit={forecast.unit ?? ''}
+            points={history.map((point) => ({ timestamp: point.timestamp, value: point.value }))}
+            decimals={1}
+          >
           <div className="h-[180px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={rows} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
@@ -164,6 +171,7 @@ function ForecastCard({ forecast }: { forecast: AIForecast }): JSX.Element {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          </ChartDetail>
         )}
 
         {(forecast.summaryTh !== undefined || forecast.summaryEn !== undefined) && (

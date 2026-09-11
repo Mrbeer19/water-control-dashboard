@@ -5,6 +5,7 @@ import type { MonthlyUsagePoint } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatNumber, formatPercent } from '@/lib/utils';
 import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * ยอดรายเดือนย้อนหลัง
@@ -15,8 +16,16 @@ import { AXIS_PROPS, CHART, TOOLTIP_STYLE } from '@/components/charts/chart-toke
 export function MonthlyChart({ points }: { points: MonthlyUsagePoint[] }): JSX.Element {
   const { t, locale } = useLocale();
   const rows = points.map((point) => ({ ...point, display: locale === 'th' ? point.label : point.labelEn }));
+  const detailPoints = points.map((point) => ({ timestamp: point.timestamp, value: point.cubicMeters }));
 
   return (
+    <ChartDetail
+      title={t.reports.monthly}
+      unit="m³"
+      points={detailPoints}
+      decimals={1}
+      grains={['month', 'year']}
+    >
     <div className="h-[260px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 18, right: 8, bottom: 0, left: 0 }}>
@@ -57,5 +66,6 @@ export function MonthlyChart({ points }: { points: MonthlyUsagePoint[] }): JSX.E
         </BarChart>
       </ResponsiveContainer>
     </div>
+    </ChartDetail>
   );
 }

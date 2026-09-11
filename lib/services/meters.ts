@@ -1,7 +1,7 @@
 /** Service: มิเตอร์น้ำ 8 โซน + มิเตอร์หลักจากการประปา */
 
 import type { DailyUsagePoint, MainMeter, MetricKey, TimeSeriesPoint, UnaccountedWater, WaterMeter } from '@/lib/types';
-import { buildDailyUsage, daysRemainingInMonth, readHistory } from '@/lib/mock';
+import { buildDailyUsage, DAILY_HISTORY_DAYS, daysRemainingInMonth, readHistory } from '@/lib/mock';
 import { calculateStorageDelta, calculateUnaccountedWater, currentBillingPeriod } from '@/lib/utils/calculation';
 import { respond } from './internal';
 
@@ -60,12 +60,22 @@ export async function getFlowBalance(): Promise<{ inflowLpm: number; outflowLpm:
 }
 
 /**
- * ยอดใช้น้ำรายวันย้อนหลัง 30 วัน
+ * ยอดใช้น้ำรายวันย้อนหลัง (ค่าตั้งต้น 30 วัน)
  * ส่ง includeProjection = true เพื่อต่อส่วนที่ AI พยากรณ์ไปจนสิ้นเดือน
  * (จุดที่พยากรณ์จะมี projected = true และไม่มีค่าอุณหภูมิ/ฝน)
  *
+ * @param historyDays จำนวนวันย้อนหลังที่ต้องการ — หน้าต่าง "ดูข้อมูลละเอียด" ขอยาวถึง 400 วัน
+ *                    เพื่อให้สรุปรายเดือนและรายปีมีข้อมูลพอ
+ *
  * TODO(backend): GET /api/meters/daily?from=&to=&projection=
+ *   `historyDays` ควรกลายเป็น from/to และให้เซิร์ฟเวอร์เป็นคนรวมยอดรายเดือน/รายปีให้
+ *   ไม่ใช่ส่งรายวัน 400 จุดมาให้หน้าจอรวมเอง
  */
-export async function getDailyUsage(includeProjection = false): Promise<DailyUsagePoint[]> {
-  return respond((state) => buildDailyUsage(state, includeProjection ? daysRemainingInMonth() : 0));
+export async function getDailyUsage(
+  includeProjection = false,
+  historyDays: number = DAILY_HISTORY_DAYS,
+): Promise<DailyUsagePoint[]> {
+  return respond((state) =>
+    buildDailyUsage(state, includeProjection ? daysRemainingInMonth() : 0, historyDays),
+  );
 }

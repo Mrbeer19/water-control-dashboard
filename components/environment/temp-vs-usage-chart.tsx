@@ -5,6 +5,7 @@ import type { DailyUsagePoint } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { formatCubicMeters, formatDate, formatTemperature } from '@/lib/utils';
 import { AXIS_PROPS, TOOLTIP_STYLE, seriesColor } from '@/components/charts/chart-tokens';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /**
  * อุณหภูมิภายนอก เทียบ การใช้น้ำรายวัน
@@ -26,8 +27,10 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
   const tempMax = Math.ceil(Math.max(...temps) + 1);
 
   const tickFormatter = (value: number): string => new Date(value).getDate().toString();
+  const detailPoints = rows.map((row) => ({ timestamp: row.timestamp, value: row.cubicMeters }));
 
   return (
+    <ChartDetail title={t.billing.dailyUsage} unit="m³" points={detailPoints} decimals={1}>
     <div className="space-y-1">
       {/* ชั้นบน: อุณหภูมิ */}
       <div>
@@ -89,5 +92,6 @@ export function TempVsUsageChart({ points }: { points: DailyUsagePoint[] }): JSX
         </div>
       </div>
     </div>
+    </ChartDetail>
   );
 }
