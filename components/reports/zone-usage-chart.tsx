@@ -37,8 +37,8 @@ export function ZoneUsageChart({ rows }: { rows: UsageReportRow[] }): JSX.Elemen
             formatter={(value, name) => [formatCubicMeters(Number(value), locale), String(name)]}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }} />
-          <Bar dataKey="previousCubicMeters" name={t.reports.previous} fill={CHART.offline} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={22} />
-          <Bar dataKey="cubicMeters" name={t.reports.range} fill={seriesColor(0)} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={22}>
+          <Bar dataKey="previousCubicMeters" name={t.reports.lastPeriod} fill={CHART.offline} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={22} />
+          <Bar dataKey="cubicMeters" name={t.reports.thisPeriod} fill={seriesColor(0)} radius={[3, 3, 0, 0]} isAnimationActive={false} maxBarSize={22}>
             <LabelList
               dataKey="cubicMeters"
               position="top"

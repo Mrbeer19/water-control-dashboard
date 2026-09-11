@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { Download, FileText, TrendingDown, TrendingUp } from 'lucide-react';
-import type { TimeRange, TimeRangePreset, UsageReport } from '@/lib/types';
+import type { MeterReading, MonthlyUsagePoint, TimeRange, TimeRangePreset, UsageReport } from '@/lib/types';
 import { useLiveData } from '@/lib/hooks/use-live-data';
-import { getUsageReport, requestReportExport } from '@/lib/services';
+import { getMeterReadings, getMonthlyComparison, getUsageReport, requestReportExport } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import { cn, formatBaht, formatCubicMeters, formatDate, formatDateTimeTH, formatPercent } from '@/lib/utils';
 import { Section } from '@/components/layout/section';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DailyUsageChart } from '@/components/billing/daily-usage-chart';
 import { ZoneUsageChart } from '@/components/reports/zone-usage-chart';
+import { MonthlyChart } from '@/components/reports/monthly-chart';
 
 const INPUT_CLASS =
   'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -56,6 +57,8 @@ export default function ReportsPage(): JSX.Element {
   };
 
   const { data, loading } = useLiveData<UsageReport>(() => getUsageReport(range), [range.from, range.to]);
+  const { data: monthly } = useLiveData<MonthlyUsagePoint[]>(() => getMonthlyComparison(12), []);
+  const { data: readings } = useLiveData<MeterReading[]>(() => getMeterReadings(12), []);
 
   const rising = (data?.changePercent ?? 0) > 0;
 
@@ -162,7 +165,10 @@ export default function ReportsPage(): JSX.Element {
                     <p className="text-[11px] text-muted-foreground">{t.reports.totalUsage}</p>
                     <p className="tabular text-metric leading-none">{formatCubicMeters(data.totalCubicMeters, locale, 0)}</p>
                     <p className="tabular text-[11px] text-muted-foreground">
-                      {t.reports.previous} {formatCubicMeters(data.previousTotalCubicMeters, locale, 0)}
+                      {t.reports.lastPeriod} {formatCubicMeters(data.previousTotalCubicMeters, locale, 0)}
+                      <span className="block opacity-70">
+                        {formatDate(data.previousRange.from, locale)} – {formatDate(data.previousRange.to, locale)}
+                      </span>
                     </p>
                   </CardContent>
                 </Card>
@@ -171,7 +177,7 @@ export default function ReportsPage(): JSX.Element {
                     <p className="text-[11px] text-muted-foreground">{t.reports.totalCost}</p>
                     <p className="tabular text-metric leading-none">{formatBaht(data.totalCostBaht, locale, 0)}</p>
                     <p className="tabular text-[11px] text-muted-foreground">
-                      {t.reports.previous} {formatBaht(data.previousTotalCostBaht, locale, 0)}
+                      {t.reports.lastPeriod} {formatBaht(data.previousTotalCostBaht, locale, 0)}
                     </p>
                   </CardContent>
                 </Card>
@@ -217,8 +223,18 @@ export default function ReportsPage(): JSX.Element {
                     <thead>
                       <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
                         <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.zone.zone}</th>
-                        <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.reports.range}</th>
-                        <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.reports.previous}</th>
+                        <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                          {t.reports.thisPeriod}
+                          <span className="block font-normal opacity-70">
+                            {formatDate(data.range.from, locale)} – {formatDate(data.range.to, locale)}
+                          </span>
+                        </th>
+                        <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                          {t.reports.lastPeriod}
+                          <span className="block font-normal opacity-70">
+                            {formatDate(data.previousRange.from, locale)} – {formatDate(data.previousRange.to, locale)}
+                          </span>
+                        </th>
                         <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.reports.change}</th>
                         <th scope="col" className="px-3 py-2.5 text-right font-medium">{t.zone.cost}</th>
                         <th scope="col" className="px-4 py-2.5 text-right font-medium">{t.reports.share}</th>
@@ -248,6 +264,113 @@ export default function ReportsPage(): JSX.Element {
                     </tbody>
                   </table>
                 </div>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    {t.reports.monthly}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{t.reports.monthlyHint}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {monthly === null ? (
+                    <Skeleton className="h-[260px] rounded-md" />
+                  ) : (
+                    <>
+                      <MonthlyChart points={monthly} />
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[560px] text-sm">
+                          <thead>
+                            <tr className="border-b text-xs text-muted-foreground">
+                              <th scope="col" className="py-2 pr-3 text-left font-medium">{t.reports.month}</th>
+                              <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.totalUsage}</th>
+                              <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.totalCost}</th>
+                              <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.vsPrevMonth}</th>
+                              <th scope="col" className="py-2 pl-3 text-left font-medium">{t.reports.readingDate}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...monthly].reverse().map((point) => (
+                              <tr key={point.month} className="border-b last:border-0">
+                                <td className="py-2 pr-3">
+                                  {locale === 'th' ? point.label : point.labelEn}
+                                  {point.partial && (
+                                    <span className="ml-1.5 text-[10px] text-status-warning">{t.reports.partialMonth}</span>
+                                  )}
+                                </td>
+                                <td className="tabular px-3 py-2 text-right">{formatCubicMeters(point.cubicMeters, locale, 0)}</td>
+                                <td className="tabular px-3 py-2 text-right">{formatBaht(point.costBaht, locale, 0)}</td>
+                                <td
+                                  className={cn(
+                                    'tabular px-3 py-2 text-right',
+                                    point.changeFromPreviousPercent === null
+                                      ? 'text-muted-foreground'
+                                      : point.changeFromPreviousPercent > 0
+                                        ? 'text-status-warning'
+                                        : 'text-status-ok',
+                                  )}
+                                >
+                                  {point.changeFromPreviousPercent === null
+                                    ? '—'
+                                    : `${point.changeFromPreviousPercent > 0 ? '+' : ''}${formatPercent(point.changeFromPreviousPercent, locale, 1)}`}
+                                </td>
+                                <td className="py-2 pl-3 text-xs text-muted-foreground">
+                                  {point.readingDate === null ? t.reports.notYetRead : formatDate(point.readingDate, locale)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    {t.reports.readings}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{t.reports.readingsHint}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {readings === null ? (
+                    <Skeleton className="h-40 rounded-md" />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[640px] text-sm">
+                        <thead>
+                          <tr className="border-b text-xs text-muted-foreground">
+                            <th scope="col" className="py-2 pr-3 text-left font-medium">{t.reports.readingDate}</th>
+                            <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.readingValue}</th>
+                            <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.unitsUsed}</th>
+                            <th scope="col" className="px-3 py-2 text-right font-medium">{t.reports.periodDays}</th>
+                            <th scope="col" className="px-3 py-2 text-right font-medium">{t.zone.cost}</th>
+                            <th scope="col" className="py-2 pl-3 text-left font-medium">{t.reports.readBy}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {readings.map((reading) => (
+                            <tr key={reading.id} className="border-b last:border-0">
+                              <td className="whitespace-nowrap py-2 pr-3">{formatDate(reading.readingDate, locale)}</td>
+                              <td className="tabular px-3 py-2 text-right font-mono text-xs">
+                                {formatCubicMeters(reading.totalizerCubicMeters, locale, 0)}
+                              </td>
+                              <td className="tabular px-3 py-2 text-right font-medium">
+                                {formatCubicMeters(reading.unitsUsed, locale, 0)}
+                              </td>
+                              <td className="tabular px-3 py-2 text-right text-muted-foreground">{reading.periodDays}</td>
+                              <td className="tabular px-3 py-2 text-right">{formatBaht(reading.costBaht, locale, 0)}</td>
+                              <td className="py-2 pl-3 text-xs text-muted-foreground">{reading.readBy}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
               </Card>
 
               <Card>

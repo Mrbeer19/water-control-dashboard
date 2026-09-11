@@ -1400,6 +1400,12 @@ export interface BillingSettings {
   vatPercent: number;
   /** วันที่ของเดือนที่รอบบิลเริ่ม */
   billingCycleStartDay: number;
+  /**
+   * วันที่ของเดือนที่เจ้าหน้าที่การประปามาจดมิเตอร์
+   * เป็นคนละวันกับวันเริ่มรอบบิล — หน่วยที่ออกบิลคิดจากเลขที่จดได้วันนี้ลบครั้งก่อน
+   * ไม่ใช่จากยอดสะสมตามปฏิทิน
+   */
+  meterReadingDay: number;
   /** อัตราค่าไฟเฉลี่ยต่อหน่วย ใช้แบ่งค่าไฟตามแผนก */
   electricityRatePerKwh: number;
   /** ค่า Ft ต่อหน่วย (บวก/ลบได้) */
@@ -1522,6 +1528,55 @@ export interface DepartmentUsage {
   changeFromPreviousPercent: number;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// การจดมิเตอร์และการเทียบรายเดือน
+// ─────────────────────────────────────────────────────────────
+
+/** ผู้จดมิเตอร์ */
+export type MeterReadingSource = 'utility' | 'staff' | 'auto';
+
+/**
+ * การจดมิเตอร์หนึ่งครั้ง
+ *
+ * ★ หน่วยที่ออกบิล = เลขหน้าปัดครั้งนี้ − ครั้งก่อน ไม่ใช่ยอดสะสมตามเดือนปฏิทิน
+ *   รอบจดจึงคร่อมเดือนได้ และนี่คือตัวเลขที่ต้องกระทบยอดกับใบแจ้งหนี้จริง
+ */
+export interface MeterReading extends BaseRecord {
+  meterId: string;
+  meterName: string;
+  /** วันที่มาจดมิเตอร์ */
+  readingDate: ISODateTime;
+  /** เลขบนหน้าปัดที่จดได้ (m³) */
+  totalizerCubicMeters: number;
+  /** หน่วยที่ใช้ในรอบนั้น = ครั้งนี้ − ครั้งก่อน */
+  unitsUsed: number;
+  costBaht: number;
+  source: MeterReadingSource;
+  /** ชื่อผู้จด — เจ้าหน้าที่การประปาหรือช่างในโรงงาน */
+  readBy: string;
+  /** จำนวนวันในรอบจดนี้ ใช้เทียบรอบที่ยาวไม่เท่ากัน */
+  periodDays: number;
+  note: string | null;
+}
+
+/** ยอดใช้น้ำของหนึ่งเดือน ใช้กับกราฟเทียบเดือนต่อเดือน */
+export interface MonthlyUsagePoint {
+  /** "YYYY-MM" */
+  month: string;
+  /** ป้ายสำหรับแสดงผล เช่น "ก.ย. 69" */
+  label: string;
+  labelEn: string;
+  timestamp: EpochMs;
+  cubicMeters: number;
+  costBaht: number;
+  /** เทียบเดือนก่อนหน้า (%) — null สำหรับเดือนแรกสุดที่ไม่มีอะไรให้เทียบ */
+  changeFromPreviousPercent: number | null;
+  /** วันที่จดมิเตอร์ของเดือนนั้น — null เมื่อยังไม่ถึงรอบจด */
+  readingDate: ISODateTime | null;
+  /** true = เดือนที่ยังไม่จบ ตัวเลขจึงยังไม่ใช่ยอดเต็มเดือน */
+  partial: boolean;
+}
 
 // ═════════════════════════════════════════════════════════════
 // สรุปภาพรวมและรายงาน

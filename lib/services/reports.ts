@@ -7,12 +7,14 @@ import type {
   ReportFormat,
   ReportRow,
   ReportType,
+  MeterReading,
+  MonthlyUsagePoint,
   TimeRange,
   UsageReport,
   UsageReportRow,
   UtilityKind,
 } from '@/lib/types';
-import { buildDailyUsage } from '@/lib/mock';
+import { buildDailyUsage, buildMeterReadings, buildMonthlyUsage } from '@/lib/mock';
 import {
   billingPeriodProgress,
   calculateBillingEstimate,
@@ -266,4 +268,26 @@ export async function getUsageReport(range: TimeRange): Promise<UsageReport> {
       generatedAt: new Date().toISOString(),
     };
   });
+}
+
+/**
+ * ยอดใช้น้ำรายเดือนย้อนหลัง พร้อม % เทียบเดือนก่อนหน้า
+ *
+ * ★ เดือนล่าสุดยังไม่จบ จะมี partial = true — หน้าจอต้องบอกผู้ใช้ให้ชัด
+ *   ไม่งั้นคนอ่านจะเข้าใจว่าเดือนนี้ใช้น้ำลดลงฮวบ ทั้งที่แค่ยังไม่ครบเดือน
+ *
+ * TODO(backend): GET /api/reports/monthly?months=
+ */
+export async function getMonthlyComparison(months = 12): Promise<MonthlyUsagePoint[]> {
+  return respond((state) => buildMonthlyUsage(state, months));
+}
+
+/**
+ * ประวัติการจดมิเตอร์ของการประปา
+ * หน่วยที่ออกบิลคิดจากเลขหน้าปัดครั้งนี้ลบครั้งก่อน ไม่ใช่ยอดสะสมตามเดือนปฏิทิน
+ *
+ * TODO(backend): GET /api/reports/meter-readings?meterId=&limit=
+ */
+export async function getMeterReadings(months = 12): Promise<MeterReading[]> {
+  return respond((state) => buildMeterReadings(state, months));
 }

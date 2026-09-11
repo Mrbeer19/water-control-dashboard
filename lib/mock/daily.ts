@@ -6,7 +6,7 @@
  * (วันหยุดใช้น้ำน้อยลง วันที่ร้อนใช้น้ำมากขึ้น วันฝนตกใช้น้ำน้อยลง)
  */
 
-import type { DailyUsagePoint } from '@/lib/types';
+import type { DailyUsagePoint, MeterReading, MonthlyUsagePoint } from '@/lib/types';
 import type { MockState } from './store';
 import { createRng, roundTo } from './random';
 import { splitIntoTiers } from '@/lib/utils/calculation';
@@ -100,4 +100,119 @@ export function buildDailyUsage(
 export function daysRemainingInMonth(now: Date = new Date()): number {
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   return Math.max(0, lastDay - now.getDate());
+}
+
+// ─────────────────────────────────────────────────────────────
+// ยอดรายเดือนและการจดมิเตอร์
+// ─────────────────────────────────────────────────────────────
+
+const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** จำนวนวันในเดือนนั้น */
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+/**
+ * ยอดใช้น้ำรายเดือนย้อนหลัง พร้อมเปอร์เซ็นต์เทียบเดือนก่อนหน้า
+ *
+ * ★ เดือนปัจจุบันยังไม่จบ จึงถูกทำเครื่องหมาย partial ไว้
+ *   ถ้าเอาไปเทียบกับเดือนเต็มตรง ๆ จะดูเหมือนใช้น้ำลดลงฮวบทั้งที่แค่ยังไม่ครบเดือน
+ */
+export function buildMonthlyUsage(state: MockState, months = 12): MonthlyUsagePoint[] {
+  const rng = createRng(915237);
+  const { billing } = state.settings;
+
+  const baselinePerDay = state.zones.reduce((sum, zone) => sum + zone.flowLpm, 0) * 60 * 24 * 0.001;
+  const base = baselinePerDay > 0 ? baselinePerDay : 240;
+
+  const now = new Date();
+  const points: MonthlyUsagePoint[] = [];
+
+  for (let offset = months - 1; offset >= 0; offset -= 1) {
+    const cursor = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const year = cursor.getFullYear();
+    const monthIndex = cursor.getMonth();
+    const partial = offset === 0;
+    // เดือนที่ยังไม่จบนับเฉพาะวันที่ผ่านมาแล้ว
+    const daysCounted = partial ? now.getDate() : daysInMonth(year, monthIndex);
+
+    // ฤดูร้อน (มี.ค.–พ.ค.) ใช้น้ำมากกว่า หน้าฝนใช้น้อยลง
+    const seasonal = 1 + Math.sin(((monthIndex - 1) / 12) * Math.PI * 2) * 0.11;
+    const noise = 0.95 + rng() * 0.1;
+    const cubicMeters = roundTo(base * daysCounted * seasonal * noise, 2);
+    const costBaht = roundTo(
+      splitIntoTiers(cubicMeters, billing.tiers).reduce((sum, tier) => sum + tier.amountBaht, 0),
+      2,
+    );
+
+    const readingDay = Math.min(billing.meterReadingDay, daysInMonth(year, monthIndex));
+    const readingAt = new Date(year, monthIndex, readingDay, 9, 30);
+    // ยังไม่ถึงวันจดของเดือนนี้ก็ยังไม่มีวันที่จด
+    const readingDate = readingAt.getTime() <= now.getTime() ? readingAt.toISOString() : null;
+
+    const previous = points[points.length - 1];
+    points.push({
+      month: `${year}-${`${monthIndex + 1}`.padStart(2, '0')}`,
+      label: `${TH_MONTHS[monthIndex] ?? ''} ${`${(year + 543) % 100}`.padStart(2, '0')}`,
+      labelEn: `${EN_MONTHS[monthIndex] ?? ''} ${`${year % 100}`.padStart(2, '0')}`,
+      timestamp: cursor.getTime(),
+      cubicMeters,
+      costBaht,
+      changeFromPreviousPercent:
+        previous === undefined || previous.cubicMeters === 0
+          ? null
+          : roundTo(((cubicMeters - previous.cubicMeters) / previous.cubicMeters) * 100, 1),
+      readingDate,
+      partial,
+    });
+  }
+
+  return points;
+}
+
+/**
+ * ประวัติการจดมิเตอร์ของการประปา
+ * เลขหน้าปัดไล่ขึ้นจากอดีตมาจนถึงค่าปัจจุบันของมิเตอร์หลัก
+ */
+export function buildMeterReadings(state: MockState, months = 12): MeterReading[] {
+  const monthly = buildMonthlyUsage(state, months).filter((point) => point.readingDate !== null);
+
+  // ไล่ย้อนจากเลขหน้าปัดปัจจุบัน เพื่อให้ค่าล่าสุดตรงกับมิเตอร์จริง
+  const totalUnits = monthly.reduce((sum, point) => sum + point.cubicMeters, 0);
+  let running = state.mainMeter.totalizerCubicMeters - totalUnits;
+
+  return monthly
+    .map((point, index) => {
+      running += point.cubicMeters;
+      const readingDate = point.readingDate ?? new Date().toISOString();
+      const previousDate = monthly[index - 1]?.readingDate;
+      const periodDays =
+        previousDate === undefined || previousDate === null
+          ? 30
+          : Math.max(
+              1,
+              Math.round((new Date(readingDate).getTime() - new Date(previousDate).getTime()) / 86_400_000),
+            );
+
+      const reading: MeterReading = {
+        id: `reading-${point.month}`,
+        name: `จดมิเตอร์ ${point.label}`,
+        createdAt: readingDate,
+        updatedAt: readingDate,
+        meterId: state.mainMeter.id,
+        meterName: state.mainMeter.name,
+        readingDate,
+        totalizerCubicMeters: roundTo(running, 2),
+        unitsUsed: point.cubicMeters,
+        costBaht: point.costBaht,
+        source: 'utility',
+        readBy: 'เจ้าหน้าที่การประปา',
+        periodDays,
+        note: null,
+      };
+      return reading;
+    })
+    .reverse();
 }

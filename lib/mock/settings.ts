@@ -107,6 +107,8 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     serviceChargeBaht: 90,
     vatPercent: 7,
     billingCycleStartDay: 1,
+    // เจ้าหน้าที่การประปาเข้ามาจดมิเตอร์ราววันที่ 18 ของทุกเดือน
+    meterReadingDay: 18,
     // อัตราค่าไฟเฉลี่ยที่ใช้แบ่งต้นทุนรายแผนก (กิจการขนาดกลาง แรงดันต่ำ)
     electricityRatePerKwh: 4.18,
     electricityFtPerKwh: 0.3972,
