@@ -3,7 +3,8 @@ import { cn } from '@/lib/utils';
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)} {...props} />
+    <div ref={ref} // ข้อ 6.2: การ์ดข้อมูล radius 16px มีเส้นขอบ ไม่มีเงา — เงาเดียวของระบบสงวนให้ drawer/dialog
+    className={cn('rounded-card border bg-card text-card-foreground', className)} {...props} />
   ),
 );
 Card.displayName = 'Card';

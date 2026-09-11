@@ -115,7 +115,7 @@ export function AnomalyCard({
               <div
                 className={cn(
                   'h-full rounded-full transition-[width] duration-700',
-                  scorePercent >= 80 ? 'bg-status-critical' : scorePercent >= 50 ? 'bg-status-warning' : 'bg-status-oky',
+                  scorePercent >= 80 ? 'bg-status-critical' : scorePercent >= 50 ? 'bg-status-warning' : 'bg-status-ok',
                 )}
                 style={{ width: `${Math.max(2, scorePercent)}%` }}
               />

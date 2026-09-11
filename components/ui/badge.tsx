@@ -7,11 +7,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground',
+        default: 'border-transparent bg-brand-strong text-brand-strong-foreground',
         secondary: 'border-transparent bg-secondary text-secondary-foreground',
         destructive: 'border-transparent bg-destructive text-destructive-foreground',
         outline: 'text-foreground',
-        // สีสถานะตาม CLAUDE.md
+        // ★ สถานะของอุปกรณ์/ระบบให้ใช้ <StatusBadge> ใน components/ui/status-badge.tsx เท่านั้น
+        //   (ข้อ 3.4 บังคับไอคอน + ข้อความ) variant ด้านล่างเหลือไว้สำหรับป้ายที่ไม่ใช่สถานะ
         ok: 'border-transparent bg-status-ok text-status-ok-foreground',
         warning: 'border-transparent bg-status-warning text-status-warning-foreground',
         critical: 'border-transparent bg-status-critical text-status-critical-foreground',

@@ -5,11 +5,17 @@ import { getAnomalyTypeConfig, isUnknownAnomalyType } from '@/lib/config/anomaly
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
+/**
+ * ★ ห้ามทำขอบจาง ๆ ด้วย opacity เพราะเป็นขอบของสถานะ (กฎ opacity ในข้อ 3)
+ *   ใช้เส้นขอบกลาง (Argent-100) แล้วให้ "สี" อยู่ที่ตัวอักษรกับไอคอนแทน
+ *   ตัวป้ายมีทั้งไอคอนและข้อความอยู่แล้ว จึงไม่ได้สื่อความหมายด้วยสีอย่างเดียว
+ */
 const TONE_CLASS = {
-  ok: 'border-status-ok/30 text-status-ok',
-  warning: 'border-status-warning/30 text-status-warning',
-  critical: 'border-status-critical/30 text-status-critical',
-  offline: 'border-status-offline/30 text-status-offline',
+  neutral: 'border-border text-muted-foreground',
+  ok: 'border-border text-status-ok',
+  warning: 'border-border text-status-warning',
+  critical: 'border-border text-status-critical',
+  offline: 'border-border text-status-offline',
 } as const;
 
 /**

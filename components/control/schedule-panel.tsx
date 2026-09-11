@@ -213,7 +213,7 @@ export function SchedulePanel({
                   className={cn(
                     'relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    schedule.enabled ? 'bg-status-ok' : 'bg-muted-foreground/40',
+                    schedule.enabled ? 'bg-control-checked' : 'bg-muted',
                   )}
                 >
                   <span

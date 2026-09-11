@@ -3,16 +3,16 @@
 import type { EntityStatus, TankShape } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-const FILL_CLASS: Record<EntityStatus, string> = {
-  ok: 'fill-status-ok',
-  warning: 'fill-status-warning',
-  critical: 'fill-status-critical',
-  offline: 'fill-status-offline',
-};
+/**
+ * ★ ตัวน้ำใช้บันได Royal Navy Blue เสมอ ไม่ผูกกับสถานะ — docs/BRANDING_SPEC.md ข้อ 6.3
+ *   สถานะของถังสื่อผ่านเส้นเกณฑ์กับ StatusBadge บนการ์ด ไม่ใช่ผ่านสีของน้ำ
+ *   (ของเดิมเปลี่ยนสีน้ำตามสถานะ ทำให้แดงไปโผล่ในพื้นที่ข้อมูลซึ่งผิดกฎการใช้แดงในข้อ 3.3)
+ */
+const WATER_BODY = 'fill-water';
+const WATER_SURFACE = 'fill-water-soft';
 
 interface TankGaugeProps {
   percentFull: number;
-  status: EntityStatus;
   shape: TankShape;
   /** เกณฑ์ที่จะขีดเส้นอ้างอิงบนถัง (เปอร์เซ็นต์) */
   markers?: { percent: number; tone: EntityStatus }[];
@@ -25,7 +25,7 @@ interface TankGaugeProps {
  * ระดับใช้ CSS transition ที่ความสูงของ rect จึงขยับนุ่มเมื่อค่าใหม่เข้ามาทุก 2 วินาที
  * ผิวน้ำเป็นคลื่นสองชั้นเลื่อนสวนทางกัน ให้ดูมีชีวิตบนจอที่เปิดทิ้งไว้ทั้งวัน
  */
-export function TankGauge({ percentFull, status, shape, markers = [], className }: TankGaugeProps): JSX.Element {
+export function TankGauge({ percentFull, shape, markers = [], className }: TankGaugeProps): JSX.Element {
   const width = 120;
   const height = 150;
   const inset = 6;
@@ -59,7 +59,7 @@ export function TankGauge({ percentFull, status, shape, markers = [], className 
       {isPond ? (
         <polygon
           points={`${inset + 14},${inset} ${width - inset - 14},${inset} ${width - inset},${height - inset} ${inset},${height - inset}`}
-          className="fill-muted/40 stroke-border"
+          className="fill-secondary stroke-border"
           strokeWidth={2}
         />
       ) : (
@@ -69,7 +69,7 @@ export function TankGauge({ percentFull, status, shape, markers = [], className 
           width={width - inset * 2}
           height={innerHeight}
           rx={bodyRadius}
-          className="fill-muted/40 stroke-border"
+          className="fill-secondary stroke-border"
           strokeWidth={2}
         />
       )}
@@ -81,16 +81,17 @@ export function TankGauge({ percentFull, status, shape, markers = [], className 
           y={waterTop}
           width={width}
           height={waterHeight + 4}
-          className={cn(FILL_CLASS[status], 'opacity-80 [transition:y_900ms_ease-out,height_900ms_ease-out]')}
+          className={cn(WATER_BODY, '[transition:y_900ms_ease-out,height_900ms_ease-out]')}
         />
 
         {/* ผิวน้ำ 2 ชั้นเลื่อนสวนทาง */}
         {clamped > 0.5 && (
-          <g className={cn(FILL_CLASS[status], '[transition:transform_900ms_ease-out]')} style={{ transform: `translateY(${waterTop}px)` }}>
-            <path d="M-120 0 q30 -5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className="opacity-60">
+          <g className="[transition:transform_900ms_ease-out]" style={{ transform: `translateY(${waterTop}px)` }}>
+            {/* คลื่นสองชั้นเลื่อนสวนทาง — ใช้คนละขั้นในบันไดเดียวกัน ไม่ได้ทำจาง ๆ ด้วย opacity */}
+            <path d="M-120 0 q30 -5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className={WATER_SURFACE}>
               <animateTransform attributeName="transform" type="translate" from="0 0" to="120 0" dur="5s" repeatCount="indefinite" />
             </path>
-            <path d="M-120 2 q30 5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className="opacity-35">
+            <path d="M-120 2 q30 5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v12 h-360 z" className={WATER_BODY}>
               <animateTransform attributeName="transform" type="translate" from="120 0" to="0 0" dur="7s" repeatCount="indefinite" />
             </path>
           </g>
@@ -109,10 +110,7 @@ export function TankGauge({ percentFull, status, shape, markers = [], className 
             y2={y}
             strokeWidth={1}
             strokeDasharray="3 3"
-            className={cn(
-              marker.tone === 'critical' ? 'stroke-status-critical' : 'stroke-status-warning',
-              'opacity-70',
-            )}
+            className={marker.tone === 'critical' ? 'stroke-status-critical' : 'stroke-status-warning'}
           />
         );
       })}

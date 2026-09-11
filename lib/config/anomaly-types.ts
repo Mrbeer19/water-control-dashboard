@@ -26,8 +26,11 @@ export interface AnomalyTypeConfig {
   labelTh: string;
   labelEn: string;
   icon: LucideIcon;
-  /** ใช้เลือกสีจาก token สถานะเดียวกับทั้งระบบ */
-  tone: EntityStatus;
+  /**
+   * ใช้เลือกสีจาก token สถานะเดียวกับทั้งระบบ
+   * 'neutral' = สีกลาง (text-secondary) สำหรับชนิดที่หน้าบ้านยังไม่รู้จัก — BRANDING_SPEC ข้อ 3.7
+   */
+  tone: EntityStatus | 'neutral';
   /** ความรุนแรงตั้งต้น ใช้เมื่อทีม AI ไม่ได้ส่ง severity มา */
   defaultSeverity: AlertSeverity;
   descriptionTh: string;
@@ -115,7 +118,8 @@ export const UNKNOWN_ANOMALY_TYPE: AnomalyTypeConfig = {
   labelTh: 'ความผิดปกติที่ยังไม่ระบุชนิด',
   labelEn: 'Unclassified anomaly',
   icon: HelpCircle,
-  tone: 'warning',
+  // ★ ชนิดที่ยังไม่รู้จักต้องเป็นสีกลาง ไม่ใช่สีเตือน — หน้าบ้านไม่มีสิทธิ์ตัดสินความรุนแรงเอง (ข้อ 3.7)
+  tone: 'neutral',
   defaultSeverity: 'info',
   descriptionTh: 'ทีม AI ส่งชนิดที่หน้าบ้านยังไม่มีคำแปล — แสดงรหัสดิบไว้ก่อน',
   descriptionEn: 'The AI team sent a type this UI has no label for yet — showing the raw code',

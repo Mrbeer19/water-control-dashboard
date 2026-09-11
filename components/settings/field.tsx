@@ -206,7 +206,7 @@ export function ToggleField({
         className={cn(
           'relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          checked ? 'bg-status-ok' : 'bg-muted-foreground/40',
+          checked ? 'bg-control-checked' : 'bg-muted',
         )}
       >
         <span

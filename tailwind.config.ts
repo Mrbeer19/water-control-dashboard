@@ -98,6 +98,11 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        // ลำดับชั้นของผิวตาม BRANDING_SPEC ข้อ 6.2
+        section: 'var(--radius-section)',
+        card: 'var(--radius-card)',
+        overlay: 'var(--radius-overlay)',
+        control: 'var(--radius-control)',
       },
       fontSize: {
         // ตัวเลขสำหรับจอแขวนผนัง — BRANDING_SPEC ข้อ 4 กำหนด ≥ 48px ที่ 1920px และ ≥ 32px ที่ 375px

@@ -160,5 +160,65 @@ function contrast(a, b) {
   else fail('ข้อยกเว้นปุ่ม primary (ข้อ 3.5)', `ได้ ${known.toFixed(2)} : 1 แต่เอกสารบันทึกไว้ 4.42`);
 }
 
+/* ---------- 5. กฎ opacity ตามข้อ 3 ---------- */
+{
+  // ห้าม: พื้น/ขอบของสถานะ · สีที่ใช้แยกชุดข้อมูลในกราฟ · สีข้อความ
+  const FORBIDDEN = [
+    [/\b(?:bg|border|fill|stroke|ring)-status-(?:ok|warning|critical|offline)(?:-[a-z]+)?\/[0-9]{1,3}\b/g, 'พื้น/ขอบของสถานะ'],
+    [/\b(?:bg|border|fill|stroke|ring)-water(?:-soft)?\/[0-9]{1,3}\b/g, 'สีชุดข้อมูลในกราฟ'],
+    [/\btext-[a-z][a-z0-9-]*\/[0-9]{1,3}\b/g, 'สีข้อความ'],
+  ];
+  /*
+   * ยอดค้างที่ยังไม่ได้แก้ แยกตามเฟสที่รับผิดชอบ (docs/DESIGN_PLAN.md ข้อ 6)
+   * ★ ตัวเลขนี้ต้องลดลงเรื่อย ๆ จนเป็น 0 ตอน Phase 7.8b — ห้ามเพิ่ม
+   *   ถ้าไฟล์ไหนเกินยอดค้าง หรือมีไฟล์ใหม่โผล่มา จะถือว่าไม่ผ่านทันที
+   */
+  const PENDING = {
+    'app/login/page.tsx': 2, // 7.3
+    'components/layout/header.tsx': 2, // 7.3
+    'components/zones/main-meter-section.tsx': 1, // 7.4
+    'components/control/command-status.tsx': 6, // 7.5
+    'components/control/emergency-panel.tsx': 4, // 7.5
+    'components/control/confirm-dialog.tsx': 1, // 7.5
+    'components/devices/device-detail-panel.tsx': 3, // 7.5
+    'components/devices/service-health-bar.tsx': 1, // 7.5
+    'components/ai/ai-overview-widget.tsx': 3, // 7.7a
+    'components/ai/maintenance-section.tsx': 2, // 7.7a
+    'components/ai/ai-summary-card.tsx': 1, // 7.7a
+    'components/ai/ai-metric-card.tsx': 1, // 7.7a
+    'app/settings/page.tsx': 1, // 7.8a
+  };
+  const found = {};
+  const detail = [];
+  for (const f of sources) {
+    const body = read(f);
+    for (const [re, why] of FORBIDDEN) {
+      for (const hit of body.match(re) ?? []) {
+        found[f] = (found[f] ?? 0) + 1;
+        detail.push(`${f} → ${hit} (${why})`);
+      }
+    }
+  }
+  const over = Object.entries(found).filter(([f, n]) => n > (PENDING[f] ?? 0));
+  const left = Object.values(found).reduce((a, b) => a + b, 0);
+  if (over.length === 0) {
+    const done = Object.entries(PENDING).filter(([f]) => (found[f] ?? 0) < PENDING[f]);
+    pass(
+      'กฎ opacity (ข้อ 3)',
+      left === 0
+        ? 'ไม่มี opacity ที่สถานะ ชุดข้อมูล หรือข้อความ'
+        : `ไม่มีจุดใหม่ · ค้างตามแผน ${left} จุด รอเฟสถัดไป` +
+          (done.length ? ` · แก้ไปแล้วเกินแผนใน ${done.length} ไฟล์ (อัปเดต PENDING ได้)` : ''),
+    );
+  } else {
+    fail(
+      'กฎ opacity (ข้อ 3)',
+      `มีจุดเกินยอดค้างที่วางแผนไว้:\n         ` +
+        over.map(([f, n]) => `${f} เจอ ${n} แต่แผนไว้ ${PENDING[f] ?? 0}`).join('\n         ') +
+        `\n       รายการทั้งหมด:\n         ${detail.join('\n         ')}`,
+    );
+  }
+}
+
 console.log(failed === 0 ? '\nสีผ่านทุกข้อ\n' : `\nไม่ผ่าน ${failed} ข้อ\n`);
 process.exit(failed === 0 ? 0 : 1);

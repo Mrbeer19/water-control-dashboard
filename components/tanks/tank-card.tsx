@@ -41,7 +41,7 @@ export function TankCard({ tank }: { tank: Tank }): JSX.Element {
     <Card className="overflow-hidden">
       <CardContent className="flex gap-4 p-4">
         <div className="h-[150px] w-[110px] shrink-0">
-          <TankGauge percentFull={tank.percentFull} status={tank.status} shape={tank.shape} markers={markers} />
+          <TankGauge percentFull={tank.percentFull} shape={tank.shape} markers={markers} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">

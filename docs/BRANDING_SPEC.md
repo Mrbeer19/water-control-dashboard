@@ -181,6 +181,10 @@ Neutral: Lynx White `#F7F7F7` (พื้นหน้า), `#FFFFFF` (พื้�
 
 ทุก pill ต้องมี **ไอคอน + ข้อความ** เสมอ ห้ามสื่อสถานะด้วยสีอย่างเดียว
 
+**จุดสถานะแบบไม่มีข้อความ** (`StatusDot` ในตารางที่พื้นที่จำกัด) ต้องต่างกันที่**รูปทรงไอคอน** ไม่ใช่แค่สี
+— ปกติ = วงกลมติ๊ก · เตือน = สามเหลี่ยม · วิกฤต = แปดเหลี่ยม · offline = วงกลมขีดทับ
+เพราะจุดนี้ไม่มีข้อความกำกับ ถ้าต่างกันแค่สีคนตาบอดสีจะแยกไม่ออก
+
 ### 3.5 ปุ่ม primary
 
 Cinnabar-500 + ตัวอักษรขาว = 4.42:1 (ขาดเกณฑ์ AA 4.5 อยู่ 0.08)
@@ -213,6 +217,7 @@ Cinnabar-500 + ตัวอักษรขาว = 4.42:1 (ขาดเกณฑ
 - **shadcn:** map ค่าจากข้อ 3.3 เข้าตัวแปรเดิมใน `app/globals.css` (`--primary`, `--destructive`, `--border`, `--ring` ฯลฯ) โดย**คงรูปแบบค่าที่ไฟล์ใช้อยู่** (HSL หรือ oklch) และใส่คอมเมนต์ hex ต้นฉบับข้างทุกตัว — component ของ shadcn จะได้สี CI โดยไม่ต้องแก้ทีละตัว
 - **Recharts / SVG เขียนมือ** (tank gauge, ผังการไหล): อ่านสีจาก `lib/config/theme.ts` จุดเดียว ห้ามใส่ hex ใน props ของกราฟ
 - **`lib/config/anomaly-types.ts`:** สีของแต่ละ type ต้องชี้ไป semantic token ไม่ใช่ hex, และ type ที่ไม่รู้จักใช้สี `text-secondary` + ไอคอน default
+  — ทำเป็น `tone: 'neutral'` ซึ่งเป็นค่าที่ประกาศเพิ่มใน `anomaly-types.ts` เอง **ไม่ได้แก้ `EntityStatus` ใน `lib/types.ts`**
 - Test whitelist ต้องแปลงค่า HSL/oklch กลับเป็น hex ก่อนเทียบกับตาราง 3.1 (ยอมคลาดจากการปัดเศษ ±1 ต่อ channel)
 - **`app/layout.tsx` — `themeColor`** *(ตัดสิน 2026-09-11)*: ทั้งสองค่า import จาก `lib/config/theme.ts` ห้ามเขียน hex ซ้ำในไฟล์นี้ — light = Lynx White `#F7F7F7`, dark = พื้นหน้าของ dark mode (Argent-1000 ตามข้อ 3.6)
 

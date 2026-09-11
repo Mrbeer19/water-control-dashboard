@@ -101,7 +101,7 @@ export function PumpCard({ pump }: { pump: Pump }): JSX.Element {
         </div>
 
         {pump.faultCode !== null && (
-          <p className="rounded-md bg-status-critical/10 px-2 py-1.5 text-xs text-status-critical">
+          <p className="rounded-control bg-status-critical px-2 py-1.5 text-xs text-status-critical-foreground">
             {pump.faultCode} — {pump.faultMessage}
           </p>
         )}

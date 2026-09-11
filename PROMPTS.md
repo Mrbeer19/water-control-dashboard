@@ -612,8 +612,10 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 ไฟล์: app/overview/page.tsx
       components/diagram/ diagram-primitives.tsx flow-diagram.tsx
 
-1. แนวทางตาม §7 แถว /overview — ท่อใช้บันได Blue, node ใช้สีสถานะ,
+1. แนวทางตาม §7 แถว /overview — ท่อใช้บันได Blue (ตอนนี้ยังเป็นสีสถานะอยู่),
+   node ใช้สีสถานะ (พื้นกล่องทำไปแล้วใน 7.2 เหลือเส้นท่อ),
    จุดที่ AI ตรวจพบใช้ Cinnabar-500 (glow บนผังอนุญาต — กฎห้าม effect ใช้กับโลโก้เท่านั้น)
+   ★ ตอนนี้ขอบเรืองแสงใช้ stroke-status-critical (Cinnabar-700) ต้องเปลี่ยนเป็น Cinnabar-500
 2. สีทุกค่าอ่านผ่าน chart-tokens.ts / theme.ts ห้ามใส่ hex ใน SVG (§3.7)
 3. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/diagram/diagram-primitives.tsx (4) — แก้ไปแล้วใน 7.2 เฟสนี้แค่ตรวจซ้ำ
 

@@ -61,6 +61,12 @@
 
     --radius: 0.625rem;
 
+    /* ลำดับชั้นของผิวตาม BRANDING_SPEC ข้อ 6.2 — radius ต่อชั้น */
+    --radius-section: 1.5rem; /* กล่องรวมหมวด 24px */
+    --radius-card: 1rem; /* การ์ดข้อมูล 16px */
+    --radius-overlay: 1.25rem; /* drawer / dialog / popover 20px */
+    --radius-control: 0.75rem; /* input / button 12px */
+
     /*
      * สีของกราฟและ SVG — เก็บเป็น hex เพราะใส่ลง attribute ของ SVG ได้ตรง ๆ
      * จานสีตาม BRANDING_SPEC ข้อ 3.3: 2 สีหลัก + 1 สีอ้างอิง
@@ -124,6 +130,12 @@
     --status-offline-dot: 0 0% 61.2%; /* #9C9C9C Argent-300 */
 
     --radius: 0.625rem;
+
+    /* ลำดับชั้นของผิวตาม BRANDING_SPEC ข้อ 6.2 — radius ต่อชั้น */
+    --radius-section: 1.5rem; /* กล่องรวมหมวด 24px */
+    --radius-card: 1rem; /* การ์ดข้อมูล 16px */
+    --radius-overlay: 1.25rem; /* drawer / dialog / popover 20px */
+    --radius-control: 0.75rem; /* input / button 12px */
 
     /*
      * สีของกราฟและ SVG — เก็บเป็น hex เพราะใส่ลง attribute ของ SVG ได้ตรง ๆ

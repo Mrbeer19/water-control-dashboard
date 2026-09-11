@@ -3,11 +3,30 @@
 import type { EntityStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+/**
+ * พื้นและขอบของกล่องอุปกรณ์ — ไล่น้ำหนักตามความรุนแรงแบบเดียวกับ status pill (ข้อ 3.4)
+ * ★ ห้ามทำสีอ่อนด้วย opacity เพราะเป็นพื้นของสถานะ (กฎ opacity ในข้อ 3)
+ */
 export const NODE_FILL: Record<EntityStatus, string> = {
-  ok: 'fill-status-ok/15 stroke-status-ok',
-  warning: 'fill-status-warning/15 stroke-status-warning',
-  critical: 'fill-status-critical/15 stroke-status-critical',
-  offline: 'fill-status-offline/10 stroke-status-offline',
+  ok: 'fill-secondary stroke-status-ok',
+  warning: 'fill-status-warning-surface stroke-status-warning',
+  critical: 'fill-status-critical stroke-status-critical',
+  offline: 'fill-secondary stroke-status-offline',
+};
+
+/** สีตัวอักษรในกล่อง — กล่องวิกฤตมีพื้นเข้มเต็ม ตัวอักษรจึงต้องพลิกเป็นสีตัดพื้น */
+const NODE_TEXT: Record<EntityStatus, string> = {
+  ok: 'fill-foreground',
+  warning: 'fill-status-warning',
+  critical: 'fill-status-critical-foreground',
+  offline: 'fill-foreground',
+};
+
+const NODE_SUB: Record<EntityStatus, string> = {
+  ok: 'fill-muted-foreground',
+  warning: 'fill-status-warning',
+  critical: 'fill-status-critical-foreground',
+  offline: 'fill-muted-foreground',
 };
 
 const STROKE: Record<EntityStatus, string> = {
@@ -107,16 +126,20 @@ export function DiagramNode({
         />
       )}
       <rect width={width} height={height} rx={8} strokeWidth={1.5} className={NODE_FILL[status]} />
-      <text x={8} y={15} className="fill-foreground text-[10px] font-medium">
+      <text x={8} y={15} className={cn('text-[10px] font-medium', NODE_TEXT[status])}>
         {label}
       </text>
       {value !== undefined && (
-        <text x={8} y={height - (sub === undefined ? 10 : 20)} className="tabular fill-foreground text-[14px] font-semibold">
+        <text
+          x={8}
+          y={height - (sub === undefined ? 10 : 20)}
+          className={cn('tabular text-[14px] font-semibold', NODE_TEXT[status])}
+        >
           {value}
         </text>
       )}
       {sub !== undefined && (
-        <text x={8} y={height - 7} className="tabular fill-muted-foreground text-[9px]">
+        <text x={8} y={height - 7} className={cn('tabular text-[9px]', NODE_SUB[status])}>
           {sub}
         </text>
       )}
