@@ -64,7 +64,7 @@ export function UsersSection({ draft, onChange }: SettingsSectionProps): JSX.Ele
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[520px] text-sm">
             <thead>
-              <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+              <tr className="border-b bg-secondary text-xs text-muted-foreground">
                 <th scope="col" className="px-4 py-2.5 text-left font-medium">{t.device.name}</th>
                 <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.settings.role}</th>
                 <th scope="col" className="px-3 py-2.5 text-left font-medium">{t.settings.department}</th>

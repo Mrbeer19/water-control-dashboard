@@ -16,7 +16,7 @@ export interface SettingsSectionProps {
 }
 
 const CONTROL_CLASS =
-  'h-9 w-full rounded-md border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50';
+  'h-9 w-full rounded-control border bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50';
 
 /** หาข้อความผิดพลาดของฟิลด์หนึ่งจากรายการที่ service ตรวจมา */
 export function findError(errors: SettingsFieldError[], path: string): SettingsFieldError | undefined {
@@ -47,7 +47,7 @@ function FieldShell({
       </label>
       {children}
       {error !== undefined ? (
-        <p className="text-[11px] leading-snug text-status-critical" role="alert">
+        <p className="text-[11px] leading-snug text-form-error" role="alert">
           {locale === 'th' ? error.messageTh : error.messageEn}
         </p>
       ) : (

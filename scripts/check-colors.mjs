@@ -133,6 +133,8 @@ function contrast(a, b) {
     ['#F7B94C', '#36383A', 4.5, 'สถานะเตือน (dark)'],
     ['#F5856D', '#36383A', 4.5, 'สถานะวิกฤต (dark)'],
     ['#B4B0B1', '#36383A', 4.5, 'สถานะ offline (dark)'],
+    ['#92584A', '#FFFFFF', 4.5, 'ข้อความ error ในฟอร์ม (light) — ข้อ 7'],
+    ['#F5856D', '#36383A', 4.5, 'ข้อความ error ในฟอร์ม (dark)'],
     ['#F7F7F7', '#536281', 4.5, 'ชิป info-strong'],
     ['#FFFFFF', '#515558', 4.5, 'control-checked (light)'],
     ['#202123', '#F7F7F7', 4.5, 'control-checked (dark)'],
@@ -174,7 +176,6 @@ function contrast(a, b) {
    *   ถ้าไฟล์ไหนเกินยอดค้าง หรือมีไฟล์ใหม่โผล่มา จะถือว่าไม่ผ่านทันที
    */
   const PENDING = {
-    'app/settings/page.tsx': 1, // 7.8a
   };
   const found = {};
   const detail = [];
@@ -215,7 +216,7 @@ function contrast(a, b) {
    *   แล้วเงียบ ๆ ไม่ให้สีอะไรเลย — เคยเกิดจริงตอนแทนที่ด้วย sed ใน Phase 7.1
    */
   const KNOWN = new Set([
-    'brand-text', 'brand-strong', 'brand-strong-foreground',
+    'brand-text', 'brand-strong', 'brand-strong-foreground', 'form-error',
     'info', 'info-strong', 'info-strong-foreground',
     'control-checked', 'control-checked-foreground',
     'water', 'water-soft',
@@ -224,7 +225,7 @@ function contrast(a, b) {
     'status-critical', 'status-critical-foreground',
     'status-offline', 'status-offline-foreground', 'status-offline-dot',
   ]);
-  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|status)[a-z0-9-]*)/g;
+  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|form-error|status)[a-z0-9-]*)/g;
   const bad = [];
   for (const f of sources) {
     for (const m of read(f).matchAll(TOKEN)) {

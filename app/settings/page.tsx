@@ -148,7 +148,7 @@ export default function SettingsPage(): JSX.Element {
       </div>
 
       {errors.length > 0 && (
-        <p className="flex items-center gap-1.5 rounded-md bg-status-critical/10 px-2.5 py-2 text-xs text-status-critical">
+        <p className="flex items-center gap-1.5 rounded-control bg-status-critical px-2.5 py-2 text-xs text-status-critical">
           <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {t.settings.fixErrors} ({errors.length})
         </p>
@@ -156,7 +156,7 @@ export default function SettingsPage(): JSX.Element {
 
       {/* แท็บ — เลื่อนแนวนอนได้บนจอแคบ ไม่ยุบเป็นเมนูซ่อน เพราะช่างต้องเห็นว่ามีหมวดอะไรบ้าง */}
       <div className="overflow-x-auto">
-        <div className="inline-flex min-w-full gap-1 rounded-lg border bg-muted/40 p-1" role="tablist">
+        <div className="inline-flex min-w-full gap-1 rounded-control border bg-secondary p-1" role="tablist">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -165,9 +165,9 @@ export default function SettingsPage(): JSX.Element {
               aria-selected={tab === item.id}
               onClick={() => { setTab(item.id); }}
               className={cn(
-                'whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                'whitespace-nowrap rounded-control px-3 py-1.5 text-xs font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                tab === item.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                tab === item.id ? 'bg-card text-foreground ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {item.label}

@@ -57,6 +57,8 @@ const config: Config = {
         // สีแบรนด์เมื่อใช้เป็น "ข้อความ" — Cinnabar-500 ได้ contrast แค่ 4.4:1 จึงใช้ขั้นที่เข้ม/สว่างกว่า
         // ดู BRANDING_SPEC ข้อ 3.2 และ 3.5
         'brand-text': 'hsl(var(--brand-text))',
+        // ข้อความ error ในฟอร์ม — Cinnabar-800 ได้ 5.7:1 ทุกพื้น ต่างจาก Cinnabar-700 ที่ใช้ได้เฉพาะบนการ์ด
+        'form-error': 'hsl(var(--form-error))',
         // พื้นแบรนด์ที่ใช้ได้กับตัวอักษรเล็กกว่า 16px — Cinnabar-700 ได้ 4.8:1 กับตัวอักษรขาว
         'brand-strong': {
           DEFAULT: 'hsl(var(--brand-strong))',

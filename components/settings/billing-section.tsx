@@ -68,7 +68,7 @@ export function BillingSection({ draft, errors, onChange }: SettingsSectionProps
           </Button>
         </div>
         {findError(errors, 'billing.tiers') !== undefined && (
-          <p className="mb-2 text-[11px] text-status-critical">{findError(errors, 'billing.tiers')?.messageTh}</p>
+          <p className="mb-2 text-[11px] text-form-error">{findError(errors, 'billing.tiers')?.messageTh}</p>
         )}
 
         <div className="space-y-2">
@@ -156,7 +156,7 @@ export function BillingSection({ draft, errors, onChange }: SettingsSectionProps
       </div>
 
       {/* ตัวอย่างการคำนวณ — ให้เห็นผลของขั้นอัตราทันทีโดยไม่ต้องรอรอบบิลจริง */}
-      <div className="rounded-lg border bg-muted/30 p-4">
+      <div className="rounded-card border bg-secondary p-4">
         <p className="mb-2 text-sm font-semibold">{t.settings.preview}</p>
         <div className="mb-3 max-w-[220px]">
           <NumberField

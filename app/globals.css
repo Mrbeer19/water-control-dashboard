@@ -43,6 +43,7 @@
     --info: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 */
     --info-strong: 220.4 21.7% 41.6%; /* #536281 Blue-800 */
     --info-strong-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --form-error: 11.7 32.7% 43.1%; /* #92584A Cinnabar-800 — ข้อความ error ในฟอร์ม (ข้อ 7 แถว /settings) */
     --control-checked: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
     --control-checked-foreground: 0 0% 100%; /* #FFFFFF ขาว */
 
@@ -113,6 +114,7 @@
     --info: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 */
     --info-strong: 220.4 21.7% 41.6%; /* #536281 Blue-800 */
     --info-strong-foreground: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --form-error: 10.6 87.2% 69.4%; /* #F5856D Cinnabar-200 */
     --control-checked: 0 0% 96.9%; /* #F7F7F7 Lynx White */
     --control-checked-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
 

@@ -68,7 +68,7 @@ export function BackupSection({ userId, onImported }: { userId: string; onImport
 
       {message !== null && <p className="text-xs text-status-ok">{message}</p>}
       {errors.map((error) => (
-        <p key={error.path} className={cn('text-xs text-status-critical')}>
+        <p key={error.path} className={cn('text-xs text-form-errorcal')}>
           {locale === 'th' ? error.messageTh : error.messageEn}
         </p>
       ))}

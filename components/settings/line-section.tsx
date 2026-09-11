@@ -92,7 +92,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
           </Button>
         </div>
         {findError(errors, 'line.groups') !== undefined && (
-          <p className="mb-2 text-[11px] text-status-critical">{findError(errors, 'line.groups')?.messageTh}</p>
+          <p className="mb-2 text-[11px] text-form-error">{findError(errors, 'line.groups')?.messageTh}</p>
         )}
 
         <div className="space-y-2">
@@ -149,7 +149,7 @@ export function LineSection({ draft, errors, onChange }: SettingsSectionProps): 
       <div className="overflow-x-auto rounded-lg border p-4">
         <p className="mb-2 text-sm font-semibold">{t.settings.routing}</p>
         {findError(errors, 'line.severityRouting.critical') !== undefined && (
-          <p className="mb-2 text-[11px] text-status-critical">{findError(errors, 'line.severityRouting.critical')?.messageTh}</p>
+          <p className="mb-2 text-[11px] text-form-error">{findError(errors, 'line.severityRouting.critical')?.messageTh}</p>
         )}
         <table className="w-full min-w-[420px] text-xs">
           <thead>

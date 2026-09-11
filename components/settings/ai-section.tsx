@@ -53,7 +53,7 @@ export function AiSection({ draft, errors, onChange }: SettingsSectionProps): JS
         />
         <p className="mt-1 text-[11px] text-muted-foreground">{t.settings.sensitivityHint}</p>
         {sensitivityError !== undefined && (
-          <p className="mt-1 text-[11px] text-status-critical">
+          <p className="mt-1 text-[11px] text-form-error">
             {locale === 'th' ? sensitivityError.messageTh : sensitivityError.messageEn}
           </p>
         )}
