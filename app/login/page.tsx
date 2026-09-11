@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LangToggle } from '@/components/layout/lang-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { BrandMascot } from '@/components/layout/brand-mascot';
 
 const INPUT_CLASS =
   'h-10 w-full rounded-control border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -79,9 +80,13 @@ export default function LoginPage(): JSX.Element {
         }}
       >
         <BrandLogo height={44} priority />
-        <div className="space-y-2">
-          <p className="text-2xl font-semibold leading-snug">{t.app.title}</p>
-          <p className="text-sm opacity-90">{t.auth.subtitle}</p>
+        <div className="space-y-5">
+          {/* มาสคอตอยู่คนละมุมกับโลโก้องค์กร ไม่ล้ำ clear space ของโลโก้ (ข้อ 5.2) */}
+          <BrandMascot height={148} />
+          <div className="min-w-0 space-y-2">
+            <p className="text-2xl font-semibold leading-snug">{t.app.title}</p>
+            <p className="text-sm opacity-90">{t.auth.subtitle}</p>
+          </div>
         </div>
         <p className="flex items-center gap-1.5 text-[11px]">
           <ServerCog className="h-3.5 w-3.5" aria-hidden />
