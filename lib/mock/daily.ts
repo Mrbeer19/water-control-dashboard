@@ -11,8 +11,11 @@ import type { MockState } from './store';
 import { createRng, roundTo } from './random';
 import { splitIntoTiers } from '@/lib/utils/calculation';
 
-/** จำนวนวันย้อนหลังที่สร้างให้ */
+/** จำนวนวันย้อนหลังตั้งต้น */
 export const DAILY_HISTORY_DAYS = 30;
+
+/** เพดานที่ยอมสร้างย้อนหลัง กันการขอช่วงยาวจนสร้างข้อมูลเกินจำเป็น */
+const MAX_HISTORY_DAYS = 400;
 
 /** เที่ยงคืนของวันที่ห่างจากวันนี้ n วัน */
 function midnightOffset(daysAgo: number): Date {
@@ -33,8 +36,14 @@ function toDateKey(date: Date): string {
  * ยอดใช้น้ำรายวันย้อนหลัง + ส่วนที่พยากรณ์ไปจนสิ้นเดือน
  *
  * @param projectedDays จำนวนวันข้างหน้าที่ให้ AI พยากรณ์ต่อ (0 = เอาแต่ของจริง)
+ * @param historyDays  จำนวนวันย้อนหลังที่ต้องการ — รายงานที่เทียบช่วงก่อนหน้าต้องขอ
+ *                     ยาวเป็นสองเท่าของช่วงที่เลือก ไม่งั้นช่วงเปรียบเทียบจะไม่มีข้อมูล
  */
-export function buildDailyUsage(state: MockState, projectedDays = 0): DailyUsagePoint[] {
+export function buildDailyUsage(
+  state: MockState,
+  projectedDays = 0,
+  historyDays: number = DAILY_HISTORY_DAYS,
+): DailyUsagePoint[] {
   // seed คงที่ ทำให้กราฟไม่กระโดดใหม่ทุกครั้งที่ re-render
   const rng = createRng(770412);
   const { billing } = state.settings;
@@ -45,7 +54,8 @@ export function buildDailyUsage(state: MockState, projectedDays = 0): DailyUsage
 
   const points: DailyUsagePoint[] = [];
 
-  for (let index = DAILY_HISTORY_DAYS - 1; index >= -projectedDays; index -= 1) {
+  const days = Math.min(MAX_HISTORY_DAYS, Math.max(1, Math.round(historyDays)));
+  for (let index = days - 1; index >= -projectedDays; index -= 1) {
     const date = midnightOffset(index);
     const projected = index < 0;
     const weekday = date.getDay();

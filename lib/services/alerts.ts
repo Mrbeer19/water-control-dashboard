@@ -4,8 +4,11 @@ import type {
   Alert,
   AlertAcknowledgement,
   AlertQuery,
+  NotificationChannel,
   NotificationDelivery,
+  NotificationPreview,
   Paginated,
+  RecoveryEvent,
 } from '@/lib/types';
 import { acknowledgeAlert as acknowledgeInStore } from '@/lib/mock';
 import { mutate, respond } from './internal';
@@ -27,6 +30,7 @@ export async function getAlerts(query: AlertQuery = {}): Promise<Paginated<Alert
       ) {
         return false;
       }
+      if (query.sourceIds !== undefined && !query.sourceIds.includes(alert.sourceId)) return false;
       if (query.unreadOnly === true && alert.read) return false;
       if (query.range !== undefined) {
         const raised = new Date(alert.raisedAt).getTime();
@@ -150,5 +154,90 @@ export async function retryNotificationDelivery(id: string): Promise<Notificatio
     delivery.errorMessage = null;
     delivery.updatedAt = iso;
     return delivery;
+  });
+}
+
+/**
+ * เหตุการณ์ที่คลี่คลายแล้ว จับคู่กับ alert ต้นทาง
+ *
+ * ★ "ระยะเวลาที่เกิดเหตุ" คิดจาก raisedAt → resolvedAt ไม่ใช่จนถึงตอนที่มีคนกด ack
+ *   เพราะการรับทราบไม่ได้แปลว่าปัญหาหายแล้ว ทั้งสองตัวเลขจึงแยกกันคนละช่อง
+ *
+ * TODO(backend): GET /api/alerts/recoveries?from=&to=&limit=
+ */
+export async function getRecoveryEvents(limit = 20): Promise<RecoveryEvent[]> {
+  return respond((state) =>
+    state.alerts
+      .filter((alert): alert is Alert & { resolvedAt: string } => alert.state === 'resolved' && alert.resolvedAt !== null)
+      .slice(0, limit)
+      .map((alert) => {
+        const raised = new Date(alert.raisedAt).getTime();
+        const resolved = new Date(alert.resolvedAt).getTime();
+        const ack =
+          alert.acknowledgementId === null
+            ? null
+            : (state.acknowledgements.find((item) => item.id === alert.acknowledgementId) ?? null);
+
+        return {
+          alertId: alert.id,
+          code: alert.code,
+          sourceType: alert.sourceType,
+          sourceId: alert.sourceId,
+          sourceName: alert.sourceName,
+          severity: alert.severity,
+          messageTh: alert.messageTh,
+          messageEn: alert.messageEn,
+          raisedAt: alert.raisedAt,
+          resolvedAt: alert.resolvedAt,
+          durationMinutes: Math.max(0, Math.round((resolved - raised) / 60_000)),
+          acknowledgedBy: ack?.acknowledgedBy ?? null,
+          minutesToAcknowledge:
+            ack === null ? null : Math.max(0, Math.round((new Date(ack.acknowledgedAt).getTime() - raised) / 60_000)),
+        };
+      }),
+  );
+}
+
+/**
+ * ข้อความที่จะถูกส่งออกจริงสำหรับ alert หนึ่ง
+ *
+ * ★ ประกอบข้อความที่นี่เพื่อให้ preview ตรงกับของจริง เมื่อหลังบ้านมาต่อ
+ *   ต้องย้ายการประกอบข้อความไปฝั่งเซิร์ฟเวอร์ แล้วให้ endpoint นี้คืนข้อความเดียวกัน
+ *   ไม่ใช่ให้หน้าบ้านประกอบเองคนละแบบกับที่ส่งจริง
+ *
+ * TODO(backend): GET /api/alerts/:id/preview?channel=line
+ */
+export async function getNotificationPreview(
+  alertId: string,
+  channel: NotificationChannel = 'line',
+): Promise<NotificationPreview | null> {
+  return respond((state) => {
+    const alert = state.alerts.find((item) => item.id === alertId);
+    if (alert === undefined) return null;
+
+    const delivery = state.deliveries.find((item) => item.alertId === alertId && item.channel === channel);
+    const recipients = state.settings.notifications.recipients[channel];
+    const severityMark = { critical: '🔴 วิกฤต', warning: '🟡 เตือน', info: '🔵 แจ้งให้ทราบ' }[alert.severity];
+    const site = state.settings.general.siteName;
+
+    const lines = [
+      `${severityMark} · ${site}`,
+      alert.messageTh,
+      `จุดเกิดเหตุ: ${alert.sourceName}`,
+    ];
+    if (alert.triggerValue !== null && alert.thresholdValue !== null) {
+      lines.push(`ค่าที่วัดได้: ${alert.triggerValue} ${alert.unit ?? ''} (เกณฑ์ ${alert.thresholdValue} ${alert.unit ?? ''})`);
+    }
+    lines.push(`เวลา: ${new Date(alert.raisedAt).toLocaleString('th-TH')}`);
+    if (alert.occurrenceCount > 1) lines.push(`เกิดซ้ำ ${alert.occurrenceCount} ครั้ง`);
+
+    return {
+      alertId,
+      channel,
+      recipient: delivery?.recipient ?? recipients[0] ?? '-',
+      title: `${severityMark} · ${site}`,
+      body: lines.join('\n'),
+      deliveryState: delivery?.deliveryState ?? null,
+    };
   });
 }

@@ -850,6 +850,86 @@ export interface NotificationDelivery extends BaseRecord {
   errorMessage: string | null;
 }
 
+// ─────────────────────────────────────────────────────────────
+// ตัวอย่างข้อความแจ้งเตือน และเหตุการณ์ที่คลี่คลายแล้ว
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * ข้อความที่ระบบจะส่งออกจริงสำหรับ alert หนึ่ง
+ * ให้ผู้ใช้เห็นก่อนว่าคนปลายทางจะได้รับอะไร ก่อนจะไปตั้งค่าช่องทางแจ้งเตือน
+ */
+export interface NotificationPreview {
+  alertId: string;
+  channel: NotificationChannel;
+  recipient: string;
+  /** บรรทัดแรกที่ใช้เป็นหัวข้อ */
+  title: string;
+  /** เนื้อความเต็มตามที่จะส่งจริง รวมการขึ้นบรรทัดใหม่ */
+  body: string;
+  /** สถานะการส่งจริงของ alert นี้ — null เมื่อยังไม่เคยส่ง */
+  deliveryState: NotificationDeliveryState | null;
+}
+
+/**
+ * เหตุการณ์ที่คลี่คลายแล้ว จับคู่กับ alert ต้นทาง
+ * แสดง "เกิดนานเท่าไรกว่าจะหาย" ซึ่งเป็นตัวเลขที่ใช้ประเมินการตอบสนองของทีม
+ */
+export interface RecoveryEvent {
+  alertId: string;
+  code: AlertCode;
+  sourceType: AlertSourceType;
+  sourceId: string;
+  sourceName: string;
+  severity: AlertSeverity;
+  messageTh: string;
+  messageEn: string;
+  raisedAt: ISODateTime;
+  resolvedAt: ISODateTime;
+  /** ระยะเวลาที่เหตุการณ์ดำเนินอยู่ (นาที) */
+  durationMinutes: number;
+  /** ใครเป็นคนรับทราบ — null เมื่อหายเองโดยไม่มีใคร ack */
+  acknowledgedBy: ActorRef | null;
+  /** นาทีจากเกิดเหตุจนมีคนรับทราบ — null เมื่อไม่มีใคร ack */
+  minutesToAcknowledge: number | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// รายงานการใช้น้ำ
+// ─────────────────────────────────────────────────────────────
+
+/** หนึ่งโซนในรายงาน พร้อมตัวเลขเทียบช่วงก่อนหน้า */
+export interface UsageReportRow {
+  zoneId: string;
+  name: string;
+  nameEn: string;
+  departmentId: string | null;
+  cubicMeters: number;
+  costBaht: number;
+  /** ปริมาณของช่วงก่อนหน้าที่ยาวเท่ากัน */
+  previousCubicMeters: number;
+  previousCostBaht: number;
+  /** เปลี่ยนแปลงจากช่วงก่อนหน้า (%) — บวก = ใช้มากขึ้น */
+  changePercent: number;
+  /** สัดส่วนของทั้งโรงงานในช่วงนี้ (%) */
+  sharePercent: number;
+}
+
+export interface UsageReport {
+  range: TimeRange;
+  /** ช่วงก่อนหน้าที่ยาวเท่ากัน ใช้เป็นฐานเปรียบเทียบ */
+  previousRange: TimeRange;
+  rows: UsageReportRow[];
+  totalCubicMeters: number;
+  totalCostBaht: number;
+  previousTotalCubicMeters: number;
+  previousTotalCostBaht: number;
+  changePercent: number;
+  unaccounted: UnaccountedWater;
+  /** ยอดรายวันในช่วงที่เลือก ใช้วาดกราฟเส้น */
+  daily: DailyUsagePoint[];
+  generatedAt: ISODateTime;
+}
+
 // ═════════════════════════════════════════════════════════════
 // ผลลัพธ์จากทีม AI
 //
@@ -1564,6 +1644,8 @@ export interface AlertQuery {
   sourceTypes?: AlertSourceType[];
   codes?: AlertCode[];
   departmentIds?: string[];
+  /** กรองตาม entity ต้นทาง เช่น เอาเฉพาะ alert ของโซน 3 */
+  sourceIds?: string[];
   unreadOnly?: boolean;
   range?: TimeRange;
   limit?: number;

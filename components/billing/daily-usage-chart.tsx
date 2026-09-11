@@ -33,6 +33,8 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
   const { t, locale } = useLocale();
 
   const lastActualIndex = points.findLastIndex((point) => !point.projected);
+  // หน้ารายงานส่งมาเฉพาะวันที่เกิดขึ้นจริง — ไม่ต้องมีตำนานสีของเส้นที่ไม่ได้วาด
+  const hasForecast = points.some((point) => point.projected);
   const rows: Row[] = points.map((point, index) => {
     if (!point.projected) {
       return { timestamp: point.timestamp, actual: point.cubicMeters, forecast: null, band: null };
@@ -121,20 +123,24 @@ export function DailyUsageChart({ points }: { points: DailyUsagePoint[] }): JSX.
           </svg>
           {t.billing.actualLabel}
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <svg width="18" height="8" aria-hidden>
-            <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.sequential} strokeWidth="2" strokeDasharray="5 4" />
-          </svg>
-          {t.billing.forecastLabel}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span
-            className="inline-block h-2.5 w-4 rounded-sm"
-            style={{ background: CHART.sequential, opacity: 0.16 }}
-            aria-hidden
-          />
-          {t.billing.confidenceBand}
-        </span>
+        {hasForecast && (
+          <>
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="18" height="8" aria-hidden>
+                <line x1="0" y1="4" x2="18" y2="4" stroke={CHART.sequential} strokeWidth="2" strokeDasharray="5 4" />
+              </svg>
+              {t.billing.forecastLabel}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className="inline-block h-2.5 w-4 rounded-sm"
+                style={{ background: CHART.sequential, opacity: 0.16 }}
+                aria-hidden
+              />
+              {t.billing.confidenceBand}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
