@@ -179,25 +179,42 @@ Frontend ทำหน้าที่แสดงผลเท่านั้น �
   เพิ่ม type ใหม่ = เพิ่ม 1 บรรทัดในไฟล์นี้ ไม่ต้องแตะ component
 - field ที่ไม่บังคับ (optional) ถ้าไม่มีให้ซ่อน ไม่ใช่แสดง undefined
 
-เพิ่ม type ใน lib/types.ts (ถ้าต้องแก้ type เดิม ให้ถามก่อน):
+type ที่ใช้จริงใน lib/types.ts (ชื่อเหล่านี้คือของจริงในโค้ด ไม่ใช่ของที่วางแผนไว้):
 
   AnomalyEvent {
-    id, type: string, severity: 'critical'|'warning'|'info',
-    targetType: 'zone'|'pump'|'tank'|'meter'|'device'|'env', targetId,
-    detectedAt, resolvedAt?, status: 'active'|'resolved'|'dismissed',
-    score?: number,                       // 0-100 ถ้าโมเดลให้มา
-    explanation?: string,                 // ข้อความจาก AI/LLM
-    suggestedAction?: string,
-    evidence?: TimeSeriesPoint[],         // ค่าจริงช่วงที่เกิดเหตุ
+    id, type: string, detectedAt, status: 'active'|'resolved'|'dismissed'   // 4 ตัวนี้บังคับ
+    resolvedAt?, evidence?: TimeSeriesPoint[],
     expectedBand?: { lower: TimeSeriesPoint[], upper: TimeSeriesPoint[] },
-    feedback?: 'confirmed'|'false_positive'
+    suggestedAction?, feedback?: 'confirmed'|'false_positive'|null,
+    detector?: string, score?: number (0–1), severity?: 'critical'|'warning'|'info',
+    sourceType?, sourceId?, sourceName?,        // ★ ไม่ใช่ targetType/targetId
+    metric?, windowStart?, windowEnd?, features?, alertId?, modelName?,
+    summaryTh?, summaryEn?, extra?
   }
-  Prediction { targetType, targetId, horizon: '1h'|'6h'|'24h'|'7d'|'month',
-               points: TimeSeriesPoint[], lower?: [], upper?: [], generatedAt }
-  HealthScore { targetType, targetId, score: 0-100, trend: 'up'|'down'|'stable',
-                estimatedIssueDate?, note? }
-  AIStatus { mode?: string, lastTrainedAt?, trainingDays?, accuracy?: number,
-             falsePositiveRate?: number, summaryText?: string }
+
+  AIForecast {                                  // ★ ชื่อนี้ ไม่ใช่ Prediction
+    id, target: string, generatedAt             // 3 ตัวนี้บังคับ
+    targetId?, targetName?, metric?, unit?, horizonHours?, horizon?: string,
+    history?, forecast?: ForecastPoint[],       // ForecastPoint มี lowerBound/upperBound ในตัว
+    value?, expectedAt?, confidence?,           // สำหรับผลพยากรณ์แบบจุดเดียว
+    modelName?, mapePercent?, summaryTh?, summaryEn?
+  }
+
+  MaintenancePrediction {                       // ★ ชื่อนี้ ไม่ใช่ HealthScore
+    id, targetType, targetId, generatedAt       // 4 ตัวนี้บังคับ
+    targetName?, failureProbability? (0–1), daysUntilService?,
+    estimatedIssueDate?, healthScore? (0–100 ยิ่งสูงยิ่งดี), trend?: string,
+    features?, modelName?, note?, recommendationTh?, recommendationEn?
+  }
+
+  AIServiceStatus {                             // ★ ชื่อนี้ ไม่ใช่ AIStatus
+    reachable, lastResultAt, models, message    // 4 ตัวนี้บังคับ
+    mode?, lastTrainedAt?, trainingDays?, accuracy?, falsePositiveRate?, summaryText?
+  }
+
+★ score เป็น 0–1 เสมอทั้ง type และ AI_CONTRACT.md
+  แปลงเป็น % ที่ชั้นแสดงผลด้วย formatAnomalyScore() จาก lib/utils/format.ts เท่านั้น
+  ห้ามคูณ 100 กระจายตามคอมโพเนนต์
 
 A. AI Summary card (บนสุด) — แสดง AIStatus ทุก field ที่มี ซ่อน field ที่ไม่มี
 B. Anomaly list — card ต่อ event:
@@ -214,8 +231,8 @@ E. Widget ในหน้า Overview: จำนวน anomaly active + summaryT
 F. Mock ใน lib/mock/ai.ts — scenario toggle มุมจอ 3 แบบ:
    normal / night_leak (Zone 3 รั่วตี 2) / pump_degrading (Pump 1 กระแสค่อย ๆ สูง)
    ใช้ type ที่ยังไม่รู้จัก 1 อันใน mock ด้วย เพื่อทดสอบว่า UI ไม่พัง
-G. สร้าง docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย่าง JSON + อธิบายว่า field ไหนบังคับ
-   ไฟล์นี้ส่งให้ทีม AI
+G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย่าง JSON + อธิบายว่า field ไหนบังคับ
+   ไฟล์นี้ส่งให้ทีม AI — แก้ type ในโค้ดเมื่อไร ต้องอัปเดตไฟล์นี้ด้วยเสมอ
 ```
 
 ### คำถามที่ต้องถามทีม AI ก่อน (หรือส่ง AI_CONTRACT.md ไปให้เขาตอบกลับ)

@@ -34,6 +34,7 @@ interface ScenarioAnomalySeed {
   summaryTh: string;
   summaryEn: string;
   features: { key: string; value: number; expected?: number | null; contribution?: number }[];
+  suggestedAction?: string;
   /** ผลบางรายการจงใจส่งมาไม่ครบ เพื่อทดสอบว่า UI ยัง render ได้ */
   partial?: boolean;
 }
@@ -66,6 +67,7 @@ const SCENARIO_ANOMALIES: Record<MockScenario, ScenarioAnomalySeed[]> = {
       minutesAgo: 38,
       summaryTh: 'โซน 7 มีน้ำไหลต่อเนื่องตลอดช่วงกลางคืนที่ไม่ควรมีการใช้งาน',
       summaryEn: 'Zone 7 shows continuous flow through the night with no expected usage',
+      suggestedAction: 'ปิดวาล์วโซน 7 แล้วตรวจท่อช่วงลานล้าง หากอัตราไหลไม่ลดแสดงว่ารั่วก่อนวาล์ว',
       features: [
         { key: 'flow_lpm', value: 11.4, expected: 0, contribution: 0.74 },
         { key: 'duration_minutes', value: 316, expected: 0, contribution: 0.26 },
@@ -112,6 +114,7 @@ const SCENARIO_ANOMALIES: Record<MockScenario, ScenarioAnomalySeed[]> = {
       minutesAgo: 66,
       summaryTh: 'ปั๊มหลัก 1 ใช้ไฟเท่าเดิมแต่ได้อัตราไหลลดลงต่อเนื่อง 6 วัน',
       summaryEn: 'Main Pump 1 draws the same power but delivers steadily less flow over six days',
+      suggestedAction: 'ถอดตรวจใบพัดและซีลภายใน 2 สัปดาห์ ก่อนอัตราไหลตกจนกระทบสายการผลิต',
       features: [
         { key: 'specific_power_w_per_lpm', value: 28.0, expected: 16.7, contribution: 0.68 },
         { key: 'flow_lpm', value: 104.5, expected: 130.0, contribution: 0.32 },
@@ -152,6 +155,7 @@ export function buildAnomalies(state: MockState, scenario: MockScenario): Anomal
       id: `anomaly-${scenario}-${index + 1}`,
       type: seed.type,
       detectedAt: nowIso(at),
+      status: 'active',
     };
 
     // ผลที่ทีม AI ส่งมาไม่ครบ — คืนเท่าที่มีจริง ไม่เติมค่าปลอมให้
@@ -159,11 +163,26 @@ export function buildAnomalies(state: MockState, scenario: MockScenario): Anomal
       return { ...base, detector: seed.detector, score: seed.score, sourceId: seed.sourceId };
     }
 
+    // ค่าจริงช่วงที่เกิดเหตุ ดึงจากประวัติของ entity ต้นทางเอง ไม่ได้ปั้นตัวเลขใหม่
+    const metricKey = seed.metric === 'flow_lpm' ? 'flow_lpm' : seed.metric === 'power_watt' ? 'power_watt' : null;
+    const evidence = metricKey === null ? undefined : readHistory(seed.sourceId, metricKey).slice(-40);
+    const expectedBand =
+      evidence === undefined || evidence.length === 0
+        ? undefined
+        : {
+            lower: evidence.map((point) => ({ timestamp: point.timestamp, value: roundTo(point.value * 0.72, 2) })),
+            upper: evidence.map((point) => ({ timestamp: point.timestamp, value: roundTo(point.value * 1.12, 2) })),
+          };
+
     return {
       ...base,
       detector: seed.detector,
       score: seed.score,
       severity: seed.severity,
+      evidence,
+      expectedBand,
+      suggestedAction: seed.suggestedAction,
+      feedback: null,
       sourceType: seed.sourceType,
       sourceId: seed.sourceId,
       sourceName,

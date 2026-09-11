@@ -196,6 +196,31 @@ export function formatNumber(value: number, locale: Locale = 'th', decimals = 0)
   return numberFormat(locale, decimals, decimals).format(value);
 }
 
+/**
+ * คะแนนความผิดปกติจากทีม AI
+ *
+ * ★ ค่าที่ได้มาเป็น 0–1 เสมอ (ดู docs/AI_CONTRACT.md) แต่คนอ่านเข้าใจเปอร์เซ็นต์ง่ายกว่า
+ *   การแปลงต้องเกิดที่นี่ที่เดียว — ห้ามคูณ 100 กระจายตามคอมโพเนนต์
+ *   ไม่งั้นวันที่ทีม AI เปลี่ยนสเกล จะต้องไล่แก้ทุกจุดและจะมีที่หลุด
+ *
+ * คืน '—' เมื่อทีม AI ไม่ได้ส่งคะแนนมา ซึ่งเกิดขึ้นได้ตามสัญญา
+ */
+export function formatAnomalyScore(score: number | undefined, locale: Locale = 'th'): string {
+  if (score === undefined || !Number.isFinite(score)) return '—';
+  return `${numberFormat(locale, 0, 0).format(clampScore(score) * 100)}%`;
+}
+
+/** คะแนนดิบในสเกล 0–100 สำหรับ gauge หรือแถบความยาว */
+export function anomalyScorePercent(score: number | undefined): number | null {
+  if (score === undefined || !Number.isFinite(score)) return null;
+  return Math.round(clampScore(score) * 100);
+}
+
+/** ตัดค่าให้อยู่ในสเกลที่สัญญากำหนด กันค่าหลุดกรอบจากฝั่งโมเดล */
+function clampScore(score: number): number {
+  return Math.min(1, Math.max(0, score));
+}
+
 /** คลาส Tailwind ของสีสถานะ ใช้ร่วมกันทุกหน้าเพื่อให้สีตรงกัน */
 export const STATUS_TEXT_CLASS: Record<EntityStatus, string> = {
   ok: 'text-status-ok',

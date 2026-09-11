@@ -27,8 +27,10 @@
 | GET | `/api/ai/forecast` | `AIForecast` |
 | GET | `/api/ai/maintenance` | `MaintenancePrediction[]` |
 | GET | `/api/ai/status` | `AIServiceStatus` |
+| POST | `/api/ai/anomalies/:id/feedback` | `AnomalyEvent` — body `{ feedback }` |
+| POST | `/api/ai/anomalies/:id/status` | `AnomalyEvent` — body `{ status }` |
 
-query ของ `/api/ai/anomalies`: `type` `detector` `severity` `sourceType` `minScore` `from` `to` `limit` `offset`
+query ของ `/api/ai/anomalies`: `type` `status` `detector` `severity` `sourceType` `minScore` `from` `to` `limit` `offset`
 query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
 
 ---
@@ -40,9 +42,19 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
   id: string            // บังคับ
   type: string          // บังคับ — string เปิด ห้ามทำเป็น enum ปิด
   detectedAt: string    // บังคับ — ISO 8601
+  status: 'active' | 'resolved' | 'dismissed'   // บังคับ — ไม่ส่งมาให้ถือเป็น 'active'
+
+  resolvedAt?: string | null
+  evidence?: { timestamp: number; value: number }[]     // ค่าจริงช่วงที่เกิดเหตุ
+  expectedBand?: {                                       // ช่วงที่โมเดลคาดไว้
+    lower: { timestamp: number; value: number }[]
+    upper: { timestamp: number; value: number }[]
+  }
+  suggestedAction?: string
+  feedback?: 'confirmed' | 'false_positive' | null       // ผลตรวจจากหน้างาน
 
   detector?: string     // 'rule' | 'isolation_forest' | 'forecast_deviation' | อื่น ๆ
-  score?: number        // 0–1
+  score?: number        // 0–1  ★ ไม่ใช่ 0–100
   severity?: 'critical' | 'warning' | 'info'
   sourceType?: 'tank' | 'pump' | 'zone' | 'valve' | 'meter' | 'sensor'
              | 'device' | 'electric_node' | 'pressure_control' | 'system'
@@ -60,6 +72,13 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
 }
 ```
 
+> **`sourceType` / `sourceId` ไม่ใช่ `targetType` / `targetId`**
+> ใช้คู่ชื่อเดียวกับ `Alert` ทั้งระบบ เพื่อไม่ให้มีสองคู่ชื่อสำหรับเรื่องเดียวกัน
+
+> **`score` อยู่ในสเกล 0–1 เสมอ**
+> ถ้าโมเดลคิดเป็น 0–100 ให้หารก่อนส่ง ฝั่งหน้าบ้านแปลงเป็นเปอร์เซ็นต์ที่ชั้นแสดงผล
+> ด้วย `formatAnomalyScore()` จุดเดียว
+
 **พฤติกรรมของ Frontend เมื่อ field ขาด**
 
 | ขาด | Frontend ทำอะไร |
@@ -67,7 +86,10 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
 | `type` ไม่รู้จัก | ใช้ `UNKNOWN_ANOMALY_TYPE` และแสดงรหัสดิบคู่กัน |
 | `severity` | ใช้ `defaultSeverity` จากตารางของชนิดนั้น |
 | `summaryTh` / `summaryEn` | ใช้คำอธิบายกลางของชนิดนั้นแทน |
-| `score` | ไม่แสดงแถบคะแนน แต่ยังแสดงรายการ |
+| `score` | ไม่แสดงแถบคะแนน แต่ยังแสดงรายการ (`formatAnomalyScore()` คืน "—") |
+| `evidence` | ไม่วาดกราฟประกอบ |
+| `expectedBand` | วาดเฉพาะเส้นค่าจริง ไม่มีแถบเงา |
+| `suggestedAction` | ซ่อนส่วน "ทำอะไรต่อ" |
 | `features` | ซ่อนส่วน "ทำไมถึงถูกจับ" |
 | `sourceName` | แสดง `sourceId` แทน |
 
@@ -85,6 +107,8 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
 
 ## AIForecast
 
+> ชื่อ type คือ **`AIForecast`** (ไม่ใช่ `Prediction`)
+
 ```ts
 {
   id: string            // บังคับ
@@ -97,8 +121,12 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
   metric?: string
   unit?: string
   horizonHours?: number
+  horizon?: string      // '1h' | '6h' | '24h' | '7d' | 'month' — string เปิด
   history?: { timestamp: number; value: number }[]
   forecast?: { timestamp: number; value: number; lowerBound?: number; upperBound?: number }[]
+  value?: number | null       // ผลพยากรณ์แบบจุดเดียว เช่น "ถังจะแตะระดับต่ำสุดที่เท่าไร"
+  expectedAt?: string | null  // เวลาที่คาดว่าเหตุการณ์จะเกิด
+  confidence?: number         // 0–1
   modelName?: string | null
   mapePercent?: number
   summaryTh?: string
@@ -106,12 +134,17 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
 }
 ```
 
+ส่งมาแบบเส้น (`forecast`) หรือแบบจุดเดียว (`value` + `expectedAt`) หรือทั้งคู่ก็ได้
+
 `timestamp` เป็น **epoch milliseconds** (ไม่ใช่ ISO string) เพื่อให้กราฟไม่ต้องแปลงซ้ำทุกจุด
 ถ้าไม่มี `lowerBound`/`upperBound` frontend จะวาดเฉพาะเส้นกลางโดยไม่มีแถบความเชื่อมั่น
 
 ---
 
 ## MaintenancePrediction
+
+> ชื่อ type คือ **`MaintenancePrediction`** (ไม่ใช่ `HealthScore`)
+> คะแนนสุขภาพอยู่ใน field `healthScore` ของ type นี้
 
 ```ts
 {
@@ -123,10 +156,34 @@ query ของ `/api/ai/forecast`: `target` `targetId` `horizon`
   targetName?: string
   failureProbability?: number     // 0–1
   daysUntilService?: number | null
+  estimatedIssueDate?: string | null   // วันที่คาดว่าจะเกิดปัญหา
+  healthScore?: number            // 0–100 ★ ยิ่งสูงยิ่งดี (กลับทางกับ AnomalyEvent.score)
+  trend?: string                  // 'up' | 'down' | 'stable' — string เปิด
   features?: AnomalyFeature[]
   modelName?: string | null
+  note?: string
   recommendationTh?: string
   recommendationEn?: string
+}
+```
+
+## AIServiceStatus
+
+> ชื่อ type คือ **`AIServiceStatus`** (ไม่ใช่ `AIStatus`)
+
+```ts
+{
+  reachable: boolean        // บังคับ
+  lastResultAt: string | null   // บังคับ
+  models: string[]          // บังคับ
+  message: string | null    // บังคับ
+
+  mode?: string             // 'live' | 'training' | 'degraded' — string เปิด
+  lastTrainedAt?: string | null
+  trainingDays?: number
+  accuracy?: number         // 0–1
+  falsePositiveRate?: number // 0–1
+  summaryText?: string      // สรุปหนึ่งบรรทัดสำหรับ widget หน้า Overview
 }
 ```
 

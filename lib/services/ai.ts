@@ -10,16 +10,13 @@
 import type {
   AIForecast,
   AIServiceStatus,
-  AIStatus,
   AnomalyEvent,
+  AnomalyFeedback,
   AnomalyQuery,
-  HealthScore,
   MaintenancePrediction,
   MockScenario,
-  Prediction,
-  PredictionKind,
+  Paginated,
 } from '@/lib/types';
-import type { Paginated } from '@/lib/types';
 import { buildAnomalies, buildForecast, buildMaintenancePredictions, buildServiceStatus } from '@/lib/mock';
 import { mutate, respond } from './internal';
 
@@ -45,6 +42,7 @@ export async function getAnomalies(query: AnomalyQuery = {}): Promise<Paginated<
       if (query.sourceTypes !== undefined && anomaly.sourceType !== undefined) {
         if (!query.sourceTypes.includes(anomaly.sourceType)) return false;
       }
+      if (query.statuses !== undefined && !query.statuses.includes(anomaly.status)) return false;
       if (query.minScore !== undefined && anomaly.score !== undefined && anomaly.score < query.minScore) {
         return false;
       }
@@ -97,53 +95,36 @@ export async function getAIServiceStatus(): Promise<AIServiceStatus> {
 }
 
 
-// ─────────────────────────────────────────────────────────────
-// Phase 4.5 — ยังเป็น stub รอทีม AI ต่อของจริง
-//
-// ★ ทั้งสามฟังก์ชันคืนค่าว่างโดยตั้งใจ ไม่ใช่ค่าจำลอง
-//   หน้าจอที่เรียกต้องแสดง empty state ว่า "ยังไม่มีผลจากทีม AI"
-//   ห้ามเติมข้อมูลปลอมมากลบ เพราะจะแยกไม่ออกว่าผลยังไม่มาหรือไม่มีอะไรผิดปกติ
-// ─────────────────────────────────────────────────────────────
-
 /**
- * ผลพยากรณ์ทุกชนิดจากทีม AI
- * kind เป็น string เปิด — ไม่ส่งมาคือเอาทุกชนิด
+ * ส่งผลตรวจสอบจากหน้างานกลับให้ทีม AI
+ * ★ เป็นข้อมูลที่ทีม AI ใช้ปรับโมเดล ไม่ใช่การปิดเคส — การปิดเคสใช้ resolveAnomaly()
  *
- * TODO(backend): GET /api/ai/predictions?kind=&targetType=&targetId=&horizon=
- *   ส่งต่อจากบริการของทีม AI บน gateway ตามรูปแบบ Prediction ใน docs/AI_CONTRACT.md
+ * TODO(backend): POST /api/ai/anomalies/:id/feedback  body: { feedback }
  */
-export async function getPredictions(kind?: PredictionKind, targetId?: string): Promise<Prediction[]> {
-  // ตั้งใจอ้างพารามิเตอร์ไว้ให้ signature คงที่ตอนต่อของจริง
-  void kind;
-  void targetId;
-  return respond(() => [] as Prediction[]);
+export async function submitAnomalyFeedback(id: string, feedback: AnomalyFeedback): Promise<AnomalyEvent | null> {
+  return mutate((state) => {
+    const anomaly = state.anomalies.find((item) => item.id === id);
+    if (anomaly === undefined) return null;
+    anomaly.feedback = feedback;
+    return anomaly;
+  });
 }
 
 /**
- * คะแนนสุขภาพอุปกรณ์
- * TODO(backend): GET /api/ai/health-scores?targetType=&targetId=
+ * ปิดเคสความผิดปกติ (แก้แล้ว หรือไม่ใช่ปัญหา)
+ * TODO(backend): POST /api/ai/anomalies/:id/status  body: { status }
  */
-export async function getHealthScores(targetType?: string): Promise<HealthScore[]> {
-  void targetType;
-  return respond(() => [] as HealthScore[]);
-}
-
-/**
- * สถานะบริการ AI บน gateway
- * ตอนนี้ยังไม่ได้ต่อ จึงรายงานว่า offline ตรง ๆ แทนการเดาว่าออนไลน์
- *
- * TODO(backend): GET /api/ai/status
- */
-export async function getAIStatus(): Promise<AIStatus> {
-  return respond(() => ({
-    online: false,
-    checkedAt: new Date().toISOString(),
-    modules: {},
-    models: [],
-    lastResultAt: null,
-    messageTh: 'ยังไม่ได้เชื่อมต่อบริการ AI',
-    messageEn: 'AI service is not connected yet',
-  }));
+export async function setAnomalyStatus(
+  id: string,
+  status: AnomalyEvent['status'],
+): Promise<AnomalyEvent | null> {
+  return mutate((state) => {
+    const anomaly = state.anomalies.find((item) => item.id === id);
+    if (anomaly === undefined) return null;
+    anomaly.status = status;
+    anomaly.resolvedAt = status === 'active' ? null : new Date().toISOString();
+    return anomaly;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────

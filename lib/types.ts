@@ -965,14 +965,43 @@ export interface AnomalyFeature {
   contribution?: number;
 }
 
+/** สถานะของความผิดปกติหนึ่งรายการ */
+export type AnomalyStatus = 'active' | 'resolved' | 'dismissed';
+
+/** ผลตรวจสอบจากคนที่ไปดูหน้างานจริง ส่งกลับให้ทีม AI ใช้ปรับโมเดล */
+export type AnomalyFeedback = 'confirmed' | 'false_positive';
+
+/** ช่วงค่าที่โมเดลคาดว่าควรจะเป็น ใช้วาดแถบเงาทับค่าจริง */
+export interface AnomalyExpectedBand {
+  lower: TimeSeriesPoint[];
+  upper: TimeSeriesPoint[];
+}
+
 /**
  * ความผิดปกติหนึ่งรายการที่ทีม AI ส่งมา
- * มีเพียง id / type / detectedAt ที่รับประกันว่ามาแน่ นอกนั้นอาจขาดได้
+ *
+ * รับประกันว่ามาแน่: id / type / detectedAt / status
+ * นอกนั้น optional ทั้งหมด — UI ต้อง render ได้แม้ข้อมูลมาไม่ครบ
+ *
+ * ★ ใช้ sourceType/sourceId (ไม่ใช่ targetType/targetId) ให้ตรงกับ Alert
+ *   ซึ่งใช้คู่ชื่อนี้อยู่แล้วทั้งระบบ การมีสองคู่ชื่อสำหรับเรื่องเดียวกันจะสับสนกว่า
  */
 export interface AnomalyEvent {
   id: string;
   type: AnomalyType;
   detectedAt: ISODateTime;
+  /** ทีม AI ที่ยังไม่ส่ง status มาให้ถือเป็น 'active' */
+  status: AnomalyStatus;
+
+  resolvedAt?: ISODateTime | null;
+  /** ค่าจริงช่วงที่เกิดเหตุ ใช้วาดกราฟประกอบในการ์ด */
+  evidence?: TimeSeriesPoint[];
+  /** ช่วงที่โมเดลคาดไว้ วาดเป็นแถบเงาทับ evidence */
+  expectedBand?: AnomalyExpectedBand;
+  /** สิ่งที่แนะนำให้ทำต่อ */
+  suggestedAction?: string;
+  /** ผลตรวจสอบจากหน้างาน — null/ไม่มี = ยังไม่มีใครยืนยัน */
+  feedback?: AnomalyFeedback | null;
 
   detector?: AnomalyDetector;
   /** 0–1 ยิ่งสูงยิ่งผิดปกติ */
@@ -1025,6 +1054,16 @@ export interface AIForecast {
   modelName?: string | null;
   /** Mean Absolute Percentage Error จากการ backtest ล่าสุด */
   mapePercent?: number;
+  /**
+   * ช่วงเวลาที่พยากรณ์ เช่น '1h' | '6h' | '24h' | '7d' | 'month'
+   * string เปิด เพราะทีม AI เพิ่ม horizon ใหม่ได้โดยไม่ต้องรอหน้าบ้าน
+   */
+  horizon?: string;
+  /** ค่าที่พยากรณ์แบบจุดเดียว เช่น "ถังจะแตะระดับต่ำสุดเมื่อไร" */
+  value?: number | null;
+  expectedAt?: ISODateTime | null;
+  /** 0–1 ความมั่นใจของโมเดล */
+  confidence?: number;
   summaryTh?: string;
   summaryEn?: string;
 }
@@ -1042,9 +1081,20 @@ export interface MaintenancePrediction {
   failureProbability?: number;
   /** ประมาณจำนวนวันก่อนถึงกำหนดที่ควรเข้าซ่อม */
   daysUntilService?: number | null;
+  /** วันที่คาดว่าจะเกิดปัญหา — แสดงเป็น "คาดว่าจะเกิดภายใน X วัน" */
+  estimatedIssueDate?: ISODateTime | null;
+  /**
+   * คะแนนสุขภาพอุปกรณ์ 0–100 ยิ่งสูงยิ่งดี
+   * ★ ทิศทางกลับกับ AnomalyEvent.score ที่ยิ่งสูงยิ่งแย่ อย่าสลับกัน
+   */
+  healthScore?: number;
+  /** ทิศทางของคะแนน — string เปิด เช่น 'up' | 'down' | 'stable' */
+  trend?: string;
   /** ตัวชี้วัดที่ทำให้โมเดลคิดแบบนี้ */
   features?: AnomalyFeature[];
   modelName?: string | null;
+  /** หมายเหตุสั้น ๆ จากทีม AI */
+  note?: string;
   recommendationTh?: string;
   recommendationEn?: string;
 }
@@ -1056,134 +1106,18 @@ export interface AIServiceStatus {
   /** ชื่อโมเดลที่ทีม AI แจ้งว่ากำลังใช้อยู่ */
   models: string[];
   message: string | null;
-}
 
-// ─────────────────────────────────────────────────────────────
-// Phase 4.5 — ผลลัพธ์ชุดเพิ่มเติมจากทีม AI
-//
-// ยึดข้อตกลงเดียวกับส่วนบน: ชนิดเป็น string เปิด และมีเพียง field ที่ระบุตัวตน
-// กับเวลาที่บังคับ นอกนั้น optional ทั้งหมด เพื่อให้ UI render ได้แม้ผลมาไม่ครบ
-// ─────────────────────────────────────────────────────────────
-
-/**
- * ชนิดการพยากรณ์ — string เปิด ห้ามทำเป็น enum ปิด
- * ค่าที่คาดว่าจะใช้: 'tank_depletion' | 'demand_forecast' | 'failure_risk' | 'cost_projection'
- */
-export type PredictionKind = string;
-
-/**
- * ผลพยากรณ์หนึ่งรายการจากทีม AI
- *
- * รองรับทั้งแบบจุดเดียว (เช่น "ถังจะแตะระดับต่ำสุดในอีก 6 ชั่วโมง" → ใช้ value/expectedAt)
- * และแบบเป็นเส้น (ใช้ points) ทีม AI ส่งมาแบบไหนก็ได้ หรือส่งทั้งคู่ก็ได้
- */
-export interface Prediction {
-  id: string;
-  kind: PredictionKind;
-  generatedAt: ISODateTime;
-
-  /** ชนิดสิ่งที่พยากรณ์ — string เปิด เช่น 'tank' | 'pump' | 'zone' | 'department' | 'system' */
-  targetType?: string;
-  targetId?: string | null;
-  targetName?: string;
-  metric?: MetricKey | string;
-  unit?: string;
-  horizonHours?: number;
-
-  /** ค่าที่พยากรณ์ได้ สำหรับผลแบบจุดเดียว */
-  value?: number | null;
-  /** เวลาที่คาดว่าเหตุการณ์จะเกิด สำหรับผลเชิงเวลา */
-  expectedAt?: ISODateTime | null;
-  /** 0–1 ความมั่นใจของโมเดล */
-  confidence?: number;
-
-  /** ผลแบบเป็นเส้น พร้อมช่วงความเชื่อมั่นที่อาจไม่มีมาก็ได้ */
-  points?: ForecastPoint[];
-  /** ข้อมูลจริงย้อนหลังที่ใช้เป็นบริบทของกราฟ */
-  history?: TimeSeriesPoint[];
-
-  modelName?: string | null;
-  summaryTh?: string;
-  summaryEn?: string;
-  /** ข้อมูลเพิ่มเติมที่ทีม AI แนบมา แสดงเป็น key–value ได้โดยไม่ต้องรู้จักล่วงหน้า */
-  extra?: Record<string, string | number | boolean | null>;
-}
-
-/** องค์ประกอบย่อยที่ประกอบกันเป็นคะแนนสุขภาพ ใช้อธิบายว่าคะแนนมาจากไหน */
-export interface HealthScoreComponent {
-  /** ชื่อองค์ประกอบ เช่น 'vibration', 'specific_power', 'runtime_since_service' */
-  key: string;
-  /** 0–100 เฉพาะองค์ประกอบนี้ */
-  score?: number;
-  /** น้ำหนักที่มีต่อคะแนนรวม (0–1) */
-  weight?: number;
-  value?: number;
-  labelTh?: string;
-  labelEn?: string;
-}
-
-/**
- * คะแนนสุขภาพของอุปกรณ์หนึ่งตัว
- * score เป็น 0–100 โดยยิ่งสูงยิ่งดี (ตรงข้ามกับ AnomalyEvent.score ที่ยิ่งสูงยิ่งแย่)
- */
-export interface HealthScore {
-  id: string;
-  targetId: string;
-  computedAt: ISODateTime;
-
-  /** string เปิด เช่น 'pump' | 'valve' | 'device' | 'tank' */
-  targetType?: string;
-  targetName?: string;
-  /** 0–100 ยิ่งสูงยิ่งดี */
-  score?: number;
-  /** ระดับที่ทีม AI จัดให้ — string เปิด เช่น 'good' | 'fair' | 'poor' | 'critical' */
-  grade?: string;
-  /** ทิศทางการเปลี่ยนแปลง — string เปิด เช่น 'improving' | 'stable' | 'declining' */
-  trend?: string;
-  /** คะแนนเทียบกับครั้งก่อน (บวก = ดีขึ้น) */
-  changeFromPrevious?: number;
-  components?: HealthScoreComponent[];
-  /** ประมาณจำนวนวันก่อนคะแนนตกถึงเกณฑ์ที่ควรเข้าซ่อม */
-  daysUntilAttention?: number | null;
-  modelName?: string | null;
-  summaryTh?: string;
-  summaryEn?: string;
-  extra?: Record<string, string | number | boolean | null>;
-}
-
-/** สถานะของโมดูล AI หนึ่งตัวบน gateway */
-export interface AIModuleStatus {
-  enabled?: boolean;
-  healthy?: boolean;
-  modelName?: string | null;
-  lastResultAt?: ISODateTime | null;
-  /** เวลาที่ใช้ประมวลผลรอบล่าสุด (ms) */
-  lastRunMs?: number | null;
-  message?: string | null;
-}
-
-/**
- * สถานะรวมของบริการ AI ที่รันบน gateway
- * ใช้บอกผู้ใช้ว่า "ผลยังไม่มา" ต่างจาก "ไม่มีอะไรผิดปกติ" ซึ่งคนละความหมายกัน
- */
-export interface AIStatus {
-  online: boolean;
-  checkedAt: ISODateTime;
-
-  /**
-   * สถานะรายโมดูล — key เป็น string เปิด เช่น 'anomaly' | 'prediction' | 'health'
-   * ทีม AI เพิ่มโมดูลใหม่ได้โดยไม่ต้องแก้หน้าบ้าน
-   */
-  modules?: Record<string, AIModuleStatus>;
-  models?: string[];
-  lastResultAt?: ISODateTime | null;
-  /** จำนวนงานที่รอประมวลผลอยู่ */
-  queueDepth?: number;
-  /** เวอร์ชันของบริการ AI ที่ติดตั้งอยู่ */
-  serviceVersion?: string | null;
-  messageTh?: string;
-  messageEn?: string;
-  extra?: Record<string, string | number | boolean | null>;
+  /** โหมดการทำงานที่ทีม AI แจ้ง เช่น 'live' | 'training' | 'degraded' */
+  mode?: string;
+  lastTrainedAt?: ISODateTime | null;
+  /** จำนวนวันของข้อมูลที่ใช้ฝึกโมเดลรอบล่าสุด */
+  trainingDays?: number;
+  /** 0–1 ความแม่นของโมเดลจาก backtest */
+  accuracy?: number;
+  /** 0–1 สัดส่วนที่แจ้งเตือนผิดพลาด */
+  falsePositiveRate?: number;
+  /** ข้อความสรุปหนึ่งบรรทัดสำหรับ widget บนหน้า Overview */
+  summaryText?: string;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -1710,6 +1644,7 @@ export interface AlertQuery {
 /** ตัวกรองรายการ anomaly — ค่ากรองเป็น string เปิดตามชนิดที่ทีม AI ส่งมา */
 export interface AnomalyQuery {
   types?: AnomalyType[];
+  statuses?: AnomalyStatus[];
   detectors?: AnomalyDetector[];
   severities?: AlertSeverity[];
   sourceTypes?: AlertSourceType[];
