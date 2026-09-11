@@ -20,3 +20,4 @@ export * from './control';
 export * from './settings';
 export * from './reports';
 export * from './system';
+export * from './metrics';

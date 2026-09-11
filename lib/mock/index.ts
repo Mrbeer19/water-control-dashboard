@@ -50,3 +50,4 @@ export {
   TICK_MS,
   type MockState,
 } from './store';
+export { buildMetricSeries, buildStateSpans, SAMPLE_MS } from './metric-series';
