@@ -18,18 +18,23 @@ export function CommandStatus({ result, className }: { result: CommandResult | n
   const label = COMMAND_STATE_LABEL[result.state][locale];
   const pending = result.state === 'sending' || result.state === 'awaiting_feedback';
 
+/*
+   * ไล่น้ำหนักทางสายตาแบบเดียวกับ status pill ในข้อ 3.4
+   *   กำลังส่ง/สำเร็จ → ไม่มีพื้น    หมดเวลา → พื้นอ่อน    ล้มเหลว → พื้นเข้มเต็ม
+   * ★ ห้ามทำพื้น/ขอบจาง ๆ ด้วย opacity เพราะเป็นสีของสถานะ (กฎ opacity ข้อ 3)
+   */
   const tone = pending
-    ? 'border-info/30 bg-info/10 text-info'
+    ? 'border-border text-info'
     : result.state === 'success'
-      ? 'border-status-ok/30 bg-status-ok/10 text-status-ok'
+      ? 'border-border text-status-ok'
       : result.state === 'timeout'
-        ? 'border-status-warning/40 bg-status-warning/10 text-status-warning'
-        : 'border-status-critical/40 bg-status-critical/10 text-status-critical';
+        ? 'border-status-warning bg-status-warning-surface text-status-warning'
+        : 'border-status-critical bg-status-critical text-status-critical-foreground';
 
   const Icon = pending ? Loader2 : result.state === 'success' ? Check : result.state === 'timeout' ? TimerOff : AlertTriangle;
 
   return (
-    <div className={cn('rounded-md border px-2.5 py-1.5 text-xs', tone, className)} role="status" aria-live="polite">
+    <div className={cn('rounded-control border px-2.5 py-1.5 text-xs', tone, className)} role="status" aria-live="polite">
       <p className="flex items-center gap-1.5 font-medium">
         <Icon className={cn('h-3.5 w-3.5 shrink-0', pending && 'animate-spin')} aria-hidden />
         {label}

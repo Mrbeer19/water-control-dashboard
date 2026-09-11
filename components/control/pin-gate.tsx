@@ -64,7 +64,7 @@ export function PinGate({
 
       <dialog
         ref={dialogRef}
-        className="w-[min(22rem,calc(100vw-2rem))] rounded-lg border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-black/50"
+        className="w-[min(22rem,calc(100vw-2rem))] rounded-overlay border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-black/50"
         aria-labelledby="pin-title"
       >
         <form

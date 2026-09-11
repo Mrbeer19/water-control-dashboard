@@ -39,10 +39,10 @@ export function EmergencyPanel({
       : `This includes the VIP zone (${vipZoneName}).`;
 
   return (
-    <Card className="border-status-critical/30">
+    <Card className="border-status-critical">
       <CardContent className="space-y-3 p-4">
         {lockedOut && (
-          <p className="rounded-md bg-status-critical/10 px-2.5 py-2 text-xs text-status-critical">
+          <p className="rounded-control bg-status-critical px-2.5 py-2 text-xs text-status-critical-foreground">
             {t.control.lockedNotice}
           </p>
         )}
@@ -68,7 +68,7 @@ export function EmergencyPanel({
           <Button
             variant="outline"
             disabled={disabled || runner.pending}
-            className="gap-1.5 border-status-warning/40 text-status-warning hover:bg-status-warning/10"
+            className="gap-1.5 border-status-warning text-status-warning hover:bg-status-warning-surface"
             onClick={() => {
               setPendingAction({
                 action: 'close_all',

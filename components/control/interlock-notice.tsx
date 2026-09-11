@@ -14,7 +14,7 @@ export function InterlockNotice({ interlock }: { interlock: ControlInterlock | n
   if (interlock === null || interlock.reasons.length === 0) return null;
 
   return (
-    <ul className="space-y-1 rounded-md bg-muted/60 px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
+    <ul className="space-y-1 rounded-control bg-muted px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
       {interlock.reasons.map((item) => (
         <li key={item.code} className="flex gap-1.5">
           <Ban className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />

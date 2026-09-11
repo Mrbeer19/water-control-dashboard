@@ -39,7 +39,7 @@ export function ServiceHealthBar(): JSX.Element {
       {data.map((service) => {
         const Icon = ICONS[service.kind];
         return (
-          <Card key={service.kind} className={cn(service.status !== 'ok' && 'border-status-warning/40')}>
+          <Card key={service.kind} className={cn(service.status !== 'ok' && 'border-status-warning')}>
             <CardContent className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium">

@@ -73,7 +73,7 @@ export function ConfirmDialog({
     <dialog
       ref={dialogRef}
       className={cn(
-        'w-[min(30rem,calc(100vw-2rem))] rounded-lg border bg-card p-0 text-card-foreground shadow-xl',
+        'w-[min(30rem,calc(100vw-2rem))] rounded-overlay border bg-card p-0 text-card-foreground shadow-xl',
         'backdrop:bg-black/50 backdrop:backdrop-blur-[1px]',
       )}
       aria-labelledby="confirm-title"
@@ -83,7 +83,7 @@ export function ConfirmDialog({
           <span
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-              destructive ? 'bg-status-critical/15 text-status-critical' : 'bg-info/10 text-info',
+              destructive ? 'bg-status-critical text-status-critical-foreground' : 'border text-info',
             )}
           >
             {secondStage ? <ShieldAlert className="h-4.5 w-4.5" aria-hidden /> : <AlertTriangle className="h-4.5 w-4.5" aria-hidden />}

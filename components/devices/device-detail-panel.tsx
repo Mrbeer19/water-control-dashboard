@@ -96,7 +96,7 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
     <dialog
       ref={dialogRef}
       className={cn(
-        'ml-auto mr-0 h-dvh max-h-none w-[min(26rem,100vw)] rounded-none border-l bg-card p-0 text-card-foreground shadow-2xl',
+        'ml-auto mr-0 h-dvh max-h-none w-[min(26rem,100vw)] rounded-none border-l bg-card p-0 text-card-foreground shadow-xl',
         'backdrop:bg-black/50',
       )}
       aria-label={t.device.detail}
@@ -172,13 +172,11 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
             </div>
 
             {device.lastError !== null && (
-              <div className="rounded-md bg-status-critical/10 px-2.5 py-2">
-                <p className="text-[11px] text-status-critical">{t.device.lastError}</p>
-                <p className="text-xs text-status-critical">{device.lastError}</p>
+              <div className="rounded-control bg-status-critical px-2.5 py-2 text-status-critical-foreground">
+                <p className="text-[11px]">{t.device.lastError}</p>
+                <p className="text-xs">{device.lastError}</p>
                 {device.lastErrorAt !== null && (
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    {formatDateTimeTH(device.lastErrorAt, locale)}
-                  </p>
+                  <p className="mt-0.5 text-[10px] opacity-90">{formatDateTimeTH(device.lastErrorAt, locale)}</p>
                 )}
               </div>
             )}
@@ -194,14 +192,22 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
               </div>
             )}
 
+            {/* ผลของคำสั่ง — ไล่น้ำหนักตามข้อ 3.4: สำเร็จไม่มีพื้น ล้มเหลวพื้นเต็ม */}
             {action !== null && (
-              <p className={cn('rounded-md px-2.5 py-2 text-xs', action.ok ? 'bg-status-ok/10 text-status-ok' : 'bg-status-critical/10 text-status-critical')}>
+              <p
+                className={cn(
+                  'rounded-control px-2.5 py-2 text-xs',
+                  action.ok
+                    ? 'border text-status-ok'
+                    : 'bg-status-critical text-status-critical-foreground',
+                )}
+              >
                 {action.message}
                 {action.latencyMs !== null && <span className="tabular"> · {action.latencyMs} ms</span>}
               </p>
             )}
             {otaMessage !== null && (
-              <p className="rounded-md border px-2.5 py-2 text-xs text-foreground">{otaMessage}</p>
+              <p className="rounded-control border px-2.5 py-2 text-xs text-foreground">{otaMessage}</p>
             )}
           </div>
 
