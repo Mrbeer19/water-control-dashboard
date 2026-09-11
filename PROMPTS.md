@@ -344,13 +344,14 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 4. หาไฟล์โลโก้ตาม §5.1 แล้ววางที่ public/brand/ — ตัดสินผ่าน/ไม่ผ่านด้วยเกณฑ์ใน §5.1
    ไม่ผ่าน → ใช้ชั่วคราวได้ แต่ต้องขึ้น open question ขอไฟล์ต้นฉบับจากองค์กร
 5. บันทึกข้อยกเว้น contrast ของปุ่ม primary (4.42:1) ตาม §3.5 — ขอบเขตที่ยอมรับและที่ห้าม
-6. จัดหมวด opacity ทั้ง 76 จุดใน 41 ไฟล์ ตามตารางห้าม/อนุญาตในข้อ §3
+6. จัดหมวด opacity ทั้งหมด (วัดได้ 89 จุด) ตามตารางห้าม/อนุญาตในข้อ §3
    ผลลัพธ์ต้องมี: จำนวนจุดที่ต้องแก้, จำนวนจุดที่ปล่อยไว้ได้, และ**รายชื่อไฟล์ที่ต้องแก้**
    แล้วเอารายชื่อนั้นไปเติมใส่ phase ที่แตะไฟล์นั้น ๆ ในไฟล์นี้
 7. ลิสต์กราฟทุกอันที่มีชุดข้อมูลเกิน 4 ชุด พร้อมระบุว่าแต่ละอันจะใช้ทางออกไหนตาม §3.3
    (สีเดียว + ป้ายชื่อ / เน้น 1 ชุดที่เหลือ Argent-100)
 8. ตรวจคลาสสถานะ 144 จุดใน 47 ไฟล์ ว่าอ้างตัวแปร CSS ทั้งหมดหรือมีจุดที่ฝังค่าเอง
    สรุปเป็นตัวเลข: กี่จุดที่เปลี่ยนค่าตัวแปรที่ globals.css แล้วเปลี่ยนตามทันที
+   → ผล: 144/144 อ้างตัวแปร แก้ที่ globals.css จุดเดียวพอ (DESIGN_PLAN ข้อ 8)
 9. เสนอสีชุดข้อมูลของ dark mode (ขั้นที่สว่างกว่าในบันไดเดียวกัน §3.3)
    แล้วรัน validator ของ skill dataviz กับชุด 4 สีทั้ง light และ dark บันทึกผลลงเอกสาร
    คู่ไหนไม่ผ่าน → รายงาน ห้ามเติมสีนอก CI
@@ -381,9 +382,10 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    ตัวแปรที่ต้อง map ครบ: --background --foreground --card --popover --primary --secondary
    --muted --accent --destructive --border --input --ring --status-ok --status-warning
    --status-critical --status-offline (+ -foreground ทุกตัว) ทั้ง :root และ .dark
-3. --chart-1..8 → เหลือชุดข้อมูล 4 สีตามลำดับใน §3.3 พร้อมชุดของ dark mode
+3. --chart-1..8 → เหลือชุดข้อมูลตามที่ตอบ open question ข้อ 1 ของ DESIGN_PLAN
+   (ชุด 4 สีที่ตัดสินไว้เดิมไม่ผ่าน validator ทั้งสองโหมด — ดู DESIGN_PLAN ข้อ 9)
    --chart-seq-* → บันได Blue ตาม §3.3 (data-water / data-water-soft)
-   ★ ถ้าจำนวน token ที่เหลือน้อยลง ต้องแก้ chart-tokens.ts ให้ seriesColor() throw ที่ 4 ไม่ใช่ 8
+   ★ ต้องแก้ chart-tokens.ts ให้ seriesColor() throw ที่จำนวนจริง ไม่ใช่ 8
 4. tailwind.config.ts: คงรูปแบบ hsl(var(--x)) ไว้ ห้ามใส่ hex เพิ่มชื่อ token ใหม่ที่ §3.3 ต้องการ
    radius ตาม §6.2 — เพิ่มเป็นตัวแปรใหม่ อย่าทับ --radius ที่ shadcn ใช้อยู่
 5. app/layout.tsx: themeColor 2 ค่า import จาก theme.ts ตาม §3.7 (นี่คือจุดเดียวที่แตะไฟล์นี้)
@@ -436,7 +438,8 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
      เฟสนี้แก้เฉพาะจุดที่ยังประกอบสีเอง
 6. lib/config/anomaly-types.ts: tone ต้องชี้ semantic token (ตอนนี้ใช้ tone: EntityStatus อยู่แล้ว
    และไม่มี hex) — ตรวจว่า UNKNOWN_ANOMALY_TYPE ได้ text-secondary + ไอคอน default ตาม §3.7
-7. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+7. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/ai/anomaly-type-badge.tsx (4), components/diagram/diagram-primitives.tsx (4),
+   components/pumps/pump-card.tsx (1) — รวม 9 จุด
 
 §8 ที่ต้องผ่าน: โลโก้ ข้อ 1–2, สี ข้อ 4 (opacity), สี ข้อ 7 (status ใช้ pill §3.4),
   สี ข้อ 8 (แดง = วิกฤตเท่านั้น)
@@ -470,7 +473,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 7. /login ตาม §7 แถว /login — split layout, ฝั่งซ้ายพื้นบันไดสี ไม่ใช้ภาพจาก template,
    การ์ดบัญชีทดลองคงไว้, โลโก้มุมซ้ายบนฝั่งภาพ (§5.3)
 8. favicon ตาม §5.3 — คงรูปทรงเดิมของ public/favicon.svg เปลี่ยนเฉพาะสีเป็นสี CI
-9. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+9. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: app/login/page.tsx (2), components/layout/header.tsx (2) — รวม 4 จุด
 
 §8 ที่ต้องผ่าน: โลโก้ ข้อ 1–2, สี ข้อ 2, สี ข้อ 4, อื่น ๆ ข้อ 3 (≥16px บน Cinnabar-500),
   อื่น ๆ ข้อ 5 (light/dark ที่ 375px และ 1920px)
@@ -497,7 +500,8 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 2. แนวทางหน้าตาม §7 แถว `/` (แถว KPI, กล่อง alert ล่าสุด, กราฟพยากรณ์ + ช่วงความเชื่อมั่น)
 3. ผิวและ radius ตาม §6.2, KPI ใหญ่ตาม §4 — นี่คือหน้าที่จอแขวนผนังเปิดค้างไว้
 4. สีใน SVG และกราฟอ่านผ่าน chart-tokens.ts เท่านั้น ห้ามใส่ hex ใน props (§3.7)
-5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/zones/main-meter-section.tsx (1) — 1 จุด
+   (components/pumps/pump-card.tsx แก้ไปแล้วใน 7.2)
 
 §8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5 (กราฟไม่เกิน 4 สี), อื่น ๆ ข้อ 2, 4, 5
 
@@ -522,7 +526,9 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 2. state machine ของคำสั่ง (sending → awaiting_feedback → …), PIN modal, double confirm,
    interlock — ห้ามแตะ behavior (§1) เปลี่ยนแค่หน้าตา
 3. side panel ของ /devices ตาม §6.2 (drawer = เงาเดียวของระบบ)
-4. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+4. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/control/command-status.tsx (6), components/control/emergency-panel.tsx (4),
+   components/devices/device-detail-panel.tsx (3), components/control/confirm-dialog.tsx (1),
+   components/devices/service-health-bar.tsx (1) — รวม 15 จุด
 
 §8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 8, อื่น ๆ ข้อ 3, 4, 5, 6
 
@@ -546,7 +552,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    ห้ามเขียน hex ในไฟล์นี้ และห้ามใช้คีย์นี้ที่อื่น
 3. ข้อความ "ช่วงวันที่ / ช่วงก่อนหน้า" ถูกแก้ให้ชัดเจนไปแล้วในเฟสก่อน — ห้ามเปลี่ยนคำกลับ
 4. กราฟหลายชุดใช้ลำดับ 4 สีตาม §3.3 ถ้าเกิน 4 ชุดให้ทำตามทางออกที่ DESIGN_PLAN ข้อ 7 เลือกไว้
-5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: ไม่มี — ไฟล์กลุ่มนี้ไม่มี opacity หมวดห้าม
 
 §8 ที่ต้องผ่าน: สี ข้อ 1 (พร้อมข้อยกเว้น thirdParty.line), สี ข้อ 2, สี ข้อ 4, สี ข้อ 5,
   สี ข้อ 7, อื่น ๆ ข้อ 2, 5
@@ -570,7 +576,8 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    ห้ามทำให้ fallback หายไปตอนจัดสไตล์
 3. formatAnomalyScore() เป็นจุดเดียวที่แปลง 0–1 เป็น % — ห้ามคูณ 100 เพิ่มในเฟสนี้
 4. กราฟใช้ลำดับ 4 สีตาม §3.3 — anomaly timeline เคยมีปัญหาแกนเวลา ห้ามแตะ domain/ticks
-5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+5. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/ai/ai-overview-widget.tsx (3), components/ai/maintenance-section.tsx (2),
+   components/ai/ai-summary-card.tsx (1), components/ai/ai-metric-card.tsx (1) — รวม 7 จุด
 
 §8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 5, สี ข้อ 7, สี ข้อ 8, อื่น ๆ ข้อ 4, 5
 
@@ -589,7 +596,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 1. แนวทางตาม §7 แถว /overview — ท่อใช้บันได Blue, node ใช้สีสถานะ,
    จุดที่ AI ตรวจพบใช้ Cinnabar-500 (glow บนผังอนุญาต — กฎห้าม effect ใช้กับโลโก้เท่านั้น)
 2. สีทุกค่าอ่านผ่าน chart-tokens.ts / theme.ts ห้ามใส่ hex ใน SVG (§3.7)
-3. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+3. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: components/diagram/diagram-primitives.tsx (4) — แก้ไปแล้วใน 7.2 เฟสนี้แค่ตรวจซ้ำ
 
 §8 ที่ต้องผ่าน: สี ข้อ 1, สี ข้อ 2, สี ข้อ 4, สี ข้อ 7, อื่น ๆ ข้อ 5
 
@@ -608,7 +615,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
 1. แนวทางตาม §7 แถว /settings — tab + ฟอร์ม, ข้อความ error ภาษาไทยใช้ Cinnabar-800
 2. ค่าตั้งต้นทั้งหมดอยู่ใน withDefaults() ตอนโหลดแล้ว — ห้ามย้ายกลับไปใส่ ?? ใน component
 3. input / button radius ตาม §6.2
-4. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: <เติมรายชื่อจาก DESIGN_PLAN ข้อ 6>
+4. opacity ในไฟล์กลุ่มนี้ที่อยู่ในหมวด "ห้าม" ของ §3: app/settings/page.tsx (1) — 1 จุด
 
 §8 ที่ต้องผ่าน: สี ข้อ 2, สี ข้อ 4, สี ข้อ 7, อื่น ๆ ข้อ 4, 5, 6
 
@@ -628,7 +635,7 @@ G. docs/AI_CONTRACT.md อธิบาย type ทั้ง 4 + ตัวอย�
    เป้าหมาย: เหลือเฉพาะ lib/config/theme.ts
 2. รัน test whitelist hex + test contrast ที่เขียนไว้ใน 7.1 ให้ผ่าน (§8 สี ข้อ 3)
 3. ตรวจ opacity ตามตารางห้าม/อนุญาตใน §3 — เทียบกับจำนวนที่จัดหมวดไว้ใน DESIGN_PLAN ข้อ 6
-   ตั้งต้น 76 จุดใน 41 ไฟล์
+   ตั้งต้น 89 จุด: ห้าม 37 · ควรแก้ 44 · อนุญาต 8 (DESIGN_PLAN ข้อ 6)
 4. รัน validator ของ skill dataviz ทั้ง light และ dark (§8 สี ข้อ 6)
 5. ตรวจ light + dark ที่ 375px และ 1920px ครบทั้ง 9 หน้า วัด scrollWidth เทียบ viewport
    (เคยเจอ overflow ที่ /alerts มาแล้ว) — §8 อื่น ๆ ข้อ 5
