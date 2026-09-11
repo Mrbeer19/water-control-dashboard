@@ -174,10 +174,6 @@ function contrast(a, b) {
    *   ถ้าไฟล์ไหนเกินยอดค้าง หรือมีไฟล์ใหม่โผล่มา จะถือว่าไม่ผ่านทันที
    */
   const PENDING = {
-    'components/ai/ai-overview-widget.tsx': 3, // 7.7a
-    'components/ai/maintenance-section.tsx': 2, // 7.7a
-    'components/ai/ai-summary-card.tsx': 1, // 7.7a
-    'components/ai/ai-metric-card.tsx': 1, // 7.7a
     'app/settings/page.tsx': 1, // 7.8a
   };
   const found = {};
@@ -210,6 +206,34 @@ function contrast(a, b) {
         `\n       รายการทั้งหมด:\n         ${detail.join('\n         ')}`,
     );
   }
+}
+
+/* ---------- 6. ชื่อ token สีที่ใช้จริงต้องมีอยู่จริง ---------- */
+{
+  /*
+   * ★ กันคลาสพิมพ์เพี้ยน เช่น "text-infary" หรือ "bg-status-oky" ที่ Tailwind ไม่รู้จัก
+   *   แล้วเงียบ ๆ ไม่ให้สีอะไรเลย — เคยเกิดจริงตอนแทนที่ด้วย sed ใน Phase 7.1
+   */
+  const KNOWN = new Set([
+    'brand-text', 'brand-strong', 'brand-strong-foreground',
+    'info', 'info-strong', 'info-strong-foreground',
+    'control-checked', 'control-checked-foreground',
+    'water', 'water-soft',
+    'status-ok', 'status-ok-foreground', 'status-ok-dot',
+    'status-warning', 'status-warning-foreground', 'status-warning-surface',
+    'status-critical', 'status-critical-foreground',
+    'status-offline', 'status-offline-foreground', 'status-offline-dot',
+  ]);
+  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|status)[a-z0-9-]*)/g;
+  const bad = [];
+  for (const f of sources) {
+    for (const m of read(f).matchAll(TOKEN)) {
+      const name = m[1].replace(/\/[0-9]{1,3}$/, '');
+      if (!KNOWN.has(name)) bad.push(`${f} → ${m[0]}`);
+    }
+  }
+  if (bad.length === 0) pass('ชื่อ token สี', `ใช้ชื่อที่ประกาศไว้ทั้งหมด (${KNOWN.size} ชื่อ)`);
+  else fail('ชื่อ token สี', `ไม่มีชื่อนี้ใน tailwind.config.ts:\n         ${[...new Set(bad)].join('\n         ')}`);
 }
 
 console.log(failed === 0 ? '\nสีผ่านทุกข้อ\n' : `\nไม่ผ่าน ${failed} ข้อ\n`);

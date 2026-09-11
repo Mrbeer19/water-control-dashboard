@@ -27,7 +27,7 @@ export function ScenarioSwitcher({
         <FlaskConical className="h-3.5 w-3.5" aria-hidden />
         {t.ai.scenario}
       </span>
-      <div className="inline-flex rounded-md border bg-background p-0.5" role="group" aria-label={t.ai.scenario}>
+      <div className="inline-flex rounded-control border bg-background p-0.5" role="group" aria-label={t.ai.scenario}>
         {SCENARIO_OPTIONS.map((option) => (
           <button
             key={option.value}

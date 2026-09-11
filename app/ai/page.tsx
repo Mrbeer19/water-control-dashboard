@@ -39,7 +39,7 @@ import { MaintenanceSection } from '@/components/ai/maintenance-section';
 import { ScenarioSwitcher } from '@/components/ai/scenario-switcher';
 
 const SELECT_CLASS =
-  'h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-control border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 interface AiData {
   page: Paginated<AnomalyEvent>;

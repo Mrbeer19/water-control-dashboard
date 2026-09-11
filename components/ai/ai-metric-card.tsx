@@ -36,7 +36,7 @@ export function AiMetricCard({ metric }: { metric: AIMetric }): JSX.Element {
   const trendIsBad = rising === higherIsWorse;
 
   return (
-    <Card className={cn(status === 'critical' && 'border-status-critical/40')}>
+    <Card className={cn(status === 'critical' && 'border-status-critical')}>
       <CardContent className="space-y-2 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

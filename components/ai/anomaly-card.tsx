@@ -147,7 +147,7 @@ export function AnomalyCard({
         )}
 
         {anomaly.suggestedAction !== undefined && (
-          <p className="flex gap-1.5 rounded-md bg-info/10 px-2.5 py-2 text-xs leading-relaxed text-info">
+          <p className="flex gap-1.5 rounded-control border px-2.5 py-2 text-xs leading-relaxed text-info">
             <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>
               <span className="font-medium">{t.ai.suggestedAction}: </span>

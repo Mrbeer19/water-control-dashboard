@@ -74,7 +74,7 @@ export function MaintenanceSection({
               );
 
         return (
-          <Card key={prediction.id} className={cn(score !== undefined && score < 50 && 'border-status-critical/40')}>
+          <Card key={prediction.id} className={cn(score !== undefined && score < 50 && 'border-status-critical')}>
             <CardContent className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 truncate font-medium">{prediction.targetName ?? prediction.targetId}</p>
@@ -144,7 +144,7 @@ export function MaintenanceSection({
               )}
 
               {prediction.note !== undefined && (
-                <p className="rounded-md bg-status-warning/10 px-2 py-1.5 text-[11px] text-status-warning">
+                <p className="rounded-control bg-status-warning-surface px-2 py-1.5 text-[11px] text-status-warning">
                   {prediction.note}
                 </p>
               )}

@@ -36,13 +36,14 @@ export function AiOverviewWidget(): JSX.Element {
   const critical = data.page.items.filter((anomaly) => anomaly.severity === 'critical').length;
   const hasCritical = critical > 0;
 
+  // ขอบ/พื้นของสถานะห้ามทำจางด้วย opacity — ใช้ขอบทึบแทน (กฎ opacity ข้อ 3)
   return (
-    <Card className={cn(hasCritical && 'border-status-critical/50 bg-status-critical/5')}>
+    <Card className={cn(hasCritical && 'border-status-critical')}>
       <CardContent className="flex flex-wrap items-center gap-3 p-4">
         <span
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-            hasCritical ? 'bg-status-critical/15 text-status-critical' : 'bg-info/10 text-info',
+            hasCritical ? 'bg-status-critical text-status-critical-foreground' : 'border text-info',
           )}
         >
           {hasCritical ? <TriangleAlert className="h-4.5 w-4.5" aria-hidden /> : <Brain className="h-4.5 w-4.5" aria-hidden />}
