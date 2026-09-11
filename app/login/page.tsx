@@ -59,10 +59,25 @@ export default function LoginPage(): JSX.Element {
   return (
     <div className="flex min-h-dvh flex-col bg-background lg:flex-row">
       {/*
-        ฝั่งภาพ: พื้นบันไดสี Blue ตาม BRANDING_SPEC ข้อ 7 แถว /login
-        ไม่ใช้ภาพจาก template และไม่ใส่ลาย เพราะโลโก้ห้ามวางบนพื้นลาย (ข้อ 5.2)
+        ฝั่งภาพ: ภาพจากเอกสาร CI ขององค์กร (หน้า 7 พาเนล Sustainability) ไม่ใช่ภาพจาก template
+        ★ ภาพถูกทำเป็น duotone บันได Blue ไว้แล้วตั้งแต่ตอนสร้างไฟล์ ความสว่างสูงสุด 0.12
+          ทำให้ตัวอักษร Lynx White ได้ contrast 5.71 : 1 ทุกจุดของภาพโดยไม่ต้องพึ่ง overlay
+        ★ ครึ่งบนไล่เป็นสีทึบ เพื่อให้โลโก้อยู่บนพื้นเรียบ ไม่ใช่บนพื้นลาย (ข้อ 5.2)
+        ★ สี bg-info-strong เป็นพื้นสำรองเผื่อภาพโหลดไม่ขึ้น
       */}
-      <aside className="hidden bg-info-strong text-info-strong-foreground lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:p-10">
+      <aside
+        className="hidden bg-info-strong bg-cover bg-center text-info-strong-foreground lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:p-10"
+        style={{
+          backgroundImage: [
+            'linear-gradient(to bottom,',
+            'hsl(var(--info-strong)) 0%,',
+            'hsl(var(--info-strong) / 0.88) 20%,',
+            'hsl(var(--info-strong) / 0.12) 46%,',
+            'hsl(var(--info-strong) / 0.42) 100%),',
+            'url(/brand/login-cover.jpg)',
+          ].join(' '),
+        }}
+      >
         <BrandLogo height={44} priority />
         <div className="space-y-2">
           <p className="text-2xl font-semibold leading-snug">{t.app.title}</p>
