@@ -136,6 +136,6 @@ git merge origin/dev
 4. **ห้าม merge PR ของตัวเองโดยไม่มีคนดู** อย่างน้อยต้องมีเพื่อนอ่านหนึ่งคน
 5. **ห้ามแก้ `lib/types.ts` ของเดิมโดยไม่บอกทีม** เพราะเป็นสัญญากับทีมหลังบ้านและทีม AI
 
-> **หมายเหตุ:** repo นี้เป็น private บนบัญชีแบบฟรี จึงยังตั้ง branch protection บน GitHub ไม่ได้
-> กฎด้านบนจึงต้องอาศัยวินัยของทีมเอง ถ้าอัปเกรดเป็น GitHub Pro เมื่อไร
-> ให้เปิด "Require a pull request before merging" ที่ `main` และ `dev` ทันที
+> **หมายเหตุ:** repo เปิดสาธารณะแล้ว จึงตั้ง branch protection ได้
+> ให้เปิด "Require a pull request before merging" ที่ `main` และ `dev`
+> ที่ Settings → Branches เพื่อบังคับกฎข้างบนแทนการอาศัยวินัยอย่างเดียว

@@ -1,17 +1,14 @@
 # เดโมให้เพื่อนในทีมเปิดดูผ่านเว็บโดยไม่ต้องโหลดลงเครื่อง
 #
-# ★ ต้องเปิด GitHub Pages ที่ Settings → Pages → Source = GitHub Actions ก่อน
-#   repo แบบ private บนบัญชีฟรียังเปิด Pages ไม่ได้ (ดูหมายเหตุใน README)
+# ★ Pages เปิดไว้แล้วที่ Settings → Pages → Source = GitHub Actions
 # ★ เดโมเป็นไฟล์นิ่งล้วน ใช้ mock data เหมือนตอนรันในเครื่อง ไม่มีข้อมูลจริงของโรงงาน
 # ★ ไม่กระทบ build ที่ขึ้น VM จริง เพราะโหมด export เปิดด้วย env เท่านั้น
 name: เดโมบน GitHub Pages
 
-# ★ ตอนนี้สั่งรันเองเท่านั้น (Actions → เดโมบน GitHub Pages → Run workflow)
-#   ยังไม่ผูกกับ push เพราะ repo private บนบัญชีฟรีเปิด Pages ไม่ได้
-#   ถ้าเปิด Pages ได้เมื่อไร ให้เอาคอมเมนต์สองบรรทัดล่างออก เดโมจะอัปเดตเองทุกครั้งที่ merge เข้า main
+# เดโมอัปเดตเองทุกครั้งที่ merge เข้า main — สั่งรันเองได้จาก Actions ด้วย
 on:
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

@@ -119,21 +119,15 @@ feature/<ชื่อคุณ>-<สิ่งที่ทำ>  →  dev  →  ma
 
 ---
 
-## เดโมให้เพื่อนเปิดดูโดยไม่ต้องโหลดลงเครื่อง
+## เดโม — เปิดดูได้เลยไม่ต้องโหลดลงเครื่อง
 
-มี workflow พร้อมแล้วที่ `.github/workflows/pages.yml` — build เป็นไฟล์นิ่งแล้วส่งขึ้น GitHub Pages
-ทุกครั้งที่มีการ merge เข้า `main`
+### 🔗 https://mrbeer19.github.io/water-control-dashboard/
 
-**แต่ตอนนี้ยังเปิดใช้ไม่ได้** เพราะ repo เป็น private บนบัญชีแบบฟรี
-ซึ่ง GitHub ยังไม่ให้ใช้ Pages (ตอบกลับมาว่า *"Your current plan does not support GitHub Pages for this repository"*)
+เข้าสู่ระบบด้วย **`admin` / `admin1234`**
 
-ทางเลือกที่ทำได้
-1. **แยก repo สาธารณะไว้เก็บเฉพาะเดโม** — โค้ดยังเป็น private เหมือนเดิม เปิดเฉพาะไฟล์ที่ build แล้ว
-2. **อัปเกรดเป็น GitHub Pro** — Pages ใช้ได้กับ repo private แต่ *ตัวเว็บเดโมยังเปิดสาธารณะอยู่ดี*
-   (การล็อกไม่ให้คนนอกเข้าถึงมีเฉพาะแพ็กเกจ Enterprise)
-3. **เปิด repo เป็นสาธารณะ** — ใช้ Pages ได้ฟรีทันที แต่โค้ดทั้งหมดจะเปิดตาม
+เดโมอัปเดตอัตโนมัติทุกครั้งที่ merge เข้า `main` ผ่าน `.github/workflows/pages.yml`
 
-ระหว่างนี้เปิดดูเองในเครื่องได้ด้วย
+อยากเปิดดูในเครื่องตัวเองก็ได้
 
 ```bash
 STATIC_EXPORT=true npm run build
