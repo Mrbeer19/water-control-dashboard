@@ -96,7 +96,7 @@ scripts/              สคริปต์ตรวจงานอัตโน�
 |---|---|
 | `CLAUDE.md` | ขอบเขตงาน ข้อจำกัด และกฎการเขียนโค้ด |
 | `RUNBOOK.md` | ลูปการทำงาน เช็คลิสต์รีวิวตัวเอง และจุดที่ต้องหยุดถาม |
-| `docs/HANDOFF.md` | endpoint ทั้งหมดที่ทีมหลังบ้านต้องทำ พร้อมรูปแบบข้อมูล |
+| `HANDOFF.md` | endpoint ทั้งหมดที่ทีมหลังบ้านต้องทำ พร้อมรูปแบบข้อมูล |
 | `docs/AI_CONTRACT.md` | สัญญาระหว่าง frontend กับทีม AI |
 | `docs/BRANDING_SPEC.md` | สี ฟอนต์ โลโก้ และ layout ตาม CI ของ Kasetphand |
 | `docs/GIT_FLOW.md` | วิธีแตก branch และส่งงานเข้า `dev` / `main` |
