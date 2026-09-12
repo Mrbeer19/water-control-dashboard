@@ -45,21 +45,31 @@ export const TANK_SPECS: readonly TankSpec[] = [
   },
   {
     id: 'tank-2',
-    name: 'ถังจ่ายน้ำ',
-    nameEn: 'Service Tank',
+    // ★ สำรวจหน้างาน 12 ก.ย. 2569: ถังใบนี้เป็นถังของโซน VIP โดยเฉพาะ
+    //   รับน้ำต่อจากถัง 1 มาเก็บไว้ แล้วมีปั๊มของตัวเอง (pump-3) จ่ายเข้าโซน VIP
+    name: 'ถังโซน VIP',
+    nameEn: 'VIP Zone Tank',
     role: 'service',
     capacityLiters: 3_000,
     heightMeters: 2.0,
     shape: 'cylindrical',
     levelSource: 'sensor',
     levelToVolumeTable: null,
-    location: 'ดาดฟ้าอาคารผลิต A',
-    locationEn: 'Production A Rooftop',
+    location: 'พื้นที่โซน VIP',
+    locationEn: 'VIP Zone Area',
     deviceId: 'esp32-tank-2',
     initialPercent: 74,
   },
   {
     id: 'tank-3',
+    /*
+     * ★ สำรวจหน้างาน 12 ก.ย. 2569: บ่อนี้ **รับน้ำจากการประปาโดยตรง** ไม่ได้ต่อจากถัง 1
+     *   เติมอัตโนมัติเมื่อระดับลดต่ำกว่าเส้นที่ตั้งไว้
+     *   ตอนประปาไม่ไหล จะ **สูบกลับเข้าถัง 1** เพื่อจ่ายต่อให้ทั้งโรงงาน
+     *
+     * ★ ผลต่อสูตรน้ำสูญหาย: น้ำที่เข้าบ่อนี้ผ่านมิเตอร์หลักแล้ว
+     *   Δstorage จึงต้องรวมบ่อนี้ด้วย ไม่งั้นช่วงเติมบ่อระบบจะเตือนว่ารั่ว
+     */
     name: 'บ่อสำรอง',
     nameEn: 'Reserve Pond',
     role: 'reserve_pond',
@@ -106,6 +116,13 @@ export interface PumpSpec {
   hasVfd: boolean;
 }
 
+/*
+ * ★ สำรวจหน้างาน 12 ก.ย. 2569: ปั๊มหลัก 2 ตัวอยู่ข้างถัง 1 ใช้ตู้ควบคุมเดิมของโรงงานร่วมกัน
+ *   **ทั้งคู่จ่ายน้ำให้ทุกโซนเหมือนกัน ไม่ได้แบ่งโซนกัน**
+ *   แต่ **สลับเวรกันเดิน** ตัวหนึ่งช่วงกลางวัน อีกตัวช่วงกลางคืน
+ *   servesZoneIds ของสองตัวนี้จึงต้องเป็นชุดเดียวกัน
+ *   ตัวที่ "เข้าเวร" ตัดสินใน simulator ตาม settings.maintenance.pumpAlternationHours (12 ชม.)
+ */
 export const PUMP_SPECS: readonly PumpSpec[] = [
   {
     id: 'pump-1',
@@ -113,7 +130,7 @@ export const PUMP_SPECS: readonly PumpSpec[] = [
     nameEn: 'Main Pump 1',
     role: 'main',
     sourceTankId: 'tank-1',
-    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4'],
+    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4', 'zone-5', 'zone-6', 'zone-7'],
     deviceId: 'esp32-pump-1',
     ratedFlowLpm: 220,
     ratedPowerWatt: 3_000,
@@ -127,7 +144,7 @@ export const PUMP_SPECS: readonly PumpSpec[] = [
     nameEn: 'Main Pump 2',
     role: 'main',
     sourceTankId: 'tank-1',
-    servesZoneIds: ['zone-5', 'zone-6', 'zone-7'],
+    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4', 'zone-5', 'zone-6', 'zone-7'],
     deviceId: 'esp32-pump-2',
     ratedFlowLpm: 220,
     ratedPowerWatt: 3_000,

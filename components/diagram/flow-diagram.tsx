@@ -31,7 +31,7 @@ const H = 720;
 /**
  * แผนผังการไหลของน้ำทั้งระบบ — SVG เขียนมือ ไม่ใช้ไลบรารีวาดผัง
  *
- * เส้นทาง: การประปา → มิเตอร์หลัก → ถังใต้ดิน → ปั๊ม → วาล์ว 8 โซน → มิเตอร์โซน
+ * เส้นทาง: การประปา → มิเตอร์หลัก → ถังใต้ดิน → ปั๊ม → วาล์วรายโซน → มิเตอร์โซน
  *          และแยกไปบ่อสำรอง กับถังจ่ายที่เลี้ยงปั๊ม VIP
  */
 export function FlowDiagram({ data }: { data: FlowDiagramData }): JSX.Element {
@@ -216,7 +216,7 @@ export function FlowDiagram({ data }: { data: FlowDiagramData }): JSX.Element {
         />
       )}
 
-      {/* วาล์ว + มิเตอร์ 8 โซน */}
+      {/* วาล์ว + มิเตอร์รายโซน */}
       {zoneRows.map(({ zone, valve, y }) => (
         <g key={zone.id}>
           <DiagramNode

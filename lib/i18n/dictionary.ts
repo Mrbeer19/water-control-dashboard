@@ -132,9 +132,9 @@ export const th = {
     inMonth: 'น้ำเข้าเดือนนี้',
     inletPressure: 'แรงดันขาเข้า',
     unaccounted: 'น้ำสูญหาย',
-    unaccountedHint: 'มิเตอร์หลัก − ผลรวม 8 โซน − น้ำที่เก็บเพิ่มในถัง',
+    unaccountedHint: 'มิเตอร์หลัก − ผลรวมทุกโซน ({n}) − น้ำที่เก็บเพิ่มในถัง',
     storageDelta: 'น้ำที่เก็บเพิ่มในถัง',
-    zoneTotal: 'ผลรวม 8 โซน',
+    zoneTotal: 'ผลรวม {n} โซน',
   },
   billing: {
     actualToDate: 'ใช้จริงถึงวันนี้',
@@ -788,9 +788,9 @@ export const en: Dictionary = {
     inMonth: 'Intake this month',
     inletPressure: 'Inlet pressure',
     unaccounted: 'Unaccounted water',
-    unaccountedHint: 'Main meter − sum of 8 zones − water added to storage',
+    unaccountedHint: 'Main meter − sum of all zones ({n}) − water added to storage',
     storageDelta: 'Added to storage',
-    zoneTotal: 'Sum of 8 zones',
+    zoneTotal: 'Sum of {n} zones',
   },
   billing: {
     actualToDate: 'Actual to date',

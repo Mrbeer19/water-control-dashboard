@@ -48,7 +48,7 @@ export function buildDailyUsage(
   const rng = createRng(770412);
   const { billing } = state.settings;
 
-  // ฐานรายวันมาจากอัตราไหลจริงของ 8 โซนตอนนี้ คูณ 24 ชม.
+  // ฐานรายวันมาจากอัตราไหลจริงของทุกโซนตอนนี้ คูณ 24 ชม.
   const baselinePerDay = state.zones.reduce((sum, zone) => sum + zone.flowLpm, 0) * 60 * 24 * 0.001;
   const base = baselinePerDay > 0 ? baselinePerDay : 240;
 

@@ -3,7 +3,7 @@
 import { Droplets, Info, TrendingDown } from 'lucide-react';
 import type { Locale, MainMeter, TimeSeriesPoint, UnaccountedWater } from '@/lib/types';
 import { useLiveData } from '@/lib/hooks/use-live-data';
-import { getMainMeter, getMeterHistory, getUnaccountedWater } from '@/lib/services';
+import { getMainMeter, getMeterHistory, getUnaccountedWater, getZones } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import { cn, formatCubicMeters, formatFlow, formatNumber, formatPercent, formatPressure, kpiToneClass } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,15 +16,22 @@ interface MainMeterData {
   meter: MainMeter;
   unaccounted: UnaccountedWater;
   history: TimeSeriesPoint[];
+  /** นับจากข้อมูลจริง ไม่ fix ไว้ที่ 8 */
+  zoneCount: number;
 }
 
 /** 1.4 — มิเตอร์หลักและน้ำสูญหาย */
 export function MainMeterSection(): JSX.Element {
   const { t, locale } = useLocale();
   const { data, loading } = useLiveData<MainMeterData>(async () => {
-    const [meter, unaccounted] = await Promise.all([getMainMeter(), getUnaccountedWater()]);
+    const [meter, unaccounted, zones] = await Promise.all([
+      getMainMeter(),
+      getUnaccountedWater(),
+      getZones(),
+    ]);
     const history = await getMeterHistory(meter.id, 'flow_lpm');
-    return { meter, unaccounted, history };
+    // ★ จำนวนโซนนับจากข้อมูลจริง ไม่ fix ไว้ที่ 8 — จำนวนมิเตอร์หน้างานยังไม่สรุป
+    return { meter, unaccounted, history, zoneCount: zones.length };
   }, []);
 
   if (loading && data === null) {
@@ -46,7 +53,7 @@ export function MainMeterSection(): JSX.Element {
     );
   }
 
-  const { meter, unaccounted, history } = data;
+  const { meter, unaccounted, history, zoneCount } = data;
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -136,13 +143,16 @@ export function MainMeterSection(): JSX.Element {
 
           <dl className="mt-3 space-y-1 border-t pt-3 text-xs">
             <Line label={t.overview.mainMeter} value={formatCubicMeters(unaccounted.mainMeterCubicMeters, locale)} />
-            <Line label={t.meter.zoneTotal} value={signed(-unaccounted.zoneTotalCubicMeters, locale)} />
+            <Line
+              label={t.meter.zoneTotal.replace('{n}', formatNumber(zoneCount, locale, 0))}
+              value={signed(-unaccounted.zoneTotalCubicMeters, locale)}
+            />
             <Line label={t.meter.storageDelta} value={signed(-unaccounted.storageDeltaCubicMeters, locale)} />
           </dl>
 
           <p className="mt-2.5 flex gap-1.5 text-[10px] leading-relaxed text-muted-foreground">
             <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-            {t.meter.unaccountedHint}
+            {t.meter.unaccountedHint.replace('{n}', formatNumber(zoneCount, locale, 0))}
           </p>
         </CardContent>
       </Card>
