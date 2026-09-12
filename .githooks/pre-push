@@ -1,0 +1,26 @@
+#!/bin/sh
+# กัน push ตรงเข้า main จากเครื่องนี้
+#
+# ★ branch protection บน GitHub กันคนในทีมได้ก็จริง
+#   แต่เจ้าของ repo มีสิทธิ์ admin จึง "ทะลุ" ได้ — ตัว hook นี้คือด่านที่กันตรงนั้น
+# ★ ต้องเปิดใช้ก่อนด้วย: git config core.hooksPath .githooks
+# ★ จำเป็นจริง ๆ ค่อยข้ามด้วย git push --no-verify (ตั้งใจเท่านั้น)
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main)
+      echo ""
+      echo "  ✋ หยุดก่อน — ห้าม push ตรงเข้า main"
+      echo ""
+      echo "     ของจะขึ้น main ได้ต้องผ่าน Pull Request จาก dev"
+      echo "     และต้องให้เจ้าของ repo อนุมัติก่อน"
+      echo ""
+      echo "     ทำแบบนี้แทน:"
+      echo "       git push origin dev"
+      echo "       gh pr create --base main --head dev"
+      echo ""
+      exit 1
+      ;;
+  esac
+done
+exit 0

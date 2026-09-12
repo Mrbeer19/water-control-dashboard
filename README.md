@@ -13,7 +13,8 @@
 
 ```bash
 npm install
-npm run dev          # เปิด http://localhost:3000
+git config core.hooksPath .githooks   # เปิด hook กัน push ตรงเข้า main
+npm run dev                            # เปิด http://localhost:3000
 ```
 
 เข้าสู่ระบบด้วย **`admin` / `admin1234`**
@@ -109,7 +110,8 @@ scripts/              สคริปต์ตรวจงานอัตโน�
 feature/<ชื่อคุณ>-<สิ่งที่ทำ>  →  dev  →  main
 ```
 
-- **ห้าม push เข้า `main` หรือ `dev` ตรง ๆ** ให้แตก branch ของตัวเองแล้วเปิด Pull Request
+- **ห้าม push เข้า `main` หรือ `dev` ตรง ๆ** — GitHub บังคับไว้แล้ว push ตรงจะถูกปฏิเสธ
+  ให้แตก branch ของตัวเองแล้วเปิด Pull Request
 - PR ทุกใบพุ่งเข้า **`dev`** ก่อนเสมอ — GitHub จะตั้งปลายทางเป็น `main` ให้ **ต้องเปลี่ยนเป็น `dev` เอง**
 - `main` เป็น default branch และคือของที่พร้อมส่ง — merge จาก `dev` เมื่อทดสอบผ่านแล้วเท่านั้น
   เดโมบน GitHub Pages ก็ build จาก `main`
