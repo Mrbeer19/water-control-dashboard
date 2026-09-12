@@ -114,6 +114,9 @@ export function startSimulator(): () => void {
   };
 }
 
+/** ระยะห่างจาก UTC ของเวลาไทย — ใช้ให้รอบสลับปั๊มตกที่ 00:00 / 12:00 ตามนาฬิกาในโรงงาน */
+const TH_OFFSET_MS = 7 * 3_600_000;
+
 // ─────────────────────────────────────────────────────────────
 // หนึ่ง tick
 // ─────────────────────────────────────────────────────────────
@@ -128,9 +131,9 @@ function tick(state: MockState): void {
     1 + 0.18 * Math.sin(state.tick / 300) + 0.08 * Math.sin(state.tick / 77) + randomBetween(-0.02, 0.02);
 
   updateEnvironment(state, at, iso);
-  const pumpRunning = updatePumpDutyCycle(state);
+  const pumpRunning = updatePumpDutyCycle(state, at);
   updateZones(state, iso, demandFactor, pumpRunning);
-  updatePumps(state, iso);
+  updatePumps(state, iso, pumpRunning);
   updatePressureControl(state, at, iso);
   updateMainMeter(state, iso);
   updateTanks(state, iso);
@@ -291,9 +294,28 @@ function dewPointOf(temperatureCelsius: number, humidityPercent: number): number
 // ปั๊ม — รอบการเดิน/หยุด
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * ปั๊มหลักตัวไหน "เข้าเวร" ณ เวลานี้
+ *
+ * ★ หน้างานจริงปั๊มหลัก 2 ตัวจ่ายให้ทุกโซนเหมือนกัน แต่ผลัดกันเดินตัวละช่วง
+ *   ตัวหนึ่งกลางวัน อีกตัวกลางคืน ไม่ได้เดินพร้อมกันทั้งคู่
+ * ★ ตัดช่วงตามเวลาไทย ไม่ใช่เวลาเครื่อง — ที่ +07:00 ทำให้รอบสลับตกที่ 00:00 และ 12:00 พอดี
+ * ★ ถ้าปิดการสลับใน settings ให้ถือว่าเดินได้ทั้งคู่เหมือนเดิม
+ */
+function dutyMainPumpId(state: MockState, at: number): string | null {
+  const { pumpAlternationEnabled, pumpAlternationHours } = state.settings.maintenance;
+  const mains = state.pumps.filter((pump) => pump.role === 'main');
+  if (!pumpAlternationEnabled || mains.length === 0) return null;
+
+  const periodMs = Math.max(1, pumpAlternationHours) * 3_600_000;
+  const slot = Math.floor((at + TH_OFFSET_MS) / periodMs);
+  return mains[slot % mains.length]?.id ?? null;
+}
+
 /** ตัดสินว่าปั๊มตัวไหนควรเดินใน tick นี้ คืน map<pumpId, boolean> */
-function updatePumpDutyCycle(state: MockState): Map<string, boolean> {
+function updatePumpDutyCycle(state: MockState, at: number): Map<string, boolean> {
   const running = new Map<string, boolean>();
+  const dutyId = dutyMainPumpId(state, at);
 
   for (const pump of state.pumps) {
     const source = state.tanks.find((tank) => tank.id === pump.sourceTankId);
@@ -307,6 +329,12 @@ function updatePumpDutyCycle(state: MockState): Map<string, boolean> {
     if (pump.controlMode === 'manual') {
       // โหมด manual ทำตามที่คนสั่งไว้ ยกเว้นถังแห้งจริง ๆ ถึงจะตัด
       running.set(pump.id, pump.runState === 'running' && sourcePercent > 8);
+      continue;
+    }
+
+    // ปั๊มหลักที่ไม่ได้เข้าเวรรอบนี้ = ตัวสำรอง ยังไม่ต้องเดิน
+    if (pump.role === 'main' && dutyId !== null && pump.id !== dutyId) {
+      running.set(pump.id, false);
       continue;
     }
 
@@ -342,8 +370,11 @@ function updateZones(
     const meter = state.zoneMeters.find((item) => item.id === zone.meterId);
     if (spec === undefined || valve === undefined || meter === undefined) continue;
 
-    const feedingPump = state.pumps.find((pump) => pump.servesZoneIds.includes(zone.id));
-    const supplied = feedingPump !== undefined && (pumpRunning.get(feedingPump.id) ?? false);
+    // ★ ปั๊มหลักทั้งสองตัวจ่ายให้โซนเดียวกัน ต้องหาตัวที่กำลังเดินอยู่จริง
+    //   ถ้าใช้ find() เฉย ๆ จะได้ปั๊มตัวแรกเสมอ แล้วโซนจะไม่มีน้ำตอนปั๊มตัวที่สองเข้าเวร
+    const supplied = state.pumps.some(
+      (pump) => pump.servesZoneIds.includes(zone.id) && (pumpRunning.get(pump.id) ?? false),
+    );
     const valveOpenFraction = valve.position === 'fault' ? 0 : valve.openPercent / 100;
 
     // night_leak จำลอง "สภาพจริง" ที่มีน้ำรั่ว ไม่ใช่การที่หน้าบ้านไปตัดสินว่ารั่ว
@@ -387,15 +418,22 @@ function updateZones(
 // ปั๊ม — อัตราไหลและค่าไฟฟ้า
 // ─────────────────────────────────────────────────────────────
 
-function updatePumps(state: MockState, iso: string): void {
+function updatePumps(state: MockState, iso: string, pumpRunning: Map<string, boolean>): void {
   for (const pump of state.pumps) {
     const spec = PUMP_SPECS.find((item) => item.id === pump.id);
     if (spec === undefined) continue;
 
-    // อัตราไหลของปั๊ม = ผลรวมที่โซนปลายทางใช้จริง
-    const demand = state.zones
-      .filter((zone) => pump.servesZoneIds.includes(zone.id))
-      .reduce((sum, zone) => sum + zone.flowLpm, 0);
+    /*
+     * อัตราไหลของปั๊ม = ผลรวมที่โซนปลายทางใช้จริง
+     * ★ นับเฉพาะตอนปั๊มตัวนี้เข้าเวร ไม่งั้นปั๊มหลักสองตัวที่จ่ายโซนเดียวกัน
+     *   จะโชว์อัตราไหลของทั้งโรงงานพร้อมกันทั้งคู่ ซึ่งนับซ้ำ
+     */
+    const onDuty = pumpRunning.get(pump.id) ?? false;
+    const demand = onDuty
+      ? state.zones
+          .filter((zone) => pump.servesZoneIds.includes(zone.id))
+          .reduce((sum, zone) => sum + zone.flowLpm, 0)
+      : 0;
 
     const isRunning = demand > 0.5;
     if (isRunning && pump.runState !== 'running') {

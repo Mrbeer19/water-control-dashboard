@@ -188,7 +188,7 @@ export function seedAlerts(state: MockState): void {
     sourceType: 'system',
     sourceId: 'system',
     sourceName: 'ระบบจ่ายน้ำ',
-    messageTh: 'น้ำสูญหายเกินเกณฑ์ — มิเตอร์หลักสูงกว่าผลรวม 8 โซน',
+    messageTh: 'น้ำสูญหายเกินเกณฑ์ — มิเตอร์หลักสูงกว่าผลรวมทุกโซน',
     messageEn: 'Unaccounted water above threshold — main meter exceeds zone total',
     triggerValue: 9.4,
     thresholdValue: 8,

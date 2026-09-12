@@ -40,26 +40,36 @@ export const TANK_SPECS: readonly TankSpec[] = [
     levelToVolumeTable: null,
     location: 'ลานหน้าห้องปั๊ม',
     locationEn: 'Pump House Yard',
-    deviceId: 'esp32-tank-1',
+    deviceId: 'esp32-pump-house',
     initialPercent: 68,
   },
   {
     id: 'tank-2',
-    name: 'ถังจ่ายน้ำ',
-    nameEn: 'Service Tank',
+    // ★ สำรวจหน้างาน 12 ก.ย. 2569: ถังใบนี้เป็นถังของโซน VIP โดยเฉพาะ
+    //   รับน้ำต่อจากถัง 1 มาเก็บไว้ แล้วมีปั๊มของตัวเอง (pump-3) จ่ายเข้าโซน VIP
+    name: 'ถังโซน VIP',
+    nameEn: 'VIP Zone Tank',
     role: 'service',
     capacityLiters: 3_000,
     heightMeters: 2.0,
     shape: 'cylindrical',
     levelSource: 'sensor',
     levelToVolumeTable: null,
-    location: 'ดาดฟ้าอาคารผลิต A',
-    locationEn: 'Production A Rooftop',
-    deviceId: 'esp32-tank-2',
+    location: 'พื้นที่โซน VIP',
+    locationEn: 'VIP Zone Area',
+    deviceId: 'esp32-vip',
     initialPercent: 74,
   },
   {
     id: 'tank-3',
+    /*
+     * ★ สำรวจหน้างาน 12 ก.ย. 2569: บ่อนี้ **รับน้ำจากการประปาโดยตรง** ไม่ได้ต่อจากถัง 1
+     *   เติมอัตโนมัติเมื่อระดับลดต่ำกว่าเส้นที่ตั้งไว้
+     *   ตอนประปาไม่ไหล จะ **สูบกลับเข้าถัง 1** เพื่อจ่ายต่อให้ทั้งโรงงาน
+     *
+     * ★ ผลต่อสูตรน้ำสูญหาย: น้ำที่เข้าบ่อนี้ผ่านมิเตอร์หลักแล้ว
+     *   Δstorage จึงต้องรวมบ่อนี้ด้วย ไม่งั้นช่วงเติมบ่อระบบจะเตือนว่ารั่ว
+     */
     name: 'บ่อสำรอง',
     nameEn: 'Reserve Pond',
     role: 'reserve_pond',
@@ -82,7 +92,7 @@ export const TANK_SPECS: readonly TankSpec[] = [
     ],
     location: 'ท้ายโรงงาน',
     locationEn: 'Rear Plant Area',
-    deviceId: 'esp32-tank-3',
+    deviceId: 'esp32-pond',
     initialPercent: 82,
   },
 ];
@@ -106,6 +116,13 @@ export interface PumpSpec {
   hasVfd: boolean;
 }
 
+/*
+ * ★ สำรวจหน้างาน 12 ก.ย. 2569: ปั๊มหลัก 2 ตัวอยู่ข้างถัง 1 ใช้ตู้ควบคุมเดิมของโรงงานร่วมกัน
+ *   **ทั้งคู่จ่ายน้ำให้ทุกโซนเหมือนกัน ไม่ได้แบ่งโซนกัน**
+ *   แต่ **สลับเวรกันเดิน** ตัวหนึ่งช่วงกลางวัน อีกตัวช่วงกลางคืน
+ *   servesZoneIds ของสองตัวนี้จึงต้องเป็นชุดเดียวกัน
+ *   ตัวที่ "เข้าเวร" ตัดสินใน simulator ตาม settings.maintenance.pumpAlternationHours (12 ชม.)
+ */
 export const PUMP_SPECS: readonly PumpSpec[] = [
   {
     id: 'pump-1',
@@ -113,8 +130,8 @@ export const PUMP_SPECS: readonly PumpSpec[] = [
     nameEn: 'Main Pump 1',
     role: 'main',
     sourceTankId: 'tank-1',
-    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4'],
-    deviceId: 'esp32-pump-1',
+    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4', 'zone-5', 'zone-6', 'zone-7'],
+    deviceId: 'esp32-pump-house',
     ratedFlowLpm: 220,
     ratedPowerWatt: 3_000,
     initialRuntimeHours: 8_412.6,
@@ -127,8 +144,8 @@ export const PUMP_SPECS: readonly PumpSpec[] = [
     nameEn: 'Main Pump 2',
     role: 'main',
     sourceTankId: 'tank-1',
-    servesZoneIds: ['zone-5', 'zone-6', 'zone-7'],
-    deviceId: 'esp32-pump-2',
+    servesZoneIds: ['zone-1', 'zone-2', 'zone-3', 'zone-4', 'zone-5', 'zone-6', 'zone-7'],
+    deviceId: 'esp32-pump-house',
     ratedFlowLpm: 220,
     ratedPowerWatt: 3_000,
     initialRuntimeHours: 8_106.2,
@@ -142,7 +159,7 @@ export const PUMP_SPECS: readonly PumpSpec[] = [
     role: 'vip',
     sourceTankId: 'tank-2',
     servesZoneIds: ['zone-8'],
-    deviceId: 'esp32-pump-3',
+    deviceId: 'esp32-vip',
     ratedFlowLpm: 60,
     ratedPowerWatt: 750,
     initialRuntimeHours: 3_275.9,
@@ -160,7 +177,17 @@ export interface ZoneSpec {
   areaEn: string;
   meterId: string;
   valveId: string;
-  deviceId: string;
+  /**
+   * ESP32 ที่นับ pulse ของมิเตอร์โซนนี้
+   * ★ มิเตอร์ทุกโซนอยู่รวมกันจุดเดียว จึงใช้ node เดียวกันหมด (ยกเว้นโซน VIP)
+   */
+  meterDeviceId: string;
+  /**
+   * ESP32 ที่สั่งวาล์วของโซนนี้
+   * ★ แยกบอร์ดจากมิเตอร์โดยตั้งใจ — อ่านค่ากับสั่งงานไม่ควรตายพร้อมกัน
+   *   (ดู PROJECT_BRIEF.md ข้อ 3.8)
+   */
+  valveDeviceId: string;
   /** แผนกที่รับผิดชอบค่าน้ำของโซนนี้ — null สำหรับพื้นที่ส่วนกลาง */
   departmentId: string | null;
   isVip: boolean;
@@ -179,7 +206,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Production Building A',
     meterId: 'meter-zone-1',
     valveId: 'valve-zone-1',
-    deviceId: 'esp32-meter-1',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-production',
     isVip: false,
     baselineFlowLpm: 46,
@@ -194,7 +222,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Production Building B',
     meterId: 'meter-zone-2',
     valveId: 'valve-zone-2',
-    deviceId: 'esp32-meter-2',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-production',
     isVip: false,
     baselineFlowLpm: 38,
@@ -209,7 +238,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Canteen & Central Kitchen',
     meterId: 'meter-zone-3',
     valveId: 'valve-zone-3',
-    deviceId: 'esp32-meter-3',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-facility',
     isVip: false,
     baselineFlowLpm: 20,
@@ -224,7 +254,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Office Building (3F)',
     meterId: 'meter-zone-4',
     valveId: 'valve-zone-4',
-    deviceId: 'esp32-meter-4',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-facility',
     isVip: false,
     baselineFlowLpm: 13,
@@ -239,7 +270,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Staff Dormitory',
     meterId: 'meter-zone-5',
     valveId: 'valve-zone-5',
-    deviceId: 'esp32-meter-5',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-hr',
     isVip: false,
     baselineFlowLpm: 28,
@@ -254,7 +286,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Cooling Tower',
     meterId: 'meter-zone-6',
     valveId: 'valve-zone-6',
-    deviceId: 'esp32-meter-6',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-production',
     isVip: false,
     baselineFlowLpm: 54,
@@ -269,7 +302,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Washdown & Treatment',
     meterId: 'meter-zone-7',
     valveId: 'valve-zone-7',
-    deviceId: 'esp32-meter-7',
+    meterDeviceId: 'esp32-meter-bank',
+    valveDeviceId: 'esp32-valve-bank',
     departmentId: 'dept-facility',
     isVip: false,
     baselineFlowLpm: 16,
@@ -284,7 +318,8 @@ export const ZONE_SPECS: readonly ZoneSpec[] = [
     areaEn: 'Executive Residence & Lounge',
     meterId: 'meter-zone-8',
     valveId: 'valve-zone-8',
-    deviceId: 'esp32-meter-8',
+    meterDeviceId: 'esp32-vip',
+    valveDeviceId: 'esp32-vip',
     departmentId: 'dept-executive',
     isVip: true,
     baselineFlowLpm: 9,
@@ -332,7 +367,7 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     location: 'pump_room',
     locationLabel: 'ห้องปั๊ม',
     locationLabelEn: 'Pump Room',
-    deviceId: 'esp32-env-1',
+    deviceId: 'esp32-pump-house',
     hasRainGauge: false,
     hasWeatherSensors: false,
     baselineTemperatureCelsius: 34.5,
@@ -347,7 +382,7 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     location: 'control_cabinet',
     locationLabel: 'ตู้คอนโทรล',
     locationLabelEn: 'Control Cabinet',
-    deviceId: 'esp32-env-2',
+    deviceId: 'esp32-elec-2',
     hasRainGauge: false,
     hasWeatherSensors: false,
     baselineTemperatureCelsius: 38.2,
@@ -362,7 +397,7 @@ export const ENVIRONMENT_SPECS: readonly EnvironmentSpec[] = [
     location: 'outdoor',
     locationLabel: 'กลางแจ้ง',
     locationLabelEn: 'Outdoor',
-    deviceId: 'esp32-env-3',
+    deviceId: 'esp32-env-outdoor',
     hasRainGauge: true,
     hasWeatherSensors: true,
     baselineTemperatureCelsius: 31.8,

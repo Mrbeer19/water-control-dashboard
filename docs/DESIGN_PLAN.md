@@ -387,7 +387,7 @@ light #026BB5, #009148, #CBC7C8  (Argent-100)
 
 - `components/charts/chart-tokens.ts` — `CHART_SERIES` ลดจาก 8 เหลือ 2 และ `seriesColor()` ต้อง throw ที่ 2
 - `components/reports/zone-usage-chart.tsx` — แท่ง "ช่วงก่อนหน้า" ใช้ `CHART.offline` อยู่ → เปลี่ยนเป็น `data-reference`
-- `components/billing/zone-cost-chart.tsx`, `components/reports/monthly-chart.tsx` — กราฟ 8 โซนชุดเดียว → Blue + ป้ายชื่อ
+- `components/billing/zone-cost-chart.tsx`, `components/reports/monthly-chart.tsx` — กราฟรายโซนชุดเดียว → Blue + ป้ายชื่อ
 - `components/ai/forecast-section.tsx`, `components/billing/daily-usage-chart.tsx` — จริง vs พยากรณ์ → สีเดียว เส้นทึบ/ประ + band
 - `components/ai/anomaly-evidence-chart.tsx` — มีเส้น threshold สถานะ → Blue ชุดเดียว ห้าม Green
 

@@ -1,4 +1,4 @@
-/** Service: โซนการใช้น้ำ 8 โซน */
+/** Service: โซนการใช้น้ำ (จำนวนโซนไม่ตายตัว อ่านจากข้อมูลจริง) */
 
 import type { MetricKey, TimeSeriesPoint, Valve, Zone, ZoneCost } from '@/lib/types';
 import { readHistory } from '@/lib/mock';

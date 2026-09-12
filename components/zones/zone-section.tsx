@@ -22,7 +22,7 @@ export interface ZoneRow {
 const STORAGE_KEY = 'wcm.zoneView';
 type ZoneView = 'table' | 'cards';
 
-/** 1.3 — มิเตอร์น้ำ 8 โซน สลับดูแบบตาราง/การ์ดได้ */
+/** 1.3 — มิเตอร์น้ำรายโซน สลับดูแบบตาราง/การ์ดได้ */
 export function ZoneSection(): JSX.Element {
   const { t } = useLocale();
   const [view, setView] = useState<ZoneView>('table');

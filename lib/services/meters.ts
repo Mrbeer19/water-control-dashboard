@@ -1,4 +1,4 @@
-/** Service: มิเตอร์น้ำ 8 โซน + มิเตอร์หลักจากการประปา */
+/** Service: มิเตอร์น้ำรายโซน + มิเตอร์หลักจากการประปา */
 
 import type { DailyUsagePoint, MainMeter, MetricKey, TimeSeriesPoint, UnaccountedWater, WaterMeter } from '@/lib/types';
 import { buildDailyUsage, DAILY_HISTORY_DAYS, daysRemainingInMonth, readHistory } from '@/lib/mock';
@@ -29,7 +29,7 @@ export async function getMeterHistory(id: string, metric: MetricKey = 'flow_lpm'
 }
 
 /**
- * Unaccounted water = มิเตอร์หลัก − ผลรวม 8 โซน (ตัวชี้วัดการรั่ว)
+ * Unaccounted water = มิเตอร์หลัก − ผลรวมทุกโซน − Δ ถัง (ตัวชี้วัดการรั่ว)
  * TODO(backend): GET /api/meters/unaccounted?from=&to=
  */
 export async function getUnaccountedWater(): Promise<UnaccountedWater> {
