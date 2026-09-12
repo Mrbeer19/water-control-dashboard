@@ -61,7 +61,8 @@ export function defaultZoneConfigs(): ZoneConfig[] {
     zoneId: spec.id,
     name: spec.name,
     kFactor: 450,
-    deviceId: spec.deviceId,
+    // ตั้งค่ามิเตอร์ของโซน จึงใช้ node ที่นับ pulse ไม่ใช่ node ที่คุมวาล์ว
+    deviceId: spec.meterDeviceId,
     valveId: spec.valveId,
     monthlyQuotaCubicMeters:
       spec.dailyQuotaCubicMeters === null ? null : Math.round(spec.dailyQuotaCubicMeters * 30),

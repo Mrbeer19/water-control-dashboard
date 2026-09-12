@@ -312,7 +312,7 @@ function createInitialState(): MockState {
     lastCommandId: null,
     lastActuatedAt: nowIso(at - 86_400_000 * (index + 1)),
     cycleCount: 120 + index * 37,
-    deviceId: spec.deviceId,
+    deviceId: spec.valveDeviceId,
   }));
 
   const zoneMeters: WaterMeter[] = ZONE_SPECS.map((spec) => {
@@ -331,7 +331,7 @@ function createInitialState(): MockState {
       monthCubicMeters: roundTo(todayCubicMeters * 9.4, 2),
       pulsesPerLiter: 450,
       zoneId: spec.id,
-      deviceId: spec.deviceId,
+      deviceId: spec.meterDeviceId,
     };
   });
 
