@@ -1,5 +1,6 @@
 'use client';
 
+import { Bell, Coins, Droplets, Gauge, LayoutGrid, Thermometer, Waves } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
 import { Section } from '@/components/layout/section';
 import { TankSection } from '@/components/tanks/tank-section';
@@ -24,31 +25,31 @@ export default function OverviewPage(): JSX.Element {
     <div className="space-y-8">
       <AiOverviewWidget />
 
-      <Section title={t.overview.tanks}>
+      <Section title={t.overview.tanks} icon={Droplets} tone="water">
         <TankSection />
       </Section>
 
-      <Section title={t.overview.pumps}>
+      <Section title={t.overview.pumps} icon={Gauge} tone="ok">
         <PumpSection />
       </Section>
 
-      <Section title={t.overview.mainMeter}>
+      <Section title={t.overview.mainMeter} icon={Waves} tone="water">
         <MainMeterSection />
       </Section>
 
-      <Section title={t.overview.zones}>
+      <Section title={t.overview.zones} icon={LayoutGrid} tone="warning">
         <ZoneSection />
       </Section>
 
-      <Section title={t.overview.billing}>
+      <Section title={t.overview.billing} icon={Coins} tone="brand">
         <BillingSection />
       </Section>
 
-      <Section title={t.overview.recentAlerts}>
+      <Section title={t.overview.recentAlerts} icon={Bell} tone="brand">
         <RecentAlerts />
       </Section>
 
-      <Section title={t.overview.environment}>
+      <Section title={t.overview.environment} icon={Thermometer} tone="ok">
         <EnvironmentSection />
       </Section>
     </div>

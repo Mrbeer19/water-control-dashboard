@@ -18,6 +18,8 @@ export const CHART = {
   waterSoft: 'var(--data-water-soft)',
   /** ชุดอ้างอิงที่ต้องถอยหลังฉาก เช่น แท่งของช่วงก่อนหน้า — ต้องมี legend เสมอ */
   reference: 'var(--chart-reference)',
+  /** เส้นกราฟเมื่อวางบนการ์ดเด่นที่ถมสีทึบ — ต้องเป็นขาว ไม่ใช่สีน้ำเงินบนน้ำเงิน */
+  onFeature: 'hsl(var(--feature-foreground))',
   muted: 'hsl(var(--muted-foreground))',
   border: 'hsl(var(--border))',
   info: 'hsl(var(--info))',

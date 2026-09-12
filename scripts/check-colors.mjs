@@ -224,8 +224,11 @@ function contrast(a, b) {
     'status-warning', 'status-warning-foreground', 'status-warning-surface',
     'status-critical', 'status-critical-foreground',
     'status-offline', 'status-offline-foreground', 'status-offline-dot',
+    'feature', 'feature-foreground', 'feature-muted', 'banner-art',
+    'chip-water', 'chip-water-foreground', 'chip-ok', 'chip-ok-foreground',
+    'chip-warning', 'chip-warning-foreground', 'chip-brand', 'chip-brand-foreground',
   ]);
-  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|form-error|border-strong|status)[a-z0-9-]*)/g;
+  const TOKEN = /\b(?:bg|text|border|fill|stroke|ring|accent|divide|outline|caret|shadow)-((?:brand|info|water|control-checked|form-error|border-strong|status|feature|chip|banner-art)[a-z0-9-]*)/g;
   const bad = [];
   for (const f of sources) {
     for (const m of read(f).matchAll(TOKEN)) {

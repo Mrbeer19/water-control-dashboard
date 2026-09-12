@@ -59,11 +59,18 @@ export function StatusBadge({
   status,
   label,
   className,
+  onFeature = false,
 }: {
   status: EntityStatus;
   /** ข้อความแทนคำแปลมาตรฐาน เช่น "เดินเครื่อง" ของปั๊ม */
   label?: string;
   className?: string;
+  /**
+   * วางอยู่บนการ์ดเด่นที่ถมสีทึบ (ข้อ 3.8)
+   * ★ สถานะ "ปกติ" กับ "offline" ปกติไม่มีพื้น ตัวอักษรจึงไปนั่งบนพื้นน้ำเงินแล้วอ่านไม่ออก
+   *   กรณีนี้ต้องคืนผิวขาวให้ป้าย เพื่อให้สีสถานะยังอยู่บนพื้นที่มันผ่าน contrast มาแล้ว
+   */
+  onFeature?: boolean;
 }): JSX.Element {
   const { t } = useLocale();
   const tone = TONE[status];
@@ -74,6 +81,7 @@ export function StatusBadge({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full text-xs font-medium',
         tone.pill,
+        onFeature && tone.icon === undefined && 'bg-card px-2 py-0.5',
         className,
       )}
     >

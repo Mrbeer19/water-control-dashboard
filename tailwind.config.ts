@@ -77,6 +77,26 @@ const config: Config = {
           strong: 'hsl(var(--info-strong))',
           'strong-foreground': 'hsl(var(--info-strong-foreground))',
         },
+        // การ์ดเด่นหนึ่งใบต่อหน้า — พื้น Royal Navy Blue ตัวอักษรขาว (BRANDING_SPEC ข้อ 3.8)
+        // ★ ไม่ใช่สีสถานะ แดง/เหลือง/เขียว ยังสงวนไว้ให้ <StatusBadge> เท่านั้น
+        // ภาพประกอบลายเส้นบนแถบหัวเรื่อง — ขั้นสีอ่อนของ Blue ไม่ใช้ opacity (ข้อ 5.5)
+        'banner-art': 'hsl(var(--banner-art))',
+        feature: {
+          DEFAULT: 'hsl(var(--feature))',
+          foreground: 'hsl(var(--feature-foreground))',
+          muted: 'hsl(var(--feature-muted))',
+        },
+        // ชิปไอคอนหัวหมวด — ผิวสีอ่อนของบันได CI ใช้ค่าเดียวกันทั้งสองโหมด (ข้อ 3.8)
+        chip: {
+          water: 'hsl(var(--chip-water))',
+          'water-foreground': 'hsl(var(--chip-water-foreground))',
+          warning: 'hsl(var(--chip-warning))',
+          'warning-foreground': 'hsl(var(--chip-warning-foreground))',
+          ok: 'hsl(var(--chip-ok))',
+          'ok-foreground': 'hsl(var(--chip-ok-foreground))',
+          brand: 'hsl(var(--chip-brand))',
+          'brand-foreground': 'hsl(var(--chip-brand-foreground))',
+        },
         // Switch / Checkbox / Radio / Slider สถานะติ๊กแล้ว — BRANDING_SPEC ข้อ 3.3
         'control-checked': {
           DEFAULT: 'hsl(var(--control-checked))',

@@ -50,41 +50,48 @@ export function MainMeterSection(): JSX.Element {
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <Card className="lg:col-span-2">
+      {/*
+        การ์ดเด่นของหน้า — ถมพื้น Royal Navy Blue ตัวอักษรขาว (BRANDING_SPEC ข้อ 3.8)
+        ★ เลือกใบนี้เพราะ "น้ำเข้าจากการประปา" คือตัวเลขตั้งต้นของทั้งระบบ
+        ★ ห้ามถมด้วย แดง/เหลือง/เขียว — สามสีนั้นสงวนไว้ให้สถานะ ถ้าเอามาตกแต่ง
+          คนในห้องคอนโทรลจะอ่านการ์ดเด่นว่า "วิกฤต" ทั้งที่ทุกอย่างปกติ
+        ★ หนึ่งหน้ามีการ์ดเด่นได้ใบเดียว ถ้ามีหลายใบก็ไม่มีใบไหนเด่น
+      */}
+      <Card className="border-feature bg-feature text-feature-foreground lg:col-span-2">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate font-semibold leading-tight">{locale === 'th' ? meter.name : meter.nameEn}</p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-xs text-feature-muted">
                 {locale === 'th' ? meter.supplierName : meter.supplierNameEn} · {meter.supplierMeterNo} · {meter.pipeSizeInches}&quot;
               </p>
             </div>
-            <StatusBadge status={meter.status} />
+            <StatusBadge status={meter.status} onFeature />
           </div>
 
           {/* ตัวเลขใหญ่ชุดหลัก — ต้องอ่านได้จากกลางห้องคอนโทรล */}
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-[11px] text-muted-foreground">{t.meter.totalizer}</p>
+              <p className="text-[11px] text-feature-muted">{t.meter.totalizer}</p>
               <p className="tabular text-metric leading-none">{formatNumber(meter.totalizerCubicMeters, locale, 0)}</p>
-              <p className="text-[11px] text-muted-foreground">m³</p>
+              <p className="text-[11px] text-feature-muted">m³</p>
             </div>
             <div>
-              <p className="text-[11px] text-muted-foreground">{t.meter.unitsThisMonth}</p>
+              <p className="text-[11px] text-feature-muted">{t.meter.unitsThisMonth}</p>
               <p className="tabular text-metric leading-none">{formatNumber(meter.monthCubicMeters, locale, 0)}</p>
-              <p className="text-[11px] text-muted-foreground">{t.zone.units}</p>
+              <p className="text-[11px] text-feature-muted">{t.zone.units}</p>
             </div>
             <div>
-              <p className="text-[11px] text-muted-foreground">{t.meter.flowNow}</p>
-              <p className="tabular text-metric leading-none text-water">{formatNumber(meter.flowLpm, locale, 0)}</p>
-              <p className="text-[11px] text-muted-foreground">L/min</p>
+              <p className="text-[11px] text-feature-muted">{t.meter.flowNow}</p>
+              <p className="tabular text-metric leading-none">{formatNumber(meter.flowLpm, locale, 0)}</p>
+              <p className="text-[11px] text-feature-muted">L/min</p>
             </div>
           </div>
 
-          <div className="mt-3 border-t pt-3">
+          <div className="mt-3 border-t border-feature-muted pt-3">
             <Sparkline
               points={history}
-              color={CHART.water}
+              color={CHART.onFeature}
               height={44}
               label={t.meter.flowNow}
               series={{ sourceType: 'meter', sourceId: meter.id, metric: 'flow_lpm', sourceName: locale === 'th' ? meter.name : meter.nameEn }}
@@ -93,15 +100,15 @@ export function MainMeterSection(): JSX.Element {
 
           <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
             <div>
-              <dt className="text-[10px] text-muted-foreground">{t.meter.inToday}</dt>
+              <dt className="text-[10px] text-feature-muted">{t.meter.inToday}</dt>
               <dd className="tabular font-medium">{formatCubicMeters(meter.todayCubicMeters, locale)}</dd>
             </div>
             <div>
-              <dt className="text-[10px] text-muted-foreground">{t.meter.inMonth}</dt>
+              <dt className="text-[10px] text-feature-muted">{t.meter.inMonth}</dt>
               <dd className="tabular font-medium">{formatCubicMeters(meter.monthCubicMeters, locale)}</dd>
             </div>
             <div>
-              <dt className="text-[10px] text-muted-foreground">{t.meter.inletPressure}</dt>
+              <dt className="text-[10px] text-feature-muted">{t.meter.inletPressure}</dt>
               <dd className="tabular font-medium">{formatPressure(meter.inletPressureBar, locale)}</dd>
             </div>
           </dl>

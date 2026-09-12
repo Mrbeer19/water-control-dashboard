@@ -12,7 +12,7 @@
   :root {
 
     /* พื้นหน้าและพื้นการ์ด */
-    --background: 0 0% 96.9%; /* #F7F7F7 Lynx White */
+    --background: 345 3.7% 94.5%; /* #F1F0F1 Argent-50 — ลึกกว่าพื้นการ์ดหนึ่งขั้น (ข้อ 6.2) */
     --foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
     --card: 0 0% 100%; /* #FFFFFF ขาว */
     --card-foreground: 205.7 4.1% 33.1%; /* #515558 Argent-900 */
@@ -60,6 +60,26 @@
     --status-offline: 252 2.3% 43.3%; /* #6D6C71 Argent-800 */
     --status-offline-foreground: 0 0% 100%; /* #FFFFFF ขาว */
     --status-offline-dot: 0 0% 53.3%; /* #888888 Argent-500 */
+
+
+    /*
+     * ผิวเน้น ชิปไอคอน และภาพประกอบแบนเนอร์ — BRANDING_SPEC ข้อ 3.8
+     * ★★ ไม่ใช่สีสถานะ ★★ ห้ามเอาไปสื่อว่า "ปกติ / เตือน / วิกฤต"
+     *   สถานะยังต้องผ่าน <StatusBadge> ที่มีไอคอน + ข้อความเสมอ (ข้อ 3.4)
+     * ★ ชิปใช้ค่าเดียวกันทั้งสองโหมด เพราะชิปเป็นผิวของตัวเอง ไม่ได้ยืมพื้นการ์ด
+     */
+    --feature: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 — พื้นการ์ดเด่น ขาวบนพื้นนี้ได้ 5.57 : 1 */
+    --feature-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --feature-muted: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 — ข้อความรองบนการ์ดเด่น */
+    --chip-water: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 */
+    --chip-water-foreground: 231 11.8% 33.3%; /* #4B4E5F Blue-900 — 3.74 : 1 พอสำหรับไอคอน */
+    --chip-warning: 35.3 95.7% 81.6%; /* #FDD8A3 Marigold-100 */
+    --chip-warning-foreground: 41.7 13.3% 33.9%; /* #625B4B Marigold-900 — 4.98 : 1 */
+    --chip-ok: 126.5 25.2% 71.2%; /* #A3C8A7 Green-100 */
+    --chip-ok-foreground: 136.4 7.1% 30.4%; /* #48534B Green-900 — 4.35 : 1 */
+    --chip-brand: 13.9 86.1% 77.5%; /* #F7AB94 Cinnabar-100 */
+    --chip-brand-foreground: 7.5 14% 33.7%; /* #624D4A Cinnabar-900 — 4.18 : 1 */
+    --banner-art: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 — ภาพประกอบบนแถบหัวเรื่อง (ข้อ 5.5) */
 
     --radius: 0.625rem;
 
@@ -131,7 +151,27 @@
     --status-critical-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
     --status-offline: 345 2.6% 69.8%; /* #B4B0B1 Argent-200 */
     --status-offline-foreground: 220 4.5% 13.1%; /* #202123 Argent-1000 */
-    --status-offline-dot: 0 0% 61.2%; /* #9C9C9C Argent-300 */
+    --status-offline-dot: 0 0% 61.2%;
+
+    /*
+     * ผิวเน้น ชิปไอคอน และภาพประกอบแบนเนอร์ — BRANDING_SPEC ข้อ 3.8
+     * ★★ ไม่ใช่สีสถานะ ★★ ห้ามเอาไปสื่อว่า "ปกติ / เตือน / วิกฤต"
+     *   สถานะยังต้องผ่าน <StatusBadge> ที่มีไอคอน + ข้อความเสมอ (ข้อ 3.4)
+     * ★ ชิปใช้ค่าเดียวกันทั้งสองโหมด เพราะชิปเป็นผิวของตัวเอง ไม่ได้ยืมพื้นการ์ด
+     */
+    --feature: 204.8 97.8% 35.9%; /* #026BB5 Blue-500 — พื้นการ์ดเด่น ขาวบนพื้นนี้ได้ 5.57 : 1 */
+    --feature-foreground: 0 0% 100%; /* #FFFFFF ขาว */
+    --feature-muted: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 — ข้อความรองบนการ์ดเด่น */
+    --chip-water: 227.1 30.4% 72.9%; /* #A5AECF Blue-100 */
+    --chip-water-foreground: 231 11.8% 33.3%; /* #4B4E5F Blue-900 — 3.74 : 1 พอสำหรับไอคอน */
+    --chip-warning: 35.3 95.7% 81.6%; /* #FDD8A3 Marigold-100 */
+    --chip-warning-foreground: 41.7 13.3% 33.9%; /* #625B4B Marigold-900 — 4.98 : 1 */
+    --chip-ok: 126.5 25.2% 71.2%; /* #A3C8A7 Green-100 */
+    --chip-ok-foreground: 136.4 7.1% 30.4%; /* #48534B Green-900 — 4.35 : 1 */
+    --chip-brand: 13.9 86.1% 77.5%; /* #F7AB94 Cinnabar-100 */
+    --chip-brand-foreground: 7.5 14% 33.7%; /* #624D4A Cinnabar-900 — 4.18 : 1 */
+    --banner-art: 220.4 21.7% 41.6%; /* #536281 Blue-800 — โหมดมืดใช้ขั้นเข้ม ภาพจะได้ถอยหลังฉาก */
+ /* #9C9C9C Argent-300 */
 
     --radius: 0.625rem;
 
