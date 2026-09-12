@@ -6,9 +6,12 @@
 # ★ ไม่กระทบ build ที่ขึ้น VM จริง เพราะโหมด export เปิดด้วย env เท่านั้น
 name: เดโมบน GitHub Pages
 
+# ★ ตอนนี้สั่งรันเองเท่านั้น (Actions → เดโมบน GitHub Pages → Run workflow)
+#   ยังไม่ผูกกับ push เพราะ repo private บนบัญชีฟรีเปิด Pages ไม่ได้
+#   ถ้าเปิด Pages ได้เมื่อไร ให้เอาคอมเมนต์สองบรรทัดล่างออก เดโมจะอัปเดตเองทุกครั้งที่ merge เข้า main
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 permissions:
