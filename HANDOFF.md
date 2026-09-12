@@ -424,13 +424,37 @@ base topic ตั้งค่าได้ใน `SystemSettings.network.mqttBase
 | `plant/water/power/<nodeId>/telemetry` | node → gateway | V, A, W, kWh ของตู้ไฟรายแผนก |
 | `plant/water/device/<deviceId>/status` | node → gateway | rssi, uptime, freeHeap, reconnectCount, lastError |
 | `plant/water/<deviceId>/cmd` | gateway → node | คำสั่งรีบูต / OTA |
-| `plant/water/valve/<valveId>/cmd` | gateway → PLC | เปิด/ปิด/เปอร์เซ็นต์ |
-| `plant/water/valve/<valveId>/feedback` | PLC → gateway | ตำแหน่งจริงหลังสั่ง |
+| `plant/water/valve/<valveId>/cmd` | gateway → **ESP32** | เปิด/ปิด/เปอร์เซ็นต์ |
+| `plant/water/valve/<valveId>/feedback` | **ESP32** → gateway | ตำแหน่งจริงหลังสั่ง |
 | `plant/water/pump/<pumpId>/cmd` | gateway → PLC | เดิน/หยุด/โหมด |
 | `plant/water/pump/<pumpId>/feedback` | PLC → gateway | สถานะจริงหลังสั่ง |
 
 **`feedback` topic คือหัวใจของหน้า Control** — ถ้าไม่มี คำสั่งจะค้างที่ `awaiting_feedback`
 จนหมดเวลาแล้วขึ้น timeout ซึ่งเป็นพฤติกรรมที่ตั้งใจ ไม่ใช่บั๊ก
+
+> ### 🔴 การแบ่งหน้าที่ควบคุม (ตัดสิน 12 ก.ย. 2569)
+>
+> | อุปกรณ์ | ใครคุม |
+> |---|---|
+> | **ปั๊ม** | **PLC** (S7-1200) |
+> | **วาล์ว** | **ESP32** |
+>
+> **ผลที่ตามมาซึ่ง backend ต้องรับผิดชอบแทน PLC**
+>
+> วาล์วไม่ได้อยู่หลัง PLC แล้ว จึง **ไม่มีชั้น interlock ระดับฮาร์ดแวร์คอยกันคำสั่งอันตราย**
+> เดิม PLC เป็นด่านสุดท้ายที่ปฏิเสธคำสั่งที่ไม่ปลอดภัยได้เองแม้ซอฟต์แวร์พลาด
+>
+> **backend ต้องบังคับกฎเหล่านี้ก่อนส่งคำสั่งลง MQTT ทุกครั้ง — ห้ามเชื่อว่าหน้าจอกรองมาแล้ว**
+>
+> 1. **ห้ามปิดวาล์วโซน VIP อัตโนมัติ** ไม่ว่าเงื่อนไขใด (`Zone.isVip`)
+> 2. ตรวจ `ControlInterlock` ฝั่งเซิร์ฟเวอร์ก่อนส่งเสมอ
+>    (หน้าจอตรวจให้แล้วก็จริง แต่ใครยิง API ตรงก็ข้ามหน้าจอได้)
+> 3. ปิดวาล์วหลายโซนพร้อมกันต้องมีเพดาน ไม่งั้นแรงดันในท่อจะกระชาก
+> 4. firmware ของ ESP32 valve node ควรมี **fail-safe**: ขาด MQTT เกิน N วินาที
+>    ให้**คงตำแหน่งเดิม** ห้ามปิดเองหรือเปิดเอง
+>
+> ที่หน้าบ้านตรวจอยู่แล้วดูได้ที่ `lib/mock/control.ts` ฟังก์ชัน `valveInterlock()` และ `pumpInterlock()`
+> — ใช้กฎชุดเดียวกัน ไม่ใช่เขียนใหม่คนละชุด
 
 ---
 
