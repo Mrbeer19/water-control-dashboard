@@ -13,7 +13,8 @@
 
 ```bash
 npm install
-npm run dev          # เปิด http://localhost:3000
+git config core.hooksPath .githooks   # เปิด hook กัน push ตรงเข้า main
+npm run dev                            # เปิด http://localhost:3000
 ```
 
 เข้าสู่ระบบด้วย **`admin` / `admin1234`**
