@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, RefreshCw, Signal, X } from 'lucide-react';
-import type { Device, DeviceActionResult, TimeSeriesPoint } from '@/lib/types';
+import type { Device, DeviceActionResult, MetricKey, TimeSeriesPoint } from '@/lib/types';
 import { getDeviceHistory, pingDevice, rebootDevice, startFirmwareUpdate } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
 import {
@@ -19,6 +19,13 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
 import { CHART, seriesColor } from '@/components/charts/chart-tokens';
 import { kindLabel, roleLabel } from './device-labels';
+
+/**
+ * ค่าวัดสุขภาพอุปกรณ์ที่เปิดดูย้อนหลังได้ — สลับกันในหน้าต่างเดียว
+ * ★ 'online_state' อยู่ในทะเบียนแล้วแต่ยังไม่อยู่ใน MetricKey ของ lib/types.ts
+ *   การเพิ่มเข้า union = แก้สัญญากับทีมหลังบ้าน ต้องถามก่อน (RUNBOOK ข้อ 5)
+ */
+const DEVICE_METRICS: MetricKey[] = ['rssi_dbm', 'uptime_seconds', 'free_heap_bytes'];
 
 /**
  * แผงรายละเอียดอุปกรณ์
@@ -162,13 +169,27 @@ export function DeviceDetailPanel({ device, onClose }: { device: Device | null; 
                   <Signal className="h-3 w-3" aria-hidden />
                   {t.device.rssi} · dBm
                 </p>
-                <Sparkline points={rssiHistory} color={seriesColor(0)} height={56} label={`${t.device.rssi} ${device.nameEn}`} />
+                <Sparkline
+                  points={rssiHistory}
+                  color={seriesColor(0)}
+                  height={56}
+                  label={`${t.device.rssi} ${device.nameEn}`}
+                  series={{ sourceType: 'device', sourceId: device.id, metric: 'rssi_dbm', sourceName: locale === 'th' ? device.name : device.nameEn }}
+                  seriesMetrics={DEVICE_METRICS}
+                />
               </div>
             )}
 
             <div>
               <p className="mb-1 text-[11px] text-muted-foreground">{t.device.uptime}</p>
-              <Sparkline points={uptimeHistory} color={CHART.ok} height={48} label={`${t.device.uptime} ${device.nameEn}`} />
+              <Sparkline
+                points={uptimeHistory}
+                color={CHART.ok}
+                height={48}
+                label={`${t.device.uptime} ${device.nameEn}`}
+                series={{ sourceType: 'device', sourceId: device.id, metric: 'uptime_seconds', sourceName: locale === 'th' ? device.name : device.nameEn }}
+                seriesMetrics={DEVICE_METRICS}
+              />
             </div>
 
             {device.lastError !== null && (

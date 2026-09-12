@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { StatusDot } from '@/components/ui/status-badge';
 import type { ZoneRow } from './zone-section';
+import { ChartDetail } from '@/components/charts/chart-detail';
 
 /** ตารางโซน — ตัวเลขชิดขวาและใช้ tabular figures เพื่อให้เทียบคอลัมน์ได้ด้วยตา */
 export function ZoneTable({ rows }: { rows: ZoneRow[] }): JSX.Element {
@@ -46,7 +47,22 @@ export function ZoneTable({ rows }: { rows: ZoneRow[] }): JSX.Element {
                     )}
                   </div>
                 </td>
-                <td className="tabular px-3 py-2.5 text-right">{formatFlow(zone.flowLpm, locale, 1)}</td>
+                {/* อัตราไหลกดได้ — เปิดดูย้อนหลังของโซนนั้นในหน้าต่างเดียวกับกราฟอื่นทั้งระบบ */}
+                <td className="tabular px-3 py-2.5 text-right">
+                  <ChartDetail
+                    title={locale === 'th' ? zone.name : zone.nameEn}
+                    unit="L/min"
+                    points={[]}
+                    series={{
+                      sourceType: 'zone',
+                      sourceId: zone.id,
+                      metric: 'flow_lpm',
+                      sourceName: locale === 'th' ? zone.name : zone.nameEn,
+                    }}
+                  >
+                    <span className="block text-right">{formatFlow(zone.flowLpm, locale, 1)}</span>
+                  </ChartDetail>
+                </td>
                 <td className="tabular px-3 py-2.5 text-right">
                   <span className="block">{formatCubicMeters(zone.todayCubicMeters, locale)}</span>
                   <span className="block text-[11px] text-muted-foreground">

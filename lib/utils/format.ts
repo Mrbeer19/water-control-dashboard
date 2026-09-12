@@ -6,6 +6,7 @@
  */
 
 import type { EntityStatus, Locale } from '@/lib/types';
+import { getDisplayTimezone } from '@/lib/config/timezone';
 
 const TH_LOCALE = 'th-TH';
 const EN_LOCALE = 'en-GB';
@@ -46,6 +47,7 @@ export function formatDateTimeTH(value: string | number, locale: Locale = 'th'):
   if (Number.isNaN(date.getTime())) return '—';
 
   return new Intl.DateTimeFormat(locale === 'th' ? `${TH_LOCALE}-u-ca-buddhist` : EN_LOCALE, {
+    timeZone: getDisplayTimezone(),
     dateStyle: 'medium',
     timeStyle: 'medium',
   }).format(date);
@@ -56,6 +58,7 @@ export function formatTime(value: string | number, locale: Locale = 'th'): strin
   const date = typeof value === 'number' ? new Date(value) : new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat(localeTag(locale), {
+    timeZone: getDisplayTimezone(),
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -68,6 +71,7 @@ export function formatDate(value: string | number, locale: Locale = 'th'): strin
   const date = typeof value === 'number' ? new Date(value) : new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat(locale === 'th' ? `${TH_LOCALE}-u-ca-buddhist` : EN_LOCALE, {
+    timeZone: getDisplayTimezone(),
     dateStyle: 'medium',
   }).format(date);
 }

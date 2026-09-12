@@ -1,9 +1,10 @@
 'use client';
 
 import { Area, AreaChart, ResponsiveContainer, YAxis } from 'recharts';
-import type { TimeSeriesPoint } from '@/lib/types';
+import type { MetricKey, TimeSeriesPoint } from '@/lib/types';
 import { CHART } from './chart-tokens';
 import { ChartDetail } from './chart-detail';
+import type { MetricSourceRef } from './chart-explorer';
 
 /**
  * จำนวนจุดสูงสุดที่วาด — กราฟกว้างราว 150 px การอัดพันจุดลงไปได้แค่กลุ่มเส้นหยึกหยัก
@@ -22,6 +23,13 @@ interface SparklineProps {
   unit?: string;
   /** ทศนิยมในหน้าต่างดูข้อมูลละเอียด */
   decimals?: number;
+  /**
+   * ผูกกราฟจิ๋วนี้กับค่าวัดจริง — ส่งมาแล้วหน้าต่างรายละเอียดจะเป็น chart explorer เต็มรูปแบบ
+   * ★ ไม่ส่ง = ได้หน้าต่างแบบเดิมที่รวมจาก points ซึ่งย้อนหลังได้แค่เท่าที่การ์ดถืออยู่
+   */
+  series?: MetricSourceRef;
+  /** ค่าวัดอื่นของอุปกรณ์เดียวกันที่สลับดูได้ในหน้าต่างรายละเอียด */
+  seriesMetrics?: MetricKey[];
 }
 
 /**
@@ -35,6 +43,8 @@ export function Sparkline({
   label,
   unit = '',
   decimals = 1,
+  series,
+  seriesMetrics,
 }: SparklineProps): JSX.Element {
   if (points.length < 2) {
     return (
@@ -66,6 +76,8 @@ export function Sparkline({
       unit={unit}
       decimals={decimals}
       points={points.map((point) => ({ timestamp: point.timestamp, value: point.value }))}
+      {...(series === undefined ? {} : { series })}
+      {...(seriesMetrics === undefined ? {} : { seriesMetrics })}
     >
     <div className="w-full min-w-0 overflow-hidden" style={{ height }} role="img" aria-label={label}>
       <ResponsiveContainer width="100%" height="100%">

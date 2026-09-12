@@ -153,5 +153,35 @@ const inBangkok = (ms) =>
   else fail('เดือนยาวไม่เท่ากันและข้ามปี', `ก.พ. ได้ ${febDays} วัน (ควร 29) · ข้ามปี ${crossesYear}`);
 }
 
+/* 7. ข้อความวันเวลาที่ผู้ใช้เห็น ต้องไม่ขึ้นกับ TZ ของเครื่องเช่นกัน */
+{
+  const probe = `
+    const f = await import(${JSON.stringify(join(ROOT, 'lib/utils/format.ts'))});
+    const t = Date.parse('2026-09-11T17:30:00Z'); // 12 ก.ย. 00:30 ตามเวลาไทย
+    process.stdout.write([f.formatDateTimeTH(t, 'th'), f.formatDate(t, 'th'), f.formatTime(t, 'th')].join('|'));
+  `;
+  // format.ts import ค่าจริงจาก @/lib/config/timezone จึงต้องใช้ hook แปลง alias ให้ด้วย
+  const run = (tz) =>
+    execFileSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--import',
+        join(ROOT, 'scripts/alias-hook.mjs'),
+        '--input-type=module',
+        '-e',
+        probe,
+      ],
+      { env: { ...process.env, TZ: tz }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    ).trim();
+  const bangkok = run('Asia/Bangkok');
+  const others = { UTC: run('UTC'), 'America/New_York': run('America/New_York') };
+  const mismatched = Object.entries(others).filter(([, value]) => value !== bangkok);
+  // ต้องตัดเป็นวันที่ 12 ตามเวลาไทย ไม่ใช่วันที่ 11 ตาม UTC
+  const isThaiDay = bangkok.includes('12 ก.ย.');
+  if (mismatched.length === 0 && isThaiDay) pass('ข้อความวันเวลาไม่ขึ้นกับ TZ ของเครื่อง', bangkok.split('|')[0]);
+  else fail('ข้อความวันเวลาไม่ขึ้นกับ TZ ของเครื่อง', mismatched.map(([tz]) => `${tz} ต่าง`).join(' · ') || `ได้ ${bangkok}`);
+}
+
 console.log(failed === 0 ? '\nตัดช่วงเวลาผ่านทุกข้อ\n' : `\nไม่ผ่าน ${failed} ข้อ\n`);
 process.exit(failed === 0 ? 0 : 1);

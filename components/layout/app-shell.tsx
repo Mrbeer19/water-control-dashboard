@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { setDisplayTimezone } from '@/lib/config/timezone';
+import { getSettings } from '@/lib/services';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 import { PageBanner } from './page-banner';
@@ -9,6 +11,18 @@ import { AppFooter } from './app-footer';
 /** โครงหน้าจอร่วมของทุกหน้า: sidebar ถาวรบน desktop + drawer บน mobile */
 export function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /*
+   * ตั้งเขตเวลาแสดงผลจาก settings ครั้งเดียวตอนเปิดแอป
+   * ★ ต้องทำหลัง mount ไม่ใช่ตอน render — ฝั่ง server กับ browser จะได้เริ่มจากค่าเดียวกัน
+   *   ไม่งั้น HTML สองฝั่งจะไม่ตรงกันแล้ว React จะเตือน hydration mismatch
+   * ★ ค่านี้ต้องเป็นตัวเดียวกับที่ใช้ตัดขอบ bucket ของกราฟ (lib/utils/time-buckets.ts)
+   */
+  useEffect(() => {
+    void getSettings().then((settings) => {
+      setDisplayTimezone(settings.general.timezone);
+    });
+  }, []);
 
   return (
     <div className="min-h-screen lg:pl-64">

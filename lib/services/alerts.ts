@@ -12,6 +12,7 @@ import type {
 } from '@/lib/types';
 import { acknowledgeAlert as acknowledgeInStore } from '@/lib/mock';
 import { mutate, respond } from './internal';
+import { formatDateTimeTH } from '@/lib/utils';
 
 /**
  * รายการ alert พร้อมตัวกรองและแบ่งหน้า
@@ -228,7 +229,8 @@ export async function getNotificationPreview(
     if (alert.triggerValue !== null && alert.thresholdValue !== null) {
       lines.push(`ค่าที่วัดได้: ${alert.triggerValue} ${alert.unit ?? ''} (เกณฑ์ ${alert.thresholdValue} ${alert.unit ?? ''})`);
     }
-    lines.push(`เวลา: ${new Date(alert.raisedAt).toLocaleString('th-TH')}`);
+    // ★ ต้องใช้เขตเวลาเดียวกับทั้งแอป ไม่ใช่เวลาเครื่อง ไม่งั้นข้อความแจ้งเตือนจะบอกเวลาผิด
+    lines.push(`เวลา: ${formatDateTimeTH(alert.raisedAt, 'th')}`);
     if (alert.occurrenceCount > 1) lines.push(`เกิดซ้ำ ${alert.occurrenceCount} ครั้ง`);
 
     return {

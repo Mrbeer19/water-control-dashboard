@@ -6,6 +6,7 @@ import { formatBaht, formatCubicMeters, formatFlow, formatPercent } from '@/lib/
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { ChartDetail } from '@/components/charts/chart-detail';
 import type { ZoneRow } from './zone-section';
 
 /** มุมมองการ์ดของโซน — ใช้บนมือถือหรือจอแขวนที่อยากได้ตัวเลขใหญ่ */
@@ -24,7 +25,20 @@ export function ZoneCards({ rows }: { rows: ZoneRow[] }): JSX.Element {
 
             <StatusBadge status={online ? zone.status : 'offline'} />
 
-            <p className="tabular text-2xl font-semibold leading-none">{formatFlow(zone.flowLpm, locale, 1)}</p>
+            {/* อัตราไหลปัจจุบัน กดแล้วเปิดดูย้อนหลังของโซนนี้ */}
+            <ChartDetail
+              title={locale === 'th' ? zone.name : zone.nameEn}
+              unit="L/min"
+              points={[]}
+              series={{
+                sourceType: 'zone',
+                sourceId: zone.id,
+                metric: 'flow_lpm',
+                sourceName: locale === 'th' ? zone.name : zone.nameEn,
+              }}
+            >
+              <p className="tabular text-2xl font-semibold leading-none">{formatFlow(zone.flowLpm, locale, 1)}</p>
+            </ChartDetail>
 
             <dl className="grid grid-cols-2 gap-x-2 gap-y-1.5 border-t pt-2.5 text-xs">
               <div>

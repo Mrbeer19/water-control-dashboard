@@ -1,7 +1,7 @@
 'use client';
 
 import { Gauge, Power, Wrench } from 'lucide-react';
-import type { EntityStatus, Pump, PumpRunState, TimeSeriesPoint } from '@/lib/types';
+import type { EntityStatus, MetricKey, Pump, PumpRunState, TimeSeriesPoint } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import { useLiveData } from '@/lib/hooks/use-live-data';
 import { getPumpHistory } from '@/lib/services';
@@ -19,6 +19,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
 import { CHART } from '@/components/charts/chart-tokens';
+
+/**
+ * ค่าวัดของปั๊มที่เปิดดูย้อนหลังได้ — สลับกันในหน้าต่างเดียว ไม่ต้องแปะกราฟเล็กเต็มการ์ด
+ * ★ ความถี่ VFD แสดงเฉพาะปั๊มที่มีอินเวอร์เตอร์ ไม่งั้นจะได้กราฟว่างเปล่า
+ */
+const PUMP_METRICS = (hasVfd: boolean): MetricKey[] => [
+  'power_watt',
+  'current_amp',
+  'voltage_volt',
+  'energy_kwh',
+  'flow_lpm',
+  'pressure_bar',
+  ...(hasVfd ? (['vfd_frequency_hz'] as MetricKey[]) : []),
+  // ★ 'pump_run_state' อยู่ในทะเบียนแล้วแต่ยังไม่อยู่ใน MetricKey ของ lib/types.ts
+  //   การเพิ่มเข้า union = แก้สัญญากับทีมหลังบ้าน ต้องถามก่อน (RUNBOOK ข้อ 5) — ดูรายงาน Phase 7.5
+];
 
 /** สถานะการเดินของปั๊ม → สีสถานะกลางของระบบ */
 const RUN_STATE_TONE: Record<PumpRunState, EntityStatus> = {
@@ -67,6 +83,8 @@ export function PumpCard({ pump }: { pump: Pump }): JSX.Element {
               color={tone === 'critical' ? CHART.critical : CHART.water}
               height={38}
               label={`${t.pump.energy24h} ${pump.nameEn}`}
+              series={{ sourceType: 'pump', sourceId: pump.id, metric: 'power_watt', sourceName: locale === 'th' ? pump.name : pump.nameEn }}
+              seriesMetrics={PUMP_METRICS(pump.hasVfd)}
             />
             <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{t.pump.energy24h}</p>
           </div>

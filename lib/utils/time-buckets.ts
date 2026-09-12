@@ -106,7 +106,7 @@ export function coerceGranularity(
 /* ───────────────────────── ตัดขอบช่วงตามเขตเวลา ───────────────────────── */
 
 /** ชิ้นส่วนวันเวลาของ timestamp หนึ่ง ตามเขตเวลาที่ระบุ */
-interface ZonedParts {
+export interface ZonedParts {
   year: number;
   month: number; // 1–12
   day: number;
@@ -162,7 +162,7 @@ function offsetMs(timestamp: number, timeZone: string): number {
  * ★ ต้องคำนวณ offset สองรอบ เพราะรอบแรกใช้ค่า offset ของเวลาที่เดายังไม่ตรง
  *   (สำคัญกับไซต์ที่มี DST — Asia/Bangkok ไม่มี แต่เขียนให้ถูกไว้ก่อน)
  */
-function zonedTimeToMs(parts: ZonedParts, timeZone: string): number {
+export function zonedTimeToMs(parts: ZonedParts, timeZone: string): number {
   const naive = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   const guess = naive - offsetMs(naive, timeZone);
   return naive - offsetMs(guess, timeZone);

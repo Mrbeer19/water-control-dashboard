@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowDown, ArrowUp, Hand, Minus } from 'lucide-react';
-import type { Tank } from '@/lib/types';
+import type { MetricKey, Tank } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
 import {
   cn,
@@ -13,7 +13,11 @@ import {
 } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { ChartDetail } from '@/components/charts/chart-detail';
 import { TankGauge } from './tank-gauge';
+
+/** ค่าวัดของถังที่เปิดดูย้อนหลังได้ — ระดับเป็น %, ลิตร และอัตราไหลสุทธิเข้า-ออก */
+const TANK_METRICS: MetricKey[] = ['level_percent', 'level_liters', 'net_flow_lpm'];
 
 /** การ์ดถังน้ำหนึ่งใบ — ตัวเลขใหญ่พอสำหรับจอแขวนผนัง */
 export function TankCard({ tank }: { tank: Tank }): JSX.Element {
@@ -40,8 +44,22 @@ export function TankCard({ tank }: { tank: Tank }): JSX.Element {
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex gap-4 p-4">
+        {/* เกจเป็นภาพแทนค่าระดับน้ำ กดแล้วเปิดดูย้อนหลังได้เหมือนกราฟอื่น */}
         <div className="h-[150px] w-[110px] shrink-0">
-          <TankGauge percentFull={tank.percentFull} shape={tank.shape} markers={markers} />
+          <ChartDetail
+            title={locale === 'th' ? tank.name : tank.nameEn}
+            unit="%"
+            points={[]}
+            series={{
+              sourceType: 'tank',
+              sourceId: tank.id,
+              metric: 'level_percent',
+              sourceName: locale === 'th' ? tank.name : tank.nameEn,
+            }}
+            seriesMetrics={TANK_METRICS}
+          >
+            <TankGauge percentFull={tank.percentFull} shape={tank.shape} markers={markers} />
+          </ChartDetail>
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">

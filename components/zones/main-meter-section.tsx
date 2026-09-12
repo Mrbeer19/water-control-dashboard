@@ -82,7 +82,13 @@ export function MainMeterSection(): JSX.Element {
           </div>
 
           <div className="mt-3 border-t pt-3">
-            <Sparkline points={history} color={CHART.water} height={44} label={t.meter.flowNow} />
+            <Sparkline
+              points={history}
+              color={CHART.water}
+              height={44}
+              label={t.meter.flowNow}
+              series={{ sourceType: 'meter', sourceId: meter.id, metric: 'flow_lpm', sourceName: locale === 'th' ? meter.name : meter.nameEn }}
+            />
           </div>
 
           <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">

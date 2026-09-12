@@ -1,7 +1,7 @@
 'use client';
 
 import { CloudRain, Droplet, Gauge, Minus, Sun, Thermometer, TrendingDown, TrendingUp } from 'lucide-react';
-import type { EnvironmentSensor, TimeSeriesPoint } from '@/lib/types';
+import type { EnvironmentSensor, MetricKey, TimeSeriesPoint } from '@/lib/types';
 import { useLiveData } from '@/lib/hooks/use-live-data';
 import { getEnvironmentHistory } from '@/lib/services';
 import { useLocale } from '@/lib/i18n';
@@ -10,6 +10,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Sparkline } from '@/components/charts/sparkline';
 import { seriesColor } from '@/components/charts/chart-tokens';
+
+/**
+ * ค่าวัดที่จุดนี้มีจริง — จุดในอาคารไม่มี barometer / light / rain gauge
+ * ★ ห้ามใส่ metric ที่ค่าเป็น null มาให้เลือก เดี๋ยวจะได้กราฟศูนย์ทั้งเส้นซึ่งอ่านผิด (สเปก 7.5 D)
+ */
+function sensorMetrics(sensor: EnvironmentSensor): MetricKey[] {
+  return [
+    'temperature',
+    'humidity',
+    'heat_index',
+    ...(sensor.hasWeatherSensors ? (['pressure_hpa', 'illuminance_lux'] as MetricKey[]) : []),
+    ...(sensor.hasRainGauge ? (['rainfall'] as MetricKey[]) : []),
+  ];
+}
 
 /** การ์ดเซนเซอร์หนึ่งจุด — จุดกลางแจ้งมีค่าเพิ่มที่จุดในอาคารไม่มี */
 export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.Element {
@@ -56,7 +70,14 @@ export function EnvironmentCard({ sensor }: { sensor: EnvironmentSensor }): JSX.
             </p>
           </div>
           <div className="min-w-[80px] flex-1">
-            <Sparkline points={tempHistory ?? []} color={seriesColor(1)} height={38} label={t.env.last24h} />
+            <Sparkline
+              points={tempHistory ?? []}
+              color={seriesColor(1)}
+              height={38}
+              label={t.env.last24h}
+              series={{ sourceType: 'sensor', sourceId: sensor.id, metric: 'temperature', sourceName: locale === 'th' ? sensor.name : sensor.nameEn }}
+              seriesMetrics={sensorMetrics(sensor)}
+            />
             <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{t.env.last24h}</p>
           </div>
         </div>

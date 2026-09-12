@@ -27,3 +27,26 @@ export function resolveTimezone(fromSettings?: string | null): string {
     return DEFAULT_TIMEZONE;
   }
 }
+
+/**
+ * เขตเวลาที่ใช้ "แสดงผล" ทั้งแอป
+ *
+ * ★★ ต้องเป็นตัวเดียวกับที่ใช้ตัดขอบ bucket ★★
+ *   ถ้าตัดข้อมูลด้วย Asia/Bangkok แต่พิมพ์วันที่ด้วยเวลาเครื่อง
+ *   แท่ง "1 ก.ย." จะขึ้นป้ายว่า 31 ส.ค. บนเครื่องที่ตั้งเขตเวลาอื่น
+ *
+ * ★ เก็บเป็นตัวแปรระดับโมดูล ไม่ใช่ React context เพราะ util จัดรูปแบบ
+ *   ถูกเรียกจากที่ที่ไม่ใช่ component ด้วย (service, การสร้างข้อความแจ้งเตือน)
+ * ★ ค่าเริ่มต้นเหมือนกันทั้งฝั่ง server และ browser จึงไม่เกิด hydration mismatch
+ *   ค่าจาก settings จะถูกใส่ทีหลังตอน mount (ดู components/layout/app-shell.tsx)
+ */
+let displayTimezone = DEFAULT_TIMEZONE;
+
+export function getDisplayTimezone(): string {
+  return displayTimezone;
+}
+
+/** ตั้งเขตเวลาแสดงผลจาก SystemSettings — ค่าที่ใช้ไม่ได้จะถูกปัดกลับเป็นค่าสำรอง */
+export function setDisplayTimezone(fromSettings?: string | null): void {
+  displayTimezone = resolveTimezone(fromSettings);
+}

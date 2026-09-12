@@ -3,9 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Maximize2, X } from 'lucide-react';
+import type { MetricKey } from '@/lib/types';
+import { metricLabel } from '@/lib/config/metrics';
+import { getDisplayTimezone } from '@/lib/config/timezone';
+import { zonedParts, zonedTimeToMs } from '@/lib/utils/time-buckets';
 import { useLocale } from '@/lib/i18n';
 import { cn, formatNumber } from '@/lib/utils';
 import { AXIS_PROPS, TOOLTIP_STYLE, seriesColor } from './chart-tokens';
+import { ChartExplorer, urlPointsAt, type MetricSourceRef, type RangePreset } from './chart-explorer';
 
 /** จุดข้อมูลดิบหนึ่งจุดที่กราฟส่งเข้ามาให้หน้าต่างรายละเอียด */
 export interface DetailPoint {
@@ -47,12 +52,17 @@ function autoGrains(points: DetailPoint[]): Grain[] {
   return ['day', 'month', 'year'];
 }
 
-function bucketKey(grain: Grain, date: Date): string {
-  const y = date.getFullYear();
-  const m = `${date.getMonth() + 1}`.padStart(2, '0');
-  const d = `${date.getDate()}`.padStart(2, '0');
-  const h = `${date.getHours()}`.padStart(2, '0');
-  if (grain === 'year') return `${y}`;
+/**
+ * คีย์ของถัง — ตัดตามเขตเวลาที่ตั้งไว้ ไม่ใช่เวลาเครื่อง
+ * ★ เครื่องที่ตั้งเขตเวลาอื่นจะตัดวันคนละจุดกับที่หลังบ้านรวมมา (ดู lib/config/timezone.ts)
+ */
+function bucketKey(grain: Grain, timestamp: number): string {
+  const p = zonedParts(timestamp, getDisplayTimezone());
+  const y = `${p.year}`;
+  const m = `${p.month}`.padStart(2, '0');
+  const d = `${p.day}`.padStart(2, '0');
+  const h = `${p.hour}`.padStart(2, '0');
+  if (grain === 'year') return y;
   if (grain === 'month') return `${y}-${m}`;
   if (grain === 'hour') return `${y}-${m}-${d}-${h}`;
   return `${y}-${m}-${d}`;
@@ -64,9 +74,10 @@ function bucketLabel(grain: Grain, key: string, locale: 'th' | 'en'): string {
   // ปี พ.ศ. เฉพาะภาษาไทย ให้ตรงกับที่ formatDateTimeTH ใช้ทั้งแอป
   const shownYear = locale === 'th' ? year + 543 : year;
   if (grain === 'year') return `${shownYear}`;
-  const monthName = new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-GB', { month: 'short' }).format(
-    new Date(year, Number(m) - 1, 1),
-  );
+  const monthName = new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-GB', {
+    timeZone: getDisplayTimezone(),
+    month: 'short',
+  }).format(zonedTimeToMs({ year, month: Number(m), day: 1, hour: 12, minute: 0, second: 0 }, getDisplayTimezone()));
   if (grain === 'month') return `${monthName} ${shownYear}`;
   if (grain === 'hour') return `${Number(d)} ${monthName} ${h}:00`;
   return `${Number(d)} ${monthName}`;
@@ -80,7 +91,7 @@ function bucketLabel(grain: Grain, key: string, locale: 'th' | 'en'): string {
 function aggregate(points: DetailPoint[], grain: Grain, locale: 'th' | 'en'): Bucket[] {
   const map = new Map<string, Bucket>();
   for (const point of points) {
-    const key = bucketKey(grain, new Date(point.timestamp));
+    const key = bucketKey(grain, point.timestamp);
     const existing = map.get(key);
     if (existing === undefined) {
       map.set(key, { key, label: bucketLabel(grain, key, locale), total: point.value, count: 1, peak: point.value });
@@ -119,6 +130,16 @@ interface ChartDetailProps {
    * ★ ส่งมาแล้วจะไม่มีตัวสลับ วัน/เดือน/ปี เพราะข้อมูลไม่มีมิติเวลาให้รวม
    */
   categories?: { label: string; value: number }[];
+  /**
+   * ผูกกับค่าวัดจริง — ส่งมาแล้วจะใช้ chart explorer เต็มรูปแบบแทนการรวมข้อมูลฝั่งหน้าจอ
+   * ★ โหมดนี้คือของจริงตามสเปก Phase 7.4 (ช่วงเวลา / ความละเอียด / เทียบช่วง / เจาะลึก / เหตุการณ์)
+   *   โหมดเดิมที่รวมจาก points เหลือไว้ให้กราฟที่แกนนอนไม่ใช่เวลา (categories) เท่านั้น
+   */
+  series?: MetricSourceRef;
+  /** ช่วงเริ่มต้นของโหมด series */
+  defaultPreset?: Exclude<RangePreset, 'custom'>;
+  /** ค่าวัดอื่นของอุปกรณ์เดียวกันที่สลับดูได้ในหน้าต่างเดียว */
+  seriesMetrics?: MetricKey[];
   /** กราฟตัวเล็กที่แสดงอยู่บนการ์ด */
   children: ReactNode;
 }
@@ -138,6 +159,9 @@ export function ChartDetail({
   decimals = 1,
   grains,
   categories,
+  series,
+  defaultPreset,
+  seriesMetrics,
   children,
 }: ChartDetailProps): JSX.Element {
   const { t, locale } = useLocale();
@@ -150,8 +174,15 @@ export function ChartDetail({
   const [loading, setLoading] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // โหลดชุดยาวครั้งเดียวตอนเปิดหน้าต่างครั้งแรก
+  // เปิดลิงก์ที่ copy มา แล้ว query ชี้มาที่กราฟใบนี้ → เปิดหน้าต่างให้เลย
   useEffect(() => {
+    if (series === undefined) return;
+    if (urlPointsAt(series, seriesMetrics)) setOpen(true);
+  }, [series, seriesMetrics]);
+
+  // โหลดชุดยาวครั้งเดียวตอนเปิดหน้าต่างครั้งแรก (เฉพาะโหมดเดิม)
+  useEffect(() => {
+    if (series !== undefined) return;
     if (!open || loadPoints === undefined || deep !== null || loading) return;
     setLoading(true);
     void loadPoints()
@@ -159,7 +190,7 @@ export function ChartDetail({
       .finally(() => {
         setLoading(false);
       });
-  }, [open, loadPoints, deep, loading]);
+  }, [series, open, loadPoints, deep, loading]);
 
   const source = deep ?? points;
 
@@ -240,20 +271,32 @@ export function ChartDetail({
       <dialog
         ref={dialogRef}
         className={cn(
-          'w-[min(56rem,calc(100vw-2rem))] rounded-overlay border bg-card p-0 text-card-foreground shadow-xl',
+          // จอเล็ก: เต็มจอทั้งใบ ไม่มีขอบมน จะได้พื้นที่อ่านกราฟมากที่สุดและไม่มีการเลื่อนแนวนอน
+          'm-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none border-0 bg-card p-0 text-card-foreground',
+          'sm:m-auto sm:h-auto sm:w-[min(56rem,calc(100vw-2rem))] sm:rounded-overlay sm:border sm:shadow-xl',
           // จอเตี้ยหรือจอมือถือต้องเลื่อนดูในกล่องได้ ไม่ใช่ล้นออกนอกจอ
-          'max-h-[calc(100dvh-2rem)] overflow-auto',
+          'sm:max-h-[calc(100dvh-2rem)] overflow-auto',
           'backdrop:bg-black/50 backdrop:backdrop-blur-[1px]',
         )}
         aria-label={title}
       >
         <div className="flex items-start justify-between gap-3 border-b border-border-strong p-4">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold tracking-tight">{title}</h2>
-            <p className="text-xs text-muted-foreground">
-              {t.chart.points} {formatNumber(categories?.length ?? source.length, locale, 0)} · {unit}
-              {loading && ` · ${t.common.loading}`}
-            </p>
+            {/* ★ โหมด series ห้ามใช้ป้ายของการ์ด เพราะป้ายนั้นฝังช่วงเวลาไว้ตายตัว ("24 ชม.")
+                   ซึ่งจะขัดกับช่วงที่ผู้ใช้เลือกจริงในหน้าต่าง (บั๊กเดิมข้อ 3) */}
+            <h2 className="truncate text-lg font-semibold tracking-tight">
+              {series === undefined
+                ? title
+                : [metricLabel(series.metric, t), series.sourceName].filter(Boolean).join(' · ')}
+            </h2>
+            {series === undefined && (
+              <p className="text-xs text-muted-foreground">
+                {t.chart.points} {formatNumber(categories?.length ?? source.length, locale, 0)}
+                {/* หน่วยว่างต้องไม่เหลือจุดคั่นลอย ๆ ท้ายบรรทัด (บั๊กเดิมข้อ 6) */}
+                {unit !== '' && ` · ${unit}`}
+                {loading && ` · ${t.common.loading}`}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -268,6 +311,15 @@ export function ChartDetail({
         </div>
 
         <div className="space-y-4 p-4">
+          {series !== undefined ? (
+            <ChartExplorer
+              source={series}
+              open={open}
+              {...(defaultPreset === undefined ? {} : { defaultPreset })}
+              {...(seriesMetrics === undefined ? {} : { metrics: seriesMetrics })}
+            />
+          ) : (
+          <>
           {categories === undefined && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-control border bg-secondary p-0.5" role="group">
@@ -387,6 +439,8 @@ export function ChartDetail({
                 </table>
               </div>
             </>
+          )}
+          </>
           )}
         </div>
       </dialog>
