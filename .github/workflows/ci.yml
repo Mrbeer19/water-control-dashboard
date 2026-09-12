@@ -1,0 +1,31 @@
+# ตรวจงานอัตโนมัติทุก PR — เช็คลิสต์เดียวกับที่คนต้องรันเองก่อน push
+name: ตรวจงาน
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: ชนิดข้อมูล
+        run: npx tsc --noEmit
+      - name: ESLint
+        run: npm run lint
+      - name: สีตาม CI
+        run: npm run check:colors
+      - name: การตัดช่วงเวลา
+        run: npm run check:buckets
+      - name: ความสอดคล้องของข้อมูลกราฟ
+        run: npm run check:series
+      - name: build
+        run: npm run build

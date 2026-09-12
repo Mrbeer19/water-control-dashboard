@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+
 import { X } from 'lucide-react';
 import type { SystemSummary } from '@/lib/types';
 import { useLocale } from '@/lib/i18n';
@@ -14,6 +14,7 @@ import { LangToggle } from './lang-toggle';
 import { ThemeToggle } from './theme-toggle';
 import { UserMenu } from './user-menu';
 import { NAV_SECTIONS } from './nav-items';
+import { useRoutePath } from '@/lib/hooks/use-route-path';
 
 interface SidebarProps {
   /** เปิดอยู่หรือไม่ (ใช้เฉพาะ mobile — desktop แสดงถาวร) */
@@ -22,7 +23,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps): JSX.Element {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const { t } = useLocale();
   const { data: unread } = useLiveData(getUnreadAlertCount, []);
   // กล่องสรุประบบท้าย sidebar — ดึงจาก service เดิม ห้ามสร้าง service ใหม่ (BRANDING_SPEC ข้อ 6.1)

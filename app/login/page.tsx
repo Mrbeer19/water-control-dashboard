@@ -12,6 +12,7 @@ import { LangToggle } from '@/components/layout/lang-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { BrandLogo } from '@/components/layout/brand-logo';
 import { LoginSuccess } from '@/components/layout/login-success';
+import { assetPath } from '@/lib/config/asset-path';
 
 const INPUT_CLASS =
   'h-10 w-full rounded-control border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -68,7 +69,7 @@ export default function LoginPage(): JSX.Element {
       */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/brand/login-scene.jpg)' }}
+        style={{ backgroundImage: `url(${assetPath('/brand/login-scene.jpg')})` }}
         aria-hidden
       />
       {/*

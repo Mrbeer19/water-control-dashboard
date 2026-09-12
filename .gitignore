@@ -17,3 +17,6 @@ docs/design-refs/
 
 # เครื่องมือวัด layout ตอนพัฒนา ไม่ต้องขึ้น repo และห้ามติดไปกับ build
 public/__measure.html
+
+# ไฟล์ที่ได้จาก build แบบไฟล์นิ่ง (เดโม) — ไม่ต้องขึ้น repo
+out/

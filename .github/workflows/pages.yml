@@ -1,0 +1,54 @@
+# เดโมให้เพื่อนในทีมเปิดดูผ่านเว็บโดยไม่ต้องโหลดลงเครื่อง
+#
+# ★ ต้องเปิด GitHub Pages ที่ Settings → Pages → Source = GitHub Actions ก่อน
+#   repo แบบ private บนบัญชีฟรียังเปิด Pages ไม่ได้ (ดูหมายเหตุใน README)
+# ★ เดโมเป็นไฟล์นิ่งล้วน ใช้ mock data เหมือนตอนรันในเครื่อง ไม่มีข้อมูลจริงของโรงงาน
+# ★ ไม่กระทบ build ที่ขึ้น VM จริง เพราะโหมด export เปิดด้วย env เท่านั้น
+name: เดโมบน GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: build แบบไฟล์นิ่ง
+        env:
+          STATIC_EXPORT: 'true'
+          # เดโมอยู่ใต้ /<ชื่อ repo>/ ต้องบอก Next ไม่งั้นรูปกับ JS จะ 404
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+      - name: กัน GitHub Pages เอา Jekyll มาประมวลผลโฟลเดอร์ _next
+        run: touch out/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { assetPath } from '@/lib/config/asset-path';
 
 /**
  * โลโก้ Kasetphand — docs/BRANDING_SPEC.md ข้อ 5
@@ -41,7 +42,7 @@ export function BrandLogo({
       style={{ padding: `${Math.round(h / 10)}px` }}
     >
       <Image
-        src="/brand/kasetphand-logo.png"
+        src={assetPath('/brand/kasetphand-logo.png')}
         alt="Kasetphand Group"
         width={w}
         height={h}

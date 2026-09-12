@@ -5,12 +5,13 @@ import { themeColor } from '@/lib/config/theme';
 import { LocaleProvider } from '@/lib/i18n';
 import { AuthGate } from '@/components/layout/auth-gate';
 import { THEME_INIT_SCRIPT, ThemeProvider } from '@/components/layout/theme-provider';
+import { assetPath } from '@/lib/config/asset-path';
 
 export const metadata: Metadata = {
   title: 'ระบบมอนิเตอร์และควบคุมการใช้น้ำ',
   description: 'แดชบอร์ดมอนิเตอร์และควบคุมการใช้น้ำในโรงงาน — ทำงานแบบ on-premise 100%',
   // ไอคอนต้องอยู่ในโปรเจกต์ ห้ามชี้ไป CDN
-  icons: { icon: '/favicon.svg' },
+  icons: { icon: assetPath('/favicon.svg') },
 };
 
 export const viewport: Viewport = {

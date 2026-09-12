@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { AuthSession } from '@/lib/types';
 import { getSession } from '@/lib/services';
+import { useRoutePath } from '@/lib/hooks/use-route-path';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppShell } from './app-shell';
 
@@ -18,7 +19,7 @@ const PUBLIC_PATHS = ['/login'];
  *   ด้วย middleware ที่ตรวจ cookie ก่อนส่ง HTML ออกมา
  */
 export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [checked, setChecked] = useState(false);

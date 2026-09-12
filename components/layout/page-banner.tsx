@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useRoutePath } from '@/lib/hooks/use-route-path';
 import type { Dictionary } from '@/lib/i18n';
 import { useLocale } from '@/lib/i18n';
+import { assetPath } from '@/lib/config/asset-path';
 
 /**
  * แถบหัวเรื่องของแต่ละหน้า — เป็น "ส่วน" ของตัวเอง คั่นระหว่าง header กับเนื้อหา
@@ -48,7 +49,7 @@ const ROUTE_TITLE: Record<
 };
 
 export function PageBanner(): JSX.Element | null {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const { t } = useLocale();
   const entry = ROUTE_TITLE[pathname];
   if (entry === undefined) return null;
@@ -58,7 +59,7 @@ export function PageBanner(): JSX.Element | null {
       <div
         aria-hidden
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(/brand/banners/${entry.art}.jpg)` }}
+        style={{ backgroundImage: `url(${assetPath(`/brand/banners/${entry.art}.jpg`)})` }}
       />
       {/*
         ม่านไล่สีจากผิวการ์ดด้านซ้ายไปโปร่งด้านขวา
