@@ -20,3 +20,14 @@ public/__measure.html
 
 # ไฟล์ที่ได้จาก build แบบไฟล์นิ่ง (เดโม) — ไม่ต้องขึ้น repo
 out/
+
+# backend — รหัสผ่านจริงอยู่ใน .env ห้ามขึ้น repo สาธารณะ
+backend/.env
+backend/data/
+backend/dist/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/.venv/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/mosquitto/passwd
