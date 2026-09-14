@@ -23,6 +23,14 @@ class Route:
     entity_id: str
 
 
+def is_command(topic: str, base_topic: str) -> bool:
+    """คำสั่งขาออกที่ api/notifier/dispatcher ส่งถึงอุปกรณ์ (…/cmd) — ingest subscribe `#` จึงเห็นด้วย
+    ★ ไม่ใช่ข้อมูลเข้า ข้ามเงียบ ๆ ไม่งั้นทุกคำสั่งสั่งวาล์ว บัซเซอร์ รีบูต จะถูกนับเป็นข้อความทิ้งพร้อมคำเตือน
+    """
+    prefix = base_topic.rstrip("/") + "/"
+    return topic.startswith(prefix) and topic.rsplit("/", 1)[-1] == "cmd"
+
+
 def route(topic: str, base_topic: str) -> Route | None:
     prefix = base_topic.rstrip("/") + "/"
     if not topic.startswith(prefix):

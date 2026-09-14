@@ -21,7 +21,7 @@ from .log import log
 from .metrics import Metrics
 from .normalize import Normalized, PayloadError, normalize_status, normalize_telemetry
 from .redis_pub import RedisPublisher
-from .router import route
+from .router import is_command, route
 from .rules import RuleEngine
 from .states import StateTracker
 from .writer import Writer, connect
@@ -116,6 +116,8 @@ class Processor(threading.Thread):
     def _handle_message(self, topic: str, raw: bytes, recv_ts: float) -> None:
         self._metrics.inc("messages_total")
         recv_time = datetime.fromtimestamp(recv_ts, tz=UTC)
+        if is_command(topic, self._cfg.base_topic):
+            return                      # คำสั่งขาออกของระบบเอง ไม่ใช่ข้อมูลเข้า — ไม่นับเป็นข้อความทิ้ง
         found = route(topic, self._cfg.base_topic)
         if found is None:
             self._drop("unknown_topic", topic=topic)

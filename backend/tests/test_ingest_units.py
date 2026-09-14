@@ -7,7 +7,7 @@ import pytest
 from ingest.cache import Cache, Entity, Threshold
 from ingest.liveness import Liveness
 from ingest.normalize import PayloadError, heat_index, normalize_status, normalize_telemetry
-from ingest.router import route
+from ingest.router import is_command, route
 from ingest.rules import RuleEngine
 from ingest.spool import Spool
 from ingest.states import StateTracker
@@ -31,6 +31,14 @@ def test_route_telemetry_status_and_main_meter_alias():
                                    "plant/water/tank//telemetry", "plant/water/tank/tank-1/telemetry/extra"])
 def test_route_rejects_unknown(topic):
     assert route(topic, "plant/water") is None
+
+
+def test_outbound_commands_are_recognised_so_ingest_skips_them_without_warning():
+    for topic in ("plant/water/valve/valve-zone-8/cmd", "plant/water/buzzer/cmd", "plant/water/esp32-vip/cmd"):
+        assert is_command(topic, "plant/water")
+    for topic in ("plant/water/tank/tank-1/telemetry", "plant/water/valve/valve-zone-1/feedback",
+                  "other/site/buzzer/cmd", "plant/water/cmd-log/x/telemetry"):
+        assert not is_command(topic, "plant/water")
 
 
 # ─────────────── normalize ───────────────

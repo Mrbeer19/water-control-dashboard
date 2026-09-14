@@ -340,6 +340,11 @@ def test_s14_degrading_pump1_draws_35_percent_more_power(db, env):
 
 def test_s01_normal_run_28_streams_no_missing_rows_lag_under_2s(db, env):
     duration = int(os.environ.get("S1_DURATION", "600"))
+    # ★ เริ่มจากฐานที่สะอาด: S13/S14 ก่อนหน้าเทข้อความย้อนหลังเป็นหมื่น ค่า lag สูงสุดของหน้าต่าง 1 นาทียังค้างอยู่ตอนเริ่มเทสนี้
+    #   (เคยได้ 61,674 ms ห้าจุดแรกแล้วลดเหลือ 1,437 ms) — รอให้พ้นก่อน ช่วง 600 วินาทีของ S1 ยังต้องต่ำกว่า 2 วินาทีทุกจุด
+    ingest_drained()
+    wait_for(lambda: (ingest_metrics().get("max_flush_lag_ms_1m") or 0) < 2000, 120,
+             "lag ของเทสก่อนหน้ายังไม่พ้นหน้าต่าง 1 นาที")
     report_path = BACKEND / "data" / "s01-report.json"
     process = subprocess.Popen(
         [sys.executable, "-m", "simulator.plant", "--host", "127.0.0.1", "--duration", str(duration),

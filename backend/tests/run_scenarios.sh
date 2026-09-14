@@ -20,7 +20,9 @@ case "$target" in
 esac
 
 mkdir -p data
+# ★ ระบุไฟล์เสมอ — ไม่ระบุ pytest จะเก็บ integration test ทุกไฟล์ ซึ่งเทสเฟส 5–6 เปิด simulator คืนตอนจบ
+#   simulator กลับมาส่งค่าในนามอุปกรณ์เดียวกันกลางชุด แล้ว S4 รอความเงียบไม่มีวันมา
 if [ -n "$selector" ]; then
-  exec .venv/bin/pytest -m integration -k "$selector" -v -rA -s
+  exec .venv/bin/pytest -m integration tests/test_scenarios.py -k "$selector" -v -rA -s
 fi
-exec .venv/bin/pytest -m integration -v -rA -s --junitxml=data/scenario-report.xml
+exec .venv/bin/pytest -m integration tests/test_scenarios.py -v -rA -s --junitxml=data/scenario-report.xml
