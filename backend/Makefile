@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: env passwd up down reset ps logs psql
+.PHONY: env passwd up down reset ps logs psql venv lint test scenarios sim sim-stop
 
 env:            ## สร้าง .env จากตัวอย่าง (แล้วแก้รหัสทุกตัวก่อนใช้งานจริง)
 	@test -f .env || cp .env.example .env
@@ -29,3 +29,22 @@ logs:
 
 psql:
 	$(COMPOSE) exec timescaledb sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
+venv:           ## เครื่องมือทดสอบบนเครื่อง (ต้องมีเน็ตครั้งแรก)
+	python3 -m venv .venv
+	.venv/bin/pip install -r ingest/requirements.txt -r simulator/requirements.txt pytest==8.4.2 ruff==0.8.6
+
+lint:
+	.venv/bin/ruff check ingest simulator tests
+
+test:           ## unit test — ไม่ต้องมี docker
+	.venv/bin/pytest -q
+
+scenarios:      ## สถานการณ์ S1–S14 กับ stack จริง (make up ก่อน)
+	tests/run_scenarios.sh all
+
+sim:            ## เปิด simulator 28 stream ต่อเนื่อง
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator
+
+sim-stop:
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml stop simulator

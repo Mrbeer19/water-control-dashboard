@@ -1,0 +1,21 @@
+# simulator — ใช้คู่กับ docker-compose.yml ตอนพัฒนา
+#   docker compose -f docker-compose.yml -f docker-compose.sim.yml up -d
+#
+# ★ ห้ามเปิดบนเครื่องจริงในโรงงาน — simulator ส่งค่าในนามอุปกรณ์จริงทุกตัว
+
+services:
+  simulator:
+    build: ./simulator
+    image: water-backend/simulator:0.2.0
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    environment:
+      TZ: Asia/Bangkok
+      MQTT_HOST: mosquitto
+      MQTT_DEVICE_PASSWORD: ${MQTT_DEVICE_PASSWORD:?ต้องตั้งใน .env}
+    depends_on:
+      mosquitto: { condition: service_healthy }

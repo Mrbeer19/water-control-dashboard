@@ -89,6 +89,38 @@ services:
       timeout: 3s
       retries: 6
 
+  ingest:
+    build: ./ingest
+    image: water-backend/ingest:0.2.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      MQTT_HOST: mosquitto
+      MQTT_USER: ingest
+      MQTT_PASSWORD: ${MQTT_PASSWORD_INGEST:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      SPOOL_DIR: /data/spool
+    ports:
+      - "127.0.0.1:8080:8080"          # /health · /metrics
+    volumes:
+      - ingest-spool:/data/spool       # ★ spool ต้องรอด container รีสตาร์ท
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+
 volumes:
   pgdata:
   mosqdata:
+  ingest-spool:

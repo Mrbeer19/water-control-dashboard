@@ -60,6 +60,49 @@ SELECT water_cost(45);                   -- 954.98 = (30×17 + 15×19.50 + 90) �
 mosquitto_pub -V mqttv5 -q 1 -u dev-esp32-pond -P <รหัส> -t plant/water/tank/tank-1/telemetry -m x
 ```
 
+## ingest — MQTT → TimescaleDB
+
+`ingest` subscribe `plant/water/#` แล้วเขียนเป็นก้อน (200 แถว หรือ 1 วินาที) · เปิด `http://127.0.0.1:8080/health` และ `/metrics`
+
+| ขั้น | ทำอะไร |
+|---|---|
+| router | แกะ topic → ตาราง (`meter/main` = entity `meter-main`) |
+| normalize | ค่าที่ไม่มี = `null` · เกินช่วงทางกายภาพ = `null` แต่ยังเก็บแถว · `at` ไม่มี offset = ทิ้งทั้งข้อความ |
+| derive | ถัง: `volume_l = tank_volume()` ใน DB · env: `heat_index_c` |
+| rules | เกินเกณฑ์ **3 รอบติด** ถึงเปิด alert · ปกติ 3 รอบติดถึงปิด (`alerts.kind` = `AlertCode`) |
+| states | `pump_run_state` · `online_state` ลง `state_spans` |
+| liveness | ทาง A: LWT · ทาง B: เงียบเกิน 30 วิ (ตรวจทุก 5 วิ) → `DEVICE_OFFLINE` |
+| ทนความล้มเหลว | DB ล่ม → `/data/spool/*.ndjson` แล้ว replay เอง · broker ล่ม → reconnect แบบ backoff |
+
+### สัญญา payload (⚠️ รอทีมฮาร์ดแวร์ยืนยันชื่อ field — ดู `DECISIONS.md` D-13)
+
+ทุก telemetry: `{"deviceId": "...", "at": "2026-09-13T13:45:00+07:00", "seq": 123?, "values": {...}}`
+
+| topic | `values` |
+|---|---|
+| `tank/<id>/telemetry` | `levelMeters` `flowInLpm` `flowOutLpm` |
+| `pump/<id>/telemetry` | `voltage` `currentAmp` `powerWatt` `energyKwh` `flowLpm` `pressureBar` `vfdHz` `runState` |
+| `meter/<id>/telemetry` · `meter/main/telemetry` | `pulseCount` `volumeM3` `flowLpm` `inletPressureBar` |
+| `env/<id>/telemetry` | `temperatureC` `humidityPct` `pressureHpa` `lux` `rainMm` (ฝนต่อรอบส่ง) |
+| `power/<id>/telemetry` | `phases: {"L1": {...}, "L2": {...}, "L3": {...}}` หรือ `{"single": {...}}` แต่ละเฟสมี `voltage` `currentAmp` `powerWatt` `energyKwh` `pf` `frequencyHz` |
+| `device/<id>/status` | (ไม่อยู่ใน `values`) `rssi` `uptimeSeconds` `freeHeapBytes` `reconnectCount` `lastError` · LWT = `{"deviceId": "...", "online": false}` retained |
+
+## simulator และสถานการณ์ทดสอบ
+
+```bash
+# เดินข้อมูล 28 stream แบบเวลาจริงต่อเนื่อง (ใน docker)
+docker compose -f docker-compose.yml -f docker-compose.sim.yml up -d
+
+# เติมข้อมูลย้อนหลังเร็ว ๆ จากเครื่อง (ต้องมี .venv)
+set -a; . ./.env; set +a
+.venv/bin/python -m simulator.plant --fast --start 2026-09-01T00:00:00+07:00 --duration 86400 \
+  [--scenario night_leak] [--scenario pump_degrading]
+
+make test                        # unit test ไม่ต้องมี docker
+tests/run_scenarios.sh S9        # สถานการณ์เดียว (ต้อง make up และปิด simulator ก่อน)
+tests/run_scenarios.sh all       # S1–S14 ทั้งชุด (~20 นาที) รายงานอยู่ที่ data/scenario-report.xml
+```
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

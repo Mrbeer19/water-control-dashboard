@@ -61,12 +61,14 @@ CREATE TABLE env_telemetry (
   PRIMARY KEY (entity_id, time)
 );
 
--- ★ ตู้ 3 เฟสส่ง 3 แถวต่อรอบ จึงต้องมี phase ใน PK · ยอดรวมตู้ = SUM ข้าม phase
+-- ★ ตู้ 3 เฟสส่ง 3 แถวต่อรอบ จึงต้องมี phase ใน PK
+-- ★ ingest เขียนแถว phase='total' (ยอดรวมทั้งตู้ ณ เวลาเดียวกัน) เพิ่มให้ตู้ 3 เฟส
+--   ตู้เฟสเดียวใช้แถว 'single' เป็นยอดทั้งตู้ได้เลย · ห้าม SUM ข้ามเฟสเองตอน query (จะนับ total ซ้ำ)
 CREATE TABLE power_telemetry (
   time       TIMESTAMPTZ NOT NULL,
   recv_time  TIMESTAMPTZ NOT NULL DEFAULT now(),
   entity_id  TEXT NOT NULL REFERENCES entities(entity_id),
-  phase      TEXT NOT NULL CHECK (phase IN ('L1', 'L2', 'L3', 'single')),
+  phase      TEXT NOT NULL CHECK (phase IN ('L1', 'L2', 'L3', 'single', 'total')),
   seq        BIGINT,
   voltage    DOUBLE PRECISION,
   current    DOUBLE PRECISION,

@@ -148,11 +148,13 @@ CREATE TABLE counter_resets (
   id           BIGSERIAL PRIMARY KEY,
   entity_id    TEXT NOT NULL REFERENCES entities(entity_id),
   metric       TEXT NOT NULL,
+  phase        TEXT,                                -- เฉพาะตู้ไฟ (ตัวนับแยกต่อเฟส)
   at           TIMESTAMPTZ NOT NULL,
   value_before DOUBLE PRECISION,
   value_after  DOUBLE PRECISION
 );
-CREATE INDEX counter_resets_lookup_idx ON counter_resets (entity_id, metric, at);
+-- ★ unique เพื่อให้ ingest replay spool ซ้ำได้โดยไม่เกิดแถวซ้ำ
+CREATE UNIQUE INDEX counter_resets_uq ON counter_resets (entity_id, metric, COALESCE(phase, ''), at);
 
 CREATE TABLE commands (
   command_id    UUID PRIMARY KEY,

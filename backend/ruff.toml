@@ -1,0 +1,8 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = [".venv"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# UP038 ถูกประกาศเลิกใช้ในตัว ruff เอง และ isinstance แบบ tuple เร็วกว่า X | Y
+ignore = ["UP038"]

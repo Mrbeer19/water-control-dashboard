@@ -1,0 +1,75 @@
+# ค่าตั้งต้นของโรงงานจำลอง — คัดจาก lib/mock/hardware.ts · network.ts · organization.ts
+# ★ simulator คือ "ฮาร์ดแวร์ปลอม" จึงรู้ผังท่อของโรงงานนี้ได้ ส่วน ingest/API ต้องอ่านทุกอย่างจาก DB
+
+tick_seconds: 2
+status_every_seconds: 30
+timezone: Asia/Bangkok
+pump_alternation_hours: 12
+
+# ความต้องการใช้น้ำตามกะ (คูณกับ baseline) ชั่วโมง 0–23 ตามเวลาไทย
+demand_by_hour: [0.35, 0.30, 0.30, 0.30, 0.35, 0.50, 0.80, 1.10, 1.25, 1.20, 1.15, 1.10,
+                 0.90, 1.10, 1.20, 1.20, 1.15, 1.05, 0.90, 0.75, 0.60, 0.50, 0.45, 0.40]
+
+tanks:
+  tank-1: {device: esp32-pump-house, capacity_l: 70000, initial_percent: 68,
+           profile: [[0.0, 0], [3.5, 70000]]}
+  tank-2: {device: esp32-vip, capacity_l: 3000, initial_percent: 74,
+           profile: [[0.0, 0], [2.0, 3000]]}
+  tank-3: {device: esp32-pond, capacity_l: 490000, initial_percent: 92,
+           profile: [[0.0, 0], [0.5, 42000], [1.0, 92000], [1.5, 148000], [2.0, 209000],
+                     [2.5, 275000], [3.0, 345000], [3.5, 416000], [4.0, 490000]]}
+
+pumps:
+  pump-1: {device: esp32-pump-house, role: main, source: tank-1, rated_flow_lpm: 220, rated_power_w: 3000,
+           vfd: false, initial_energy_kwh: 25237.8,
+           serves: [zone-1, zone-2, zone-3, zone-4, zone-5, zone-6, zone-7]}
+  pump-2: {device: esp32-pump-house, role: main, source: tank-1, rated_flow_lpm: 220, rated_power_w: 3000,
+           vfd: false, initial_energy_kwh: 24318.6,
+           serves: [zone-1, zone-2, zone-3, zone-4, zone-5, zone-6, zone-7]}
+  pump-3: {device: esp32-vip, role: vip, source: tank-2, rated_flow_lpm: 60, rated_power_w: 750,
+           vfd: true, initial_energy_kwh: 2456.9, serves: [zone-8]}
+
+zones:
+  zone-1: {meter: meter-zone-1, device: esp32-meter-bank, baseline_lpm: 46, initial_m3: 41250.0}
+  zone-2: {meter: meter-zone-2, device: esp32-meter-bank, baseline_lpm: 38, initial_m3: 33980.0}
+  zone-3: {meter: meter-zone-3, device: esp32-meter-bank, baseline_lpm: 20, initial_m3: 17820.0}
+  zone-4: {meter: meter-zone-4, device: esp32-meter-bank, baseline_lpm: 13, initial_m3: 11640.0}
+  zone-5: {meter: meter-zone-5, device: esp32-meter-bank, baseline_lpm: 28, initial_m3: 25010.0}
+  zone-6: {meter: meter-zone-6, device: esp32-meter-bank, baseline_lpm: 54, initial_m3: 48300.0}
+  zone-7: {meter: meter-zone-7, device: esp32-meter-bank, baseline_lpm: 16, initial_m3: 14290.0}
+  zone-8: {meter: meter-zone-8, device: esp32-vip, baseline_lpm: 9, initial_m3: 8030.0}
+
+meter_k_factor: 450   # pulse ต่อ m³
+
+main_meter: {device: esp32-meter-main, baseline_lpm: 380, initial_m3: 251400.0}
+
+env:
+  env-pump-room: {device: esp32-pump-house, outdoor: false, base_temp: 34.5, base_humidity: 68}
+  env-control-cabinet: {device: esp32-elec-2, outdoor: false, base_temp: 38.2, base_humidity: 52}
+  env-outdoor: {device: esp32-env-outdoor, outdoor: true, base_temp: 31.8, base_humidity: 74,
+                base_pressure_hpa: 1009.4, peak_lux: 92000}
+
+power:
+  elec-production: {device: esp32-elec-1, three_phase: true, baseline_w: 84000, initial_energy_kwh: 212400.0}
+  elec-facility: {device: esp32-elec-2, three_phase: true, baseline_w: 21500, initial_energy_kwh: 54300.0}
+  elec-dormitory: {device: esp32-elec-3, three_phase: true, baseline_w: 17200, initial_energy_kwh: 43500.0}
+  elec-executive: {device: esp32-elec-4, three_phase: false, baseline_w: 6400, initial_energy_kwh: 16100.0}
+
+devices:
+  esp32-pump-house: {rssi: -52, heap: 158000, uptime: 812600, reconnects: 1}
+  esp32-meter-bank: {rssi: -58, heap: 166000, uptime: 640200, reconnects: 3}
+  esp32-valve-bank: {rssi: -60, heap: 172000, uptime: 640100, reconnects: 3}
+  esp32-vip: {rssi: -61, heap: 160000, uptime: 445100, reconnects: 6}
+  esp32-pond: {rssi: -79, heap: 174000, uptime: 210400, reconnects: 21}
+  esp32-meter-main: {rssi: -74, heap: 175000, uptime: 702100, reconnects: 9}
+  esp32-env-outdoor: {rssi: -77, heap: 132000, uptime: 58900, reconnects: 38}
+  esp32-elec-1: {rssi: -57, heap: 168000, uptime: 420000, reconnects: 5}
+  esp32-elec-2: {rssi: -63, heap: 168000, uptime: 453100, reconnects: 8}
+  esp32-elec-3: {rssi: -80, heap: 168000, uptime: 486200, reconnects: 44}
+  esp32-elec-4: {rssi: -66, heap: 168000, uptime: 519300, reconnects: 7}
+
+scenarios:
+  # S13 รั่วกลางคืน — น้ำหายหลังปั๊มแต่ก่อนมิเตอร์โซน (มิเตอร์โซนจึงไม่เห็น)
+  night_leak: {zone: zone-7, lpm: 11.4, from_hour: 22, to_hour: 5}
+  # S14 ปั๊มเสื่อม — ใบพัดสึก กินไฟเพิ่มที่อัตราไหลเท่าเดิม
+  pump_degrading: {pump: pump-1, power_factor: 1.35}
