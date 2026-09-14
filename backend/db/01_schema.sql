@@ -188,31 +188,54 @@ CREATE TABLE audit_log (
 CREATE INDEX audit_log_at_idx ON audit_log (at DESC);
 
 CREATE TABLE alerts (
-  alert_id        BIGSERIAL PRIMARY KEY,
-  entity_id       TEXT REFERENCES entities(entity_id),
-  kind            TEXT NOT NULL,
-  severity        TEXT NOT NULL,                    -- info | warning | critical
-  started_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  ended_at        TIMESTAMPTZ,
-  peak_value      NUMERIC,
-  threshold       NUMERIC,
-  read_at         TIMESTAMPTZ,
-  acknowledged_by TEXT,
-  acknowledged_at TIMESTAMPTZ
+  alert_id          BIGSERIAL PRIMARY KEY,
+  entity_id         TEXT REFERENCES entities(entity_id),
+  kind              TEXT NOT NULL,                  -- AlertCode ใน lib/types.ts
+  severity          TEXT NOT NULL,                  -- info | warning | critical
+  started_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at          TIMESTAMPTZ,
+  peak_value        NUMERIC,
+  threshold         NUMERIC,
+  read_at           TIMESTAMPTZ,
+  -- ★ เกิดซ้ำภายใน notifications.deduplicationWindowMinutes = เปิดแถวเดิมแล้วนับเพิ่ม ไม่สร้างแถวใหม่
+  occurrence_count  INT NOT NULL DEFAULT 1,
+  anomaly_id        BIGINT,                         -- ai_anomalies.id เมื่อ alert มาจากผลของทีม AI
+  notified_severity TEXT                            -- ระดับที่ notifier ประเมินแล้ว · null = ยังไม่ส่ง/เลื่อนเพราะช่วงเงียบ
 );
 -- ★ กันสแปม: เหตุชนิดเดียวกันของ entity เดียวกันเปิดค้างได้แค่แถวเดียว
 CREATE UNIQUE INDEX alerts_open_uq ON alerts (entity_id, kind) WHERE ended_at IS NULL;
 CREATE INDEX alerts_started_idx ON alerts (started_at DESC);
 
-CREATE TABLE notification_log (
-  id          BIGSERIAL PRIMARY KEY,
-  alert_id    BIGINT REFERENCES alerts(alert_id),
-  channel     TEXT NOT NULL,
-  sent_at     TIMESTAMPTZ,
-  ok          BOOLEAN,
-  error       TEXT,
-  retry_count INT NOT NULL DEFAULT 0
+-- การรับทราบ — ★ รับทราบ ≠ ปัญหาหาย (alert ยังเปิดจนกว่า ingest จะปิด) · snooze = เลื่อนการเตือนซ้ำ
+CREATE TABLE alert_acknowledgements (
+  id              BIGSERIAL PRIMARY KEY,
+  alert_id        BIGINT NOT NULL REFERENCES alerts(alert_id) ON DELETE CASCADE,
+  user_id         TEXT NOT NULL REFERENCES users(user_id),
+  acknowledged_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  note            TEXT,
+  snooze_minutes  INT CHECK (snooze_minutes BETWEEN 1 AND 1440)
 );
+CREATE INDEX alert_ack_alert_idx ON alert_acknowledgements (alert_id, acknowledged_at DESC);
+
+-- การส่งแจ้งเตือน หนึ่งแถว = หนึ่งช่องทาง × หนึ่งผู้รับ (api/notifier เป็นคนเขียน)
+CREATE TABLE notification_log (
+  id              BIGSERIAL PRIMARY KEY,
+  alert_id        BIGINT NOT NULL REFERENCES alerts(alert_id) ON DELETE CASCADE,
+  channel         TEXT NOT NULL,                    -- line | email | sms | buzzer | webhook
+  recipient       TEXT NOT NULL,
+  reason          TEXT NOT NULL DEFAULT 'raised',   -- raised | escalated | unacknowledged | snooze_ended
+  state           TEXT NOT NULL DEFAULT 'queued'
+    CHECK (state IN ('queued', 'sending', 'delivered', 'failed')),
+  attempts        INT NOT NULL DEFAULT 0,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_attempt_at TIMESTAMPTZ,
+  delivered_at    TIMESTAMPTZ,
+  error           TEXT
+);
+CREATE INDEX notification_log_alert_idx ON notification_log (alert_id, created_at DESC);
+CREATE INDEX notification_log_due_idx ON notification_log (next_attempt_at) WHERE state = 'queued';
 
 -- ─────────────── ตารางของทีม AI (backend แค่เสิร์ฟ ไม่เขียนโมเดล) ───────────────
 

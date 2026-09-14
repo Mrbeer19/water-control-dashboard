@@ -132,3 +132,32 @@ ingest ยังไม่รับ feedback วาล์ว และยัง�
 พยากรณ์รอผลจากทีม AI · จำนวนคนยังไม่มีแหล่งข้อมูล — UI ต้อง render ได้เมื่อไม่มีสองอย่างนี้
 
 ### 19. ℹ️ `SystemSummary.todayEnergyKwh` = พลังงานปั๊ม + ตู้ไฟรายแผนก (จากตัวนับจริง ไม่ใช่ `power × ชั่วโมง` แบบ mock)
+
+---
+
+## การแจ้งเตือน (เฟส 4b)
+
+### 20. ℹ️ `messageTh` / `messageEn` / `unit` ของ alert มาจากเซิร์ฟเวอร์ตาม `AlertCode` · id ของ alert/ack/delivery เป็นเลขในรูป string
+
+preview (`/api/alerts/:id/preview`) ประกอบด้วยฟังก์ชันเดียวกับที่ notifier ส่งจริง — ข้อความตรงกันทุกตัวอักษร
+
+### 21. ℹ️ `POST /api/notifications/deliveries/:id/retry` คืน `deliveryState: 'queued'` ทันที ผลจริงมาในรอบถัดไป (≤ 2 วินาที)
+
+ต่างจาก mock ที่คืน `delivered` เลย → UI ควรดึงรายการใหม่หลังกด · รายการที่ส่งถึงแล้วตอบ 409 `ALREADY_DELIVERED`
+
+### 22. ℹ️ `/api/alerts` รับตัวกรองแบบ `?severity=critical,warning` หรือส่งชื่อซ้ำ · มี `departmentIds` · `from`/`to` เทียบกับ `raisedAt`
+
+`occurrenceCount` > 1 = เหตุเดิมกลับมาภายในหน้าต่างกันสแปม (แถวเดิม ไม่แจ้งซ้ำ — D-35)
+
+### 23. 👉 ถึงทีมฮาร์ดแวร์: บัซเซอร์ต้อง subscribe `plant/water/buzzer/cmd`
+
+```json
+{ "cabinet": "ตู้คอนโทรลหลัก", "alertId": "12", "code": "ENV_TEMP_HIGH", "severity": "critical",
+  "sourceId": "env-control-cabinet", "pattern": "continuous", "at": "2026-09-14T16:54:43.000+07:00" }
+```
+
+`pattern` = `continuous` (วิกฤต) หรือ `beep` · ตู้ไหนดังดูจาก `cabinet` · ต้องเพิ่ม `topic read plant/water/buzzer/cmd` ใน ACL ของ ESP32 ที่ติดบัซเซอร์
+
+### 24. ❓ ช่องทาง email ต้องมีเมลเซิร์ฟเวอร์ภายในโรงงาน (`SMTP_HOST`)
+
+ถ้าไม่มี รายการ email จะขึ้น `failed` พร้อมเหตุผล ไม่ลองซ้ำ · LINE และ SMS ขึ้น `failed` พร้อมเหตุผลเช่นกันจนกว่าจะมีคนตัดสิน (P-06)

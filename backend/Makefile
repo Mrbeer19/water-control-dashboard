@@ -62,6 +62,9 @@ contract:       ## คอมไพล์ response จริงทุก endpoint
 	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
 	  node_modules/.bin/tsc -p backend/tests/contract/tsconfig.json
 
+integration:    ## เกณฑ์รับงานที่ใช้ stack จริง ยกเว้น S1–S14 (make up ก่อน)
+	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py -v
+
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator
 

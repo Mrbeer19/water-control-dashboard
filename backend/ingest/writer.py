@@ -72,6 +72,18 @@ EXEC_SQL: dict[str, list[str]] = {
                                WHERE entity_id = %(entity_id)s AND metric = %(metric)s AND ended_at IS NULL)""",
     ],
     "alert_open": [
+        # ★ เหตุเดิมกลับมาภายใน notifications.deduplicationWindowMinutes → เปิดแถวเดิมแล้วนับเพิ่ม ไม่สร้าง alert ใหม่
+        """UPDATE alerts SET ended_at = NULL, occurrence_count = occurrence_count + 1,
+                  severity = CASE WHEN %(severity)s = 'critical' THEN 'critical' ELSE severity END
+            WHERE alert_id = (
+              SELECT a.alert_id FROM alerts a
+               WHERE a.entity_id = %(entity_id)s AND a.kind = %(kind)s AND a.ended_at IS NOT NULL
+                 AND a.ended_at >= %(started_at)s - make_interval(mins => (
+                       SELECT (value->>'deduplicationWindowMinutes')::int
+                         FROM settings WHERE section = 'notifications'))
+                 AND NOT EXISTS (SELECT 1 FROM alerts o
+                                  WHERE o.entity_id = a.entity_id AND o.kind = a.kind AND o.ended_at IS NULL)
+               ORDER BY a.ended_at DESC LIMIT 1)""",
         """INSERT INTO alerts (entity_id, kind, severity, started_at, peak_value, threshold)
            VALUES (%(entity_id)s, %(kind)s, %(severity)s, %(started_at)s, %(peak_value)s, %(threshold)s)
            ON CONFLICT (entity_id, kind) WHERE ended_at IS NULL DO NOTHING""",

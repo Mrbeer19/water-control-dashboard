@@ -145,6 +145,35 @@ services:
       retries: 6
       start_period: 10s
 
+  # ส่งแจ้งเตือนตาม alert — image เดียวกับ api คนละคำสั่ง
+  notifier:
+    build: ./api
+    image: water-backend/api:0.3.0
+    command: ["python", "-m", "api.notifier"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      MQTT_HOST: mosquitto
+      MQTT_USER: api                   # บัซเซอร์ใช้ topic plant/water/+/cmd ที่ ACL ของ api อนุญาตอยู่แล้ว
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_FROM: ${SMTP_FROM:-water-alerts@plant.local}
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/notifier.alive') > 30)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
 volumes:
   pgdata:
   mosqdata:

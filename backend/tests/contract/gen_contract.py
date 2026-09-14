@@ -17,10 +17,12 @@ BASE = "http://127.0.0.1:8000"
 
 TYPES = ("Tank", "Pump", "Valve", "Zone", "ZoneCost", "WaterMeter", "MainMeter", "UnaccountedWater", "DailyUsagePoint",
          "PressureControl", "EnvironmentSensor", "EnvironmentReading", "ElectricNode", "Department", "DepartmentUsage",
-         "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError")
+         "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError",
+         "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated")
 SERVICES = {"tanks": ["getTankTotals"], "pumps": ["getPumpEnergyToday"], "zones": ["getZoneConsumption"],
             "meters": ["getFlowBalance"], "pressure": ["getHeadcount"], "environment": ["getRainfall"],
-            "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"]}
+            "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"],
+            "alerts": ["getUnreadAlertCount"]}
 
 # (method, path, type ของ TypeScript)
 CASES = [
@@ -66,6 +68,15 @@ CASES = [
     ("GET", "/api/system/connection", "ConnectionStatus"),
     ("GET", "/api/system/services", "ServiceHealth[]"),
     ("GET", "/api/system/summary", "SystemSummary"),
+    # {alert} = id ของ alert ล่าสุด — ต้องมี alert อย่างน้อยหนึ่งรายการ (รัน make integration ก่อนจะได้ครบทุกสถานะ)
+    ("GET", "/api/alerts?limit=5", "Paginated<Alert>"),
+    ("GET", "/api/alerts/{alert}", "Alert"),
+    ("GET", "/api/alerts/unread-count", "Awaited<ReturnType<typeof getUnreadAlertCount>>"),
+    ("GET", "/api/alerts/acknowledgements", "AlertAcknowledgement[]"),
+    ("GET", "/api/alerts/recoveries", "RecoveryEvent[]"),
+    ("GET", "/api/alerts/{alert}/preview?channel=email", "NotificationPreview"),
+    ("GET", "/api/notifications/deliveries", "NotificationDelivery[]"),
+    ("GET", "/api/alerts/999999999", "ApiError"),
     ("GET", "/api/tanks/nope", "ApiError"),
     ("GET", "/api/zones/cost?from=bad", "ApiError"),
 ]
@@ -85,8 +96,10 @@ def main() -> None:
            f"import type {{ {', '.join(TYPES)} }} from '../../../lib/types';"]
     out += [f"import type {{ {', '.join(names)} }} from '../../../lib/services/{module}';"
             for module, names in SERVICES.items()]
+    latest = fetch("GET", "/api/alerts?limit=1")["items"]  # type: ignore[index]
+    alert_id = latest[0]["id"] if latest else "0"
     for index, (method, path, ts_type) in enumerate(CASES):
-        body = json.dumps(fetch(method, path), ensure_ascii=False, indent=1)
+        body = json.dumps(fetch(method, path.replace("{alert}", alert_id)), ensure_ascii=False, indent=1)
         out.append(f"\n// {method} {path}\nexport const case{index}: {ts_type} = {body};")
     sys.stdout.write("\n".join(out) + "\n")
 

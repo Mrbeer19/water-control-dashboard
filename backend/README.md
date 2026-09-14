@@ -156,6 +156,28 @@ make contract   # ยิงทุก endpoint แล้วคอมไพล์ 
 > field ขาด · field เกิน · null ในที่ห้าม null · string นอก union → tsc ล้ม · ไฟล์ที่สร้างอยู่ `data/contract/generated.ts`
 > ข้อตกลงที่หน้าบ้านต้องรู้อยู่ใน `docs/BACKEND_CONTRACT_NOTES.md` ข้อ 13–19 · เหตุผลอยู่ใน `DECISIONS.md` D-26 ถึง D-34
 
+## การแจ้งเตือน — `/api/alerts` · `/api/notifications` · service `notifier`
+
+```
+ingest (เกณฑ์ debounce 3 รอบ) ──► alerts ──► notifier (ทุก 2 วินาที) ──► notification_log ──► email · buzzer · webhook
+                                     ▲                                                      (line · sms ปิดไว้)
+                            /api/alerts/:id/acknowledge ──► alert_acknowledgements + audit_log
+```
+
+| เรื่อง | ทำที่ไหน |
+|---|---|
+| ข้อความตาม `AlertCode` (ครบทุกรหัสใน `lib/types.ts` — มีเทสตรวจ) · preview = ข้อความที่ส่งจริง | `api/alerts.py` |
+| ขั้นต่ำ · ช่วงเงียบ · ยกระดับเมื่อไม่มีคนรับทราบ · snooze · ลองซ้ำ 3 ครั้ง | `api/notifier/dispatcher.py` |
+| ช่องทางแบบ plugin | `api/notifier/channels.py` |
+| เกิดซ้ำภายในหน้าต่างกันสแปม = แถวเดิม นับเพิ่ม | `ingest/writer.py` (`alert_open`) |
+
+```bash
+make integration                       # series parity + วงจรชีวิต alert ครบ (เปิด → ส่ง → รับทราบ → ปิด → เกิดซ้ำ)
+docker compose logs -f notifier        # ดูผลการส่งแต่ละช่องทาง
+```
+
+> อีเมลใช้ได้เมื่อตั้ง `SMTP_HOST` ใน `.env` · บัซเซอร์ใช้ topic `plant/water/buzzer/cmd` — ดู `docs/BACKEND_CONTRACT_NOTES.md` ข้อ 23
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม
