@@ -103,6 +103,40 @@ tests/run_scenarios.sh S9        # สถานการณ์เดียว (�
 tests/run_scenarios.sh all       # S1–S14 ทั้งชุด (~20 นาที) รายงานอยู่ที่ data/scenario-report.xml
 ```
 
+## ข้อมูลกราฟรวมช่วง — `/api/metrics/series` · `/api/metrics/state-spans`
+
+```
+raw hypertable ──► *_5m ──► *_1h ──► *_1d        (continuous aggregate ซ้อนกัน ตัดขอบตาม settings.general.timezone)
+                    ▲         ▲         ▲
+ raw           minute_5/15   hour   day · week · month · year      ← granularity ที่ขอ
+```
+
+| กฎ | ทำที่ไหน |
+|---|---|
+| ชั้นบนเก็บ `sum` + `count` ไม่เก็บ `avg` → avg ถ่วงน้ำหนักถูกต้องแม้ช่วงที่บอร์ดหลุด | `db/07_caggs.sql` |
+| `minAt`/`maxAt` = `first(time, ค่า)` / `last(time, ค่า)` | `db/07_caggs.sql` |
+| **`counter.delta = last(N) − last(N−1)`** ข้าม bucket · รีเซ็ต → `resetDetected` ไม่ติดลบ | `api/series.py` `build_points()` |
+| กติกาช่วง ↔ ความละเอียด · เพดาน 1,000 จุด (ยกเว้น raw ≤ 1 ชม.) → 400 | `api/buckets.py` = พอร์ตตรงตัวของ `lib/utils/time-buckets.ts` |
+| bucket ครบทุกช่วง ช่วงว่างเป็น `null` + `count: 0` | `api/series.py` LEFT JOIN จากโครง bucket |
+| span สถานะต่อกันไม่มีรู · อุปกรณ์ offline = `no_data` | `api/series.py` `build_timeline()` |
+
+```bash
+# สร้าง db/07_caggs.sql ใหม่หลังแก้ api/metric_registry.py (ห้ามแก้ SQL มือ) แล้ว make reset
+.venv/bin/python scripts/gen_caggs.py
+
+# ตรวจว่า api/buckets.py ยังตรงกับ time-buckets.ts (ต้องรันใหม่ทุกครั้งที่ไฟล์ .ts เปลี่ยน)
+node scripts/gen_buckets_golden.mjs && .venv/bin/pytest tests/test_buckets_parity.py
+
+# เกณฑ์รับงานเฟส 3 ทั้ง 13 ข้อ (ต้อง make up ก่อน)
+.venv/bin/pytest -m integration tests/test_series_parity.py -v
+```
+
+> ★ **นำเข้าข้อมูลเก่ากว่าหน้าต่าง refresh** (5 นาที 14 วัน · 1 ชม. 60 วัน · 1 วัน 365 วัน) ต้องสั่งเอง
+> ไม่งั้นกราฟช่วงนั้นว่าง — ดู `DECISIONS.md` D-24
+> ```sql
+> CALL refresh_continuous_aggregate('pump_5m', '2025-01-01', '2025-03-01');  -- แล้วตามด้วย _1h และ _1d
+> ```
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

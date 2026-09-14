@@ -120,6 +120,28 @@ services:
       retries: 6
       start_period: 15s
 
+  api:
+    build: ./api
+    image: water-backend/api:0.3.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+    ports:
+      - "127.0.0.1:8000:8000"          # dev: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 · เครื่องจริงเข้าผ่าน nginx
+    depends_on:
+      timescaledb: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
+
 volumes:
   pgdata:
   mosqdata:

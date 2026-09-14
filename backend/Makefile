@@ -43,6 +43,19 @@ test:           ## unit test — ไม่ต้องมี docker
 scenarios:      ## สถานการณ์ S1–S14 กับ stack จริง (make up ก่อน)
 	tests/run_scenarios.sh all
 
+caggs:          ## สร้าง db/07_caggs.sql ใหม่จาก api/metric_registry.py
+	.venv/bin/python scripts/gen_caggs.py
+
+parity:         ## เกณฑ์รับงานเฟส 3 — /api/metrics/series 13 ข้อ (make up ก่อน)
+	.venv/bin/pytest -m integration tests/test_series_parity.py -v
+
+NODE22 := node@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+
+frontend-checks: ## 6 คำสั่งที่ CI บังคับก่อน push (check:buckets/series ต้องใช้ Node 22 จึงรันใน container)
+	cd .. && npx tsc --noEmit && npm run lint && npm run check:colors && npm run build
+	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
+	  sh -c 'npm run check:buckets && npm run check:series'
+
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator
 
