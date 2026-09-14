@@ -197,3 +197,31 @@ fetch ต้องส่ง cookie (`credentials: 'include'` หรือเร�
 ### 31. ℹ️ `/api/settings/line/test` ตอบ `ok: false` + `message` ขึ้นต้น `offline_mode` · `/network/test` เปิด TCP จริงจากเครื่อง API
 
 เขตเวลาที่ offset ไม่ใช่ชั่วโมงเต็ม (เช่น `Asia/Kathmandu`) และเขตที่ไม่ตรงกับข้อมูลรวมของกราฟ ถูกปฏิเสธ
+
+---
+
+## ข้อมูลสด (เฟส 4d)
+
+### 32. ℹ️ `WS /api/stream` หนึ่งข้อความ = อาร์เรย์ `RealtimeEvent[]` ไม่เกิน 1 ข้อความต่อ 2 วินาที
+
+```ts
+socket.onmessage = (message) => {
+  const events = JSON.parse(message.data) as RealtimeEvent[];   // entity ทั้งก้อน field ตรงกับ REST
+};
+```
+
+ส่งเฉพาะ entity ที่เนื้อหาเปลี่ยน · ไม่มีอะไรเปลี่ยน = ไม่ส่ง · วัดจริงตอน ingest รับเต็มกำลัง: 10 ข้อความใน 20 วินาที
+`subscribeToUpdates(listener)` แบบเดิมใช้ต่อได้ — เรียก listener หนึ่งครั้งต่อข้อความ · หลุดแล้วหน้าจอต้องต่อใหม่เอง (ใส่ backoff)
+
+### 33. ℹ️ เลือก channel ด้วย `?channels=telemetry,alerts` (ไม่ระบุ = ทั้งหมด · ชื่อผิด = ปฏิเสธตอน handshake)
+
+| channel | type ที่ได้ |
+|---|---|
+| `telemetry` | `tank` `pump` `valve` `zone` `meter` `main_meter` `sensor` `electric_node` `pressure_control` |
+| `system` | `device` `connection` |
+| `alerts` | `alert` `anomaly` |
+| `commands` | `command_result` (มาพร้อมเฟสระบบควบคุม) |
+
+### 34. 👉 ยืนยันรูปข้อความตาม P-03 และยังแนะนำ debounce ใน `use-live-data.ts` (P-02 ทาง ก.)
+
+backend รวบแล้วก็จริง แต่หน้า `/` ยังดึง 17 fetcher ต่อหนึ่งข้อความ — จอเปิดค้างหลายเครื่องจะหนักตอนติดตั้งจริง

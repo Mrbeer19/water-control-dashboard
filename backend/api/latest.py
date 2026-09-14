@@ -102,6 +102,14 @@ def latest_many(conn: psycopg.Connection, source_type: str, entity_ids: list[str
     return result
 
 
+def publish(channel: str, payload: dict[str, object]) -> None:
+    """แจ้ง /api/stream ว่ามีของเปลี่ยนจากฝั่ง API (เช่นมีคนรับทราบ alert) · Redis ล่มต้องไม่ทำให้คำขอล้ม"""
+    try:
+        _redis.publish(channel, json.dumps(payload, default=str))
+    except redis.RedisError:
+        pass
+
+
 def offline_devices(conn: psycopg.Connection) -> dict[str, datetime]:
     """อุปกรณ์ที่ ingest ตัดสินว่า offline อยู่ตอนนี้ → เวลาที่เริ่ม offline"""
     rows = conn.execute("""SELECT entity_id, started_at FROM state_spans

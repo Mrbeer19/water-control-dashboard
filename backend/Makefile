@@ -70,7 +70,8 @@ password:       ## ตั้งรหัสผ่านผู้ใช้ เช
 	$(COMPOSE) exec api python -m api.set_password $(NAME)
 
 integration:    ## เกณฑ์รับงานที่ใช้ stack จริง ยกเว้น S1–S14 (make up ก่อน)
-	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py -v
+	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py \
+	  tests/test_auth_settings_api.py tests/test_stream_api.py -v
 
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator

@@ -194,6 +194,16 @@ make settings-golden          # สร้างค่าอ้างอิงจ
 
 > LINE Channel Access Token อยู่ในตาราง `settings_secrets` และไม่เคยถูกส่งกลับทาง API (ตอบ `••••` + 4 ตัวท้าย)
 
+## ข้อมูลสด — `WS /api/stream`
+
+```
+ingest ─PUBLISH─► redis ─► Hub ใน api (ทุก 2 วินาที ประกอบเฉพาะ entity ที่มีข้อความเข้า) ─► client ละไม่เกิน 1 ข้อความ/2 วินาที
+```
+
+- หนึ่งข้อความ = `RealtimeEvent[]` entity ทั้งก้อนจากฟังก์ชันชุดเดียวกับ REST · เนื้อหาไม่เปลี่ยนไม่ส่ง
+- `?channels=telemetry,alerts,commands,system` · ไม่มีใครเชื่อมต่อ = ไม่แตะ DB
+- วัดเกณฑ์ข้อ 5 จริง: `make integration` (ไฟล์ `tests/test_stream_api.py` พิมพ์อัตรา ingest เทียบจำนวนข้อความ)
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

@@ -19,7 +19,7 @@ TYPES = ("Tank", "Pump", "Valve", "Zone", "ZoneCost", "WaterMeter", "MainMeter",
          "PressureControl", "EnvironmentSensor", "EnvironmentReading", "ElectricNode", "Department", "DepartmentUsage",
          "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError",
          "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated",
-         "SystemSettings", "AuthSession")
+         "SystemSettings", "AuthSession", "RealtimeEvent")
 SERVICES = {"tanks": ["getTankTotals"], "pumps": ["getPumpEnergyToday"], "zones": ["getZoneConsumption"],
             "meters": ["getFlowBalance"], "pressure": ["getHeadcount"], "environment": ["getRainfall"],
             "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"],
@@ -79,6 +79,8 @@ CASES = [
     ("GET", "/api/notifications/deliveries", "NotificationDelivery[]"),
     ("GET", "/api/alerts/999999999", "ApiError"),
     ("GET", "/api/settings", "SystemSettings"),
+    # ข้อความจริงหนึ่งข้อความจาก stream (ต้องเปิด simulator) — อาร์เรย์ของ RealtimeEvent
+    ("WS", "/api/stream?channels=telemetry,system", "RealtimeEvent[]"),
     ("GET", "/api/auth/session", "AuthSession | null"),
     ("GET", "/api/auth/me", "User | null"),
     ("GET", "/api/tanks/nope", "ApiError"),
@@ -87,6 +89,11 @@ CASES = [
 
 
 def fetch(method: str, path: str) -> object:
+    if method == "WS":
+        from websockets.sync.client import connect
+
+        with connect("ws://127.0.0.1:8000" + path, open_timeout=10) as socket:
+            return json.loads(socket.recv(timeout=15))
     request = urllib.request.Request(BASE + path, method=method)
     try:
         with urllib.request.urlopen(request, timeout=30) as response:

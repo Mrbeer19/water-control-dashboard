@@ -16,6 +16,7 @@ from .auth import AnyUser, Operator
 from .common import parse_time
 from .db import pool
 from .errors import ApiException, bad_request
+from .latest import publish
 from .registry import registry
 
 router = APIRouter(prefix="/api")
@@ -105,7 +106,9 @@ def get_alert(alert_id: str) -> dict[str, object]:
 @router.post("/alerts/{alert_id}/read")
 def post_read(alert_id: str, _user: AnyUser) -> dict[str, object]:
     with pool.connection() as conn:
-        return al.mark_read(conn, registry(conn).timezone, al.parse_id(alert_id))
+        body = al.mark_read(conn, registry(conn).timezone, al.parse_id(alert_id))
+    publish("alerts", {"alertId": body["id"]})
+    return body
 
 
 class AcknowledgeBody(BaseModel):
@@ -124,8 +127,10 @@ def post_acknowledge(alert_id: str, body: AcknowledgeBody, user: Operator) -> di
                            {"acknowledgedByUserId": body.acknowledged_by_user_id})
     note = body.note.strip() if body.note and body.note.strip() else None
     with pool.connection() as conn:
-        return al.acknowledge(conn, registry(conn).timezone, al.parse_id(alert_id), user.user_id, note,
-                              body.snooze_minutes)
+        ack = al.acknowledge(conn, registry(conn).timezone, al.parse_id(alert_id), user.user_id, note,
+                             body.snooze_minutes)
+    publish("alerts", {"alertId": ack["alertId"]})
+    return ack
 
 
 @router.get("/alerts/{alert_id}/preview")

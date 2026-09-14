@@ -23,6 +23,7 @@ from .routes_auth import router as auth_router
 from .routes_domain import router as domain_router
 from .routes_settings import router as settings_router
 from .series import SeriesQuery, metric_series, state_spans
+from .stream import hub, stream_endpoint
 
 SERVICE = "api"
 
@@ -36,7 +37,9 @@ def log(event: str, **fields: object) -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     pool.open(wait=False)
+    hub.start()
     yield
+    await hub.stop()
     pool.close()
 
 
@@ -45,6 +48,7 @@ app.include_router(domain_router)
 app.include_router(alerts_router)
 app.include_router(auth_router)
 app.include_router(settings_router)
+app.add_api_websocket_route("/api/stream", stream_endpoint)
 
 
 @app.exception_handler(ApiException)
