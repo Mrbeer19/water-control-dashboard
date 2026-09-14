@@ -261,7 +261,7 @@ meter_readings ─► รอบจดจริง (anchor=meter_reading) · ห�
 
 ```
 ทุกขอบ 5 นาที ─► หน้าต่าง 60 นาทีล่าสุด: มิเตอร์หลัก − Σโซน − Δถังทุกใบ (รวมบ่อสำรอง)
-                 ├─ มิเตอร์/ถังตัวใดไม่มีข้อมูล → ไม่ตัดสิน (% = null)
+                 ├─ มิเตอร์/ถังตัวใดข้อมูลไม่ครอบหัว-ท้ายหน้าต่าง (±2 นาที) → ไม่ตัดสิน (% = null)
                  ├─ plant_metrics ─► /api/metrics/series?sourceType=system&metric=unaccounted_percent
                  └─ ≥ 8% เตือน · ≥ 15% วิกฤต ─► alert UNACCOUNTED_WATER_HIGH ─► notifier
 ```
@@ -270,6 +270,17 @@ meter_readings ─► รอบจดจริง (anchor=meter_reading) · ห�
 docker compose exec worker python -m api.worker unaccounted --end 2026-09-13T23:40:00+07:00 --window 30
 make integration   # เกณฑ์ข้อ 1–2: tests/test_worker_api.py เดิน simulator ย้อนหลังเมื่อวาน แล้วลบข้อมูลที่ฉีดทิ้งเอง
 ```
+
+## ส่งออกไฟล์ — `POST /api/reports/export` (worker เรนเดอร์)
+
+```
+POST {type, range, format} ─► report_exports (queued) ─► 202 {jobId, status}
+worker ทุก 2 วินาที ─► report_definition() ชุดเดียวกับ GET /api/reports ─► volume exports
+GET /api/reports/export/:jobId ─► ไฟล์ (ยังไม่เสร็จ 202 · ล้มเหลว 422 · เกิน 7 วัน 410)
+```
+
+- CSV: UTF-8 with BOM · metadata บนสุด · null = ช่องว่าง · PDF: WeasyPrint + ฟอนต์ Sarabun ฝังใน image · `xlsx` ตอบ 400
+- image ของ worker แยก: `docker/worker.Dockerfile` (build context = `backend/`) · เกณฑ์ข้อ 7–8: `tests/test_exports_api.py`
 
 ## ข้อตกลงที่ห้ามพลาด
 

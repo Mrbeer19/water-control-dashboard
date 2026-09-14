@@ -292,6 +292,26 @@ CREATE TABLE alerts (
 CREATE UNIQUE INDEX alerts_open_uq ON alerts (entity_id, kind) WHERE ended_at IS NULL;
 CREATE INDEX alerts_started_idx ON alerts (started_at DESC);
 
+-- ส่งออกรายงานเป็นไฟล์ — api สร้างงาน · worker เรนเดอร์ (FOR UPDATE SKIP LOCKED) · ไฟล์อยู่ใน volume exports
+CREATE TABLE report_exports (
+  job_id       TEXT PRIMARY KEY,
+  report_type  TEXT NOT NULL,                          -- ReportType
+  range_from   TIMESTAMPTZ NOT NULL,
+  range_to     TIMESTAMPTZ NOT NULL,
+  preset       TEXT NOT NULL DEFAULT 'custom',
+  format       TEXT NOT NULL,                          -- csv | pdf
+  status       TEXT NOT NULL DEFAULT 'queued',         -- queued | running | done | failed
+  requested_by TEXT REFERENCES users(user_id),
+  file_name    TEXT,
+  size_bytes   BIGINT,
+  error        TEXT,
+  attempts     INT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  started_at   TIMESTAMPTZ,
+  finished_at  TIMESTAMPTZ
+);
+CREATE INDEX report_exports_queue_idx ON report_exports (created_at) WHERE status IN ('queued', 'running');
+
 -- การรับทราบ — ★ รับทราบ ≠ ปัญหาหาย (alert ยังเปิดจนกว่า ingest จะปิด) · snooze = เลื่อนการเตือนซ้ำ
 CREATE TABLE alert_acknowledgements (
   id              BIGSERIAL PRIMARY KEY,

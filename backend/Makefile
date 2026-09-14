@@ -71,7 +71,7 @@ password:       ## ตั้งรหัสผ่าน make password NAME=admin
 
 integration:    ## เกณฑ์รับงานที่ใช้ stack จริง ยกเว้น S1–S14 (make up ก่อน)
 	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py \
-	  tests/test_auth_settings_api.py tests/test_stream_api.py tests/test_ai_api.py tests/test_control_api.py tests/test_reports_api.py tests/test_worker_api.py -v
+	  tests/test_auth_settings_api.py tests/test_stream_api.py tests/test_ai_api.py tests/test_control_api.py tests/test_reports_api.py tests/test_worker_api.py tests/test_exports_api.py -v
 
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator

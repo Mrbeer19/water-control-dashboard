@@ -1,11 +1,13 @@
 """python -m api.worker — งานเบื้องหลังตามเวลาของโรงงาน (วนจนได้ SIGTERM)
 
   ทุกขอบ 5 นาที  unaccounted.evaluate() หน้าต่าง 60 นาทีล่าสุด → plant_metrics + alert UNACCOUNTED_WATER_HIGH
+  ทุก 2 วินาที   exports.run_next() เรนเดอร์งานส่งออก CSV/PDF ที่รออยู่จนหมดคิว
+  ทุกชั่วโมง     exports.purge() ลบงานและไฟล์ส่งออกที่เก่ากว่า 7 วัน
 
   python -m api.worker unaccounted --end 2026-09-13T23:40:00+07:00 --window 30
       ประเมินหน้าต่างเดียวแล้วพิมพ์ผลเป็น JSON (ใช้ทดสอบ และคำนวณย้อนหลังหลังนำเข้าข้อมูลเก่า)
 
-★ ตรรกะอยู่ใน api/worker/*.py (ทดสอบได้ไม่ต้องมีลูป) — ไฟล์นี้แค่จับเวลาและต่อ DB
+★ ตรรกะอยู่ใน api/worker/*.py และ api/exports.py (ทดสอบได้ไม่ต้องมีลูป) — ไฟล์นี้แค่จับเวลาและต่อ DB
 ★ รอ SETTLE_MS หลังขอบ 5 นาที ให้ ingest เขียนก้อนสุดท้ายของหน้าต่างครบก่อนประเมิน
 ★ healthcheck: ไฟล์ HEARTBEAT ถูกแตะทุกรอบที่คุย DB สำเร็จ
 """
@@ -22,12 +24,15 @@ from pathlib import Path
 
 import psycopg
 
+from .. import exports
 from ..db import conninfo
 from ..registry import registry
 from ..series import now_ms
 from . import unaccounted
 
-POLL_SECONDS = 5.0
+POLL_SECONDS = 1.0
+EXPORT_EVERY = 2.0
+PURGE_EVERY = 3600.0
 SETTLE_MS = 60_000
 HEARTBEAT = Path("/tmp/worker.alive")
 
@@ -67,6 +72,7 @@ def loop() -> None:
 
     conn: psycopg.Connection | None = None
     last_end: int | None = None
+    last_export = last_purge = 0.0
     log("worker_started")
     while not stopping:
         try:
@@ -80,6 +86,16 @@ def loop() -> None:
                     severity=result["severity"], skipped=result["skipped"], alert=result["alert"],
                     missing=result["missing"] or None)
                 last_end = end_ms
+            now = time.monotonic()
+            if now - last_export >= EXPORT_EVERY:
+                while not stopping and (finished := exports.run_next(conn, reg)) is not None:
+                    log("export", level="error" if finished["status"] == "failed" else "info", **finished)
+                last_export = now
+            if now - last_purge >= PURGE_EVERY:
+                removed = exports.purge(conn)
+                if removed:
+                    log("exports_purged", count=removed)
+                last_purge = now
             HEARTBEAT.touch()
         except psycopg.OperationalError as exc:
             log("database_unavailable", level="error", error=str(exc).strip())

@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
-from api.worker.unaccounted import MIN_MAIN_M3, judge, window_end
+from api.worker.unaccounted import EDGE_TOLERANCE_MS, MIN_MAIN_M3, judge, uncovered, window_end
 from simulator.plant import Plant
 from simulator.scenarios import Scenarios
 
@@ -32,6 +32,15 @@ def test_judge_refuses_to_decide_without_every_meter_and_tank():
 def test_judge_ignores_tiny_inflow_where_rounding_dominates():
     verdict = judge(250.0, MIN_MAIN_M3 - 0.01, LIMITS, [])
     assert verdict.severity is None and verdict.skipped == "low_inflow"
+
+
+def test_source_must_cover_both_edges_of_the_window_not_just_appear_once():
+    start, end = 0, 3_600_000
+    spans = {"steady": (1_000, end - 2_000),
+             "went_silent": (1_000, 20 * 60_000),                       # หยุดส่งตั้งแต่นาทีที่ 20
+             "came_late": (start + EDGE_TOLERANCE_MS + 1, end - 2_000),
+             "just_within": (start + EDGE_TOLERANCE_MS, end - EDGE_TOLERANCE_MS)}
+    assert uncovered([*spans, "never_seen"], spans, start, end) == ["went_silent", "came_late", "never_seen"]
 
 
 def test_window_end_snaps_down_to_local_five_minutes():

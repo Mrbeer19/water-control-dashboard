@@ -3,8 +3,8 @@
   น้ำสูญหาย = มิเตอร์หลัก − Σ ทุกโซน − Δ ปริมาณน้ำในถังทุกใบ (รวมบ่อสำรอง)
 
 ★ สูตรเดียวกับ /api/meters/unaccounted (usage.unaccounted_water) ต่างแค่รวมตัวนับรายห้านาที
-★ ตัดสินเฉพาะเมื่อข้อมูลครบ — มิเตอร์หรือถังตัวไหนไม่มีข้อมูลในหน้าต่าง = ไม่ตัดสินและเก็บ % เป็น null
-  (มิเตอร์โซนหลุดตัวเดียว Σโซนจะต่ำลง แล้วเตือนรั่วปลอมทั้งโรงงาน)
+★ ตัดสินเฉพาะเมื่อข้อมูลครบ — มิเตอร์หรือถังตัวไหนข้อมูลไม่ครอบหัวและท้ายหน้าต่าง = ไม่ตัดสินและเก็บ % เป็น null
+  (อุปกรณ์เงียบไปกลางหน้าต่าง ตัวนับหยุดนับแต่ Δถังยังเปลี่ยน แล้วเตือนรั่วปลอมทั้งโรงงาน)
 ★ น้ำเข้าต่ำกว่า MIN_MAIN_M3 ในหน้าต่าง = ไม่เตือน — หารด้วยเลขเล็ก การปัดเศษของเซนเซอร์ระดับทำ % แกว่งหลักร้อย
 ★ SQL เปิด/ปิด alert ชุดเดียวกับ ingest (เหตุเดิมกลับมาในหน้าต่างกันสแปม = เปิดแถวเดิม) notifier ส่งต่อเหมือนเหตุอื่น
 """
@@ -18,20 +18,23 @@ import psycopg
 from .. import buckets as bk
 from ..latest import publish
 from ..registry import Registry
-from ..series import iso, to_dt
+from ..series import iso, to_dt, to_ms_required
 from ..usage import unaccounted_water
 
 KIND = "UNACCOUNTED_WATER_HIGH"
 PLANT = "plant"
 WINDOW_MINUTES = 60
 MIN_MAIN_M3 = 1.0
+EDGE_TOLERANCE_MS = 120_000      # อุปกรณ์ส่งทุก 2 วินาที — ขาดหัวหรือท้ายหน้าต่างเกิน 2 นาที = ข้อมูลไม่ครบ
 
 IS_OPEN = "SELECT 1 FROM alerts WHERE entity_id = %(entity_id)s AND kind = %(kind)s AND ended_at IS NULL"
+# ★ ended_at <= at: ประเมินหน้าต่างย้อนหลัง (CLI) ต้องไม่ไปเปิด alert ที่จบหลังเวลานั้นกลับขึ้นมา
 REOPEN = """
     UPDATE alerts SET ended_at = NULL, occurrence_count = occurrence_count + 1
      WHERE alert_id = (
        SELECT a.alert_id FROM alerts a
         WHERE a.entity_id = %(entity_id)s AND a.kind = %(kind)s AND a.ended_at IS NOT NULL
+          AND a.ended_at <= %(at)s
           AND a.ended_at >= %(at)s - make_interval(mins => (
                 SELECT (value->>'deduplicationWindowMinutes')::int FROM settings WHERE section = 'notifications'))
           AND NOT EXISTS (SELECT 1 FROM alerts o
@@ -83,18 +86,30 @@ def window_end(moment_ms: int, tz: str) -> int:
     return bk.bucket_start(moment_ms, "minute_5", tz)
 
 
+def uncovered(entity_ids: list[str], spans: dict[str, tuple[int, int]], start_ms: int, end_ms: int) -> list[str]:
+    """entity ที่ข้อมูลไม่ครอบหน้าต่าง — ต้องมีข้อมูลใกล้ทั้งหัวและท้าย ไม่ใช่แค่มีสักแถวในหน้าต่าง"""
+    out = []
+    for entity_id in entity_ids:
+        span = spans.get(entity_id)
+        if span is None or span[0] > start_ms + EDGE_TOLERANCE_MS or span[1] < end_ms - EDGE_TOLERANCE_MS:
+            out.append(entity_id)
+    return out
+
+
 def missing_sources(conn: psycopg.Connection, reg: Registry, start_ms: int, end_ms: int) -> list[str]:
     meters = [str(e["entity_id"]) for e in reg.of_type("meter")]
     tanks = [str(e["entity_id"]) for e in reg.of_type("tank")]
     rows = conn.execute("""
-        SELECT DISTINCT entity_id FROM meter_telemetry
+        SELECT entity_id, min(time), max(time) FROM meter_telemetry
          WHERE entity_id = ANY(%(meters)s) AND time >= %(start)s AND time < %(end)s AND volume_m3 IS NOT NULL
-        UNION
-        SELECT DISTINCT entity_id FROM tank_telemetry
-         WHERE entity_id = ANY(%(tanks)s) AND time >= %(start)s AND time < %(end)s AND volume_l IS NOT NULL""",
+         GROUP BY entity_id
+        UNION ALL
+        SELECT entity_id, min(time), max(time) FROM tank_telemetry
+         WHERE entity_id = ANY(%(tanks)s) AND time >= %(start)s AND time < %(end)s AND volume_l IS NOT NULL
+         GROUP BY entity_id""",
                         {"meters": meters, "tanks": tanks, "start": to_dt(start_ms), "end": to_dt(end_ms)}).fetchall()
-    seen = {row[0] for row in rows}
-    return [entity_id for entity_id in meters + tanks if entity_id not in seen]
+    spans = {str(entity_id): (to_ms_required(first), to_ms_required(last)) for entity_id, first, last in rows}
+    return uncovered(meters + tanks, spans, start_ms, end_ms)
 
 
 def apply_alert(conn: psycopg.Connection, verdict: Verdict, percent: float, limits: dict[str, float | None],

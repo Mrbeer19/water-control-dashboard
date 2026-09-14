@@ -110,6 +110,9 @@ def test_1_filling_the_reserve_pond_for_30_minutes_is_not_a_leak(history, db):
 
 def test_2_night_leak_in_zone_7_raises_unaccounted_water_alert(history, db):
     end = history.backfill(yesterday(23), "night_leak", seed=62)
+    # alert ที่ค้างจากเทสอื่นหรือรอบก่อน → ผลจะเป็น ongoing · ปิดแบบเดียวกับตอนเก็บกวาด (ended_at = started_at)
+    db.rows("UPDATE alerts SET ended_at = started_at WHERE entity_id = 'plant' AND kind = %s AND ended_at IS NULL",
+            KIND)
     result = evaluate(end)
     print(f"\nข้อ 2: มิเตอร์หลัก {result['mainMeterCubicMeters']} · โซน {result['zoneTotalCubicMeters']} · "
           f"Δถัง {result['storageDeltaCubicMeters']} → สูญหาย {result['unaccountedPercent']}% ({result['severity']})")

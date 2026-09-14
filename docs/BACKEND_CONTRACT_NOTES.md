@@ -329,3 +329,8 @@ type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต�
 ### 50. ℹ️ `unaccounted_percent` พร้อมแล้ว — `sourceType: 'system'` (sourceId ใดก็ได้)
 
 แต่ละจุดคือหน้าต่าง 60 นาทีที่จบ ณ เวลานั้น (worker เขียนทุก 5 นาที) · `avg: null` = มิเตอร์/ถังบางตัวไม่มีข้อมูลในหน้าต่าง ไม่ใช่ 0 · ช่วงข้อมูลก่อนเปิด worker ไม่มีค่า
+
+### 51. 👉 ถึงหน้าบ้าน: `requestReportExport()` ได้แค่ `jobId` — ต้องเพิ่มการดาวน์โหลด (D-80)
+
+เรียก `GET /api/reports/export/:jobId` ซ้ำจนได้ 200 (ระหว่างรอได้ 202 `{jobId, status}`) แล้วเปิดไฟล์ · ต้องล็อกอิน (401 ถ้าไม่ได้ล็อกอิน)
+`format: 'xlsx'` ตอบ 400 `FORMAT_NOT_SUPPORTED` — ขอให้ซ่อนปุ่ม xlsx หรือบอกให้ใช้ CSV แทน · ไฟล์เก็บ 7 วัน (เกินได้ 410 `EXPORT_EXPIRED`)

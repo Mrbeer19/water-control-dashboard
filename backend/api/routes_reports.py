@@ -1,6 +1,7 @@
-"""endpoint รายงาน (PROMPT_06 งานที่ 3) — ตรงกับ lib/services/reports.ts
+"""endpoint รายงาน (PROMPT_06 งานที่ 3–4) — ตรงกับ lib/services/reports.ts
 
 ★ from/to รับทั้ง epoch ms และ ISO ที่มี offset (TimeRange ของหน้าบ้านเป็น ISO) · ช่วงถูกขยายให้ตรงขอบวันตามเวลาโรงงาน
+★ ส่งออกไฟล์: api สร้างงาน → worker เรนเดอร์ → api ส่งไฟล์จาก volume ร่วม (api/exports.py)
 """
 
 from __future__ import annotations
@@ -8,11 +9,14 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Query, Response
+from fastapi.responses import FileResponse, JSONResponse
 
+from . import exports
 from . import reports as rp
+from .auth import AnyUser
 from .common import parse_time
 from .db import pool
-from .errors import bad_request
+from .errors import ApiException, bad_request
 from .registry import registry
 from .series import now_ms
 
@@ -69,6 +73,30 @@ def get_meter_readings(meter_id: Annotated[str | None, Query(alias="meterId")] =
                        limit: Annotated[int, Query(ge=1, le=120)] = 12) -> list[dict[str, object]]:
     with pool.connection() as conn:
         return rp.meter_readings(conn, registry(conn), meter_id, limit)
+
+
+@router.post("/export", status_code=202)
+def post_export(body: exports.ExportRequest, user: AnyUser) -> dict[str, str]:
+    """★ ต้องล็อกอิน — สร้างงานและไฟล์บนเซิร์ฟเวอร์ (D-80) · xlsx ตอบ 400 FORMAT_NOT_SUPPORTED"""
+    with pool.connection() as conn:
+        return exports.create_job(conn, registry(conn), user.user_id, body)
+
+
+@router.get("/export/{job_id}", response_model=None)
+def get_export(job_id: str, _user: AnyUser) -> FileResponse | JSONResponse:
+    """เสร็จ = ไฟล์ · ยังไม่เสร็จ = 202 {jobId, status} · ล้มเหลว = 422 · ไฟล์ถูกลบแล้ว = 410"""
+    with pool.connection() as conn:
+        job = exports.get_job(conn, job_id)
+    if job["status"] == "failed":
+        raise ApiException(422, "EXPORT_FAILED", f"สร้างไฟล์ไม่สำเร็จ: {job['error']}", "Export failed",
+                           {"jobId": job_id, "reason": str(job["error"])})
+    if job["status"] != "done":
+        return JSONResponse({"jobId": job_id, "status": job["status"]}, status_code=202)
+    path = exports.file_of(job)
+    if not path.exists():
+        raise ApiException(410, "EXPORT_EXPIRED", f"ไฟล์นี้ถูกลบแล้ว (เก็บไว้ {exports.KEEP_DAYS} วัน) กรุณาส่งออกใหม่",
+                           "Export file has expired; request it again", {"jobId": job_id})
+    return FileResponse(path, media_type=exports.MEDIA_TYPES[str(job["format"])], filename=str(job["file_name"]))
 
 
 @router.get("")

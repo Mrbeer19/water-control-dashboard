@@ -137,6 +137,9 @@ services:
       MQTT_USER: api                   # ส่งคำสั่งไป plant/water/{valve,pump,pressure}/:id/cmd ตาม ACL
       MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
       AI_INGEST_TOKEN: ${AI_INGEST_TOKEN:-}   # บริการ AI ส่งผลด้วย Authorization: Bearer <token> · ว่าง = ส่งได้เฉพาะ admin
+      EXPORT_DIR: /data/exports
+    volumes:
+      - exports:/data/exports:ro       # ไฟล์ส่งออกที่ worker เรนเดอร์ไว้ — api แค่ส่งต่อ
     ports:
       - "127.0.0.1:8000:8000"          # dev: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 · เครื่องจริงเข้าผ่าน nginx
     depends_on:
@@ -206,11 +209,13 @@ services:
       retries: 3
       start_period: 15s
 
-  # งานตามเวลา: น้ำสูญหายทุก 5 นาที (เฟส 6) — image เดียวกับ api
+  # งานตามเวลา: น้ำสูญหายทุก 5 นาที · เรนเดอร์ไฟล์ส่งออก CSV/PDF (เฟส 6)
+  # ★ image แยกจาก api: มี WeasyPrint + ฟอนต์ Sarabun (docker/worker.Dockerfile · build context = backend/)
   worker:
-    build: ./api
-    image: water-backend/api:0.3.0
-    command: ["python", "-m", "api.worker"]
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    image: water-backend/worker:0.1.0
     restart: unless-stopped
     logging: *logging
     environment:
@@ -220,6 +225,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
       REDIS_URL: redis://redis:6379/0
+      EXPORT_DIR: /data/exports
+    volumes:
+      - exports:/data/exports          # api เมานต์แบบอ่านอย่างเดียวเพื่อส่งไฟล์
     depends_on:
       timescaledb: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -234,3 +242,4 @@ volumes:
   pgdata:
   mosqdata:
   ingest-spool:
+  exports:          # ไฟล์ส่งออกรายงาน (worker เขียน · api อ่าน) เก็บ 7 วัน
