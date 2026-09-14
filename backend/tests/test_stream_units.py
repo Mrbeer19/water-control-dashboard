@@ -32,10 +32,12 @@ def test_dirty_collects_ids_by_source_without_building_anything():
     dirty.add("telemetry", {"entityId": "esp32-vip", "sourceType": "device"})
     dirty.add("alerts", {"type": "alert_open", "entityId": "pump-1", "code": "PUMP_OVERCURRENT"})
     dirty.add("alerts", {"alertId": "42"})
+    dirty.add("alerts", {"anomalyId": 7})
     dirty.add("system", {"type": "device_offline", "deviceId": "esp32-pond"})
     assert dirty.telemetry == {"tank": {"tank-1"}, "sensor": {"env-outdoor"}}
     assert dirty.devices == {"esp32-vip", "esp32-pond"} and dirty.connection
     assert dirty.alerts == {("pump-1", "PUMP_OVERCURRENT")} and dirty.alert_ids == {42}
+    assert dirty.anomaly_ids == {7}
 
 
 def test_fingerprint_ignores_timestamps_only():

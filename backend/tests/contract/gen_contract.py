@@ -19,7 +19,8 @@ TYPES = ("Tank", "Pump", "Valve", "Zone", "ZoneCost", "WaterMeter", "MainMeter",
          "PressureControl", "EnvironmentSensor", "EnvironmentReading", "ElectricNode", "Department", "DepartmentUsage",
          "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError",
          "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated",
-         "SystemSettings", "AuthSession", "RealtimeEvent")
+         "SystemSettings", "AuthSession", "RealtimeEvent", "AnomalyEvent", "AIForecast", "MaintenancePrediction",
+         "AIMetric", "AIServiceStatus")
 SERVICES = {"tanks": ["getTankTotals"], "pumps": ["getPumpEnergyToday"], "zones": ["getZoneConsumption"],
             "meters": ["getFlowBalance"], "pressure": ["getHeadcount"], "environment": ["getRainfall"],
             "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"],
@@ -79,6 +80,14 @@ CASES = [
     ("GET", "/api/notifications/deliveries", "NotificationDelivery[]"),
     ("GET", "/api/alerts/999999999", "ApiError"),
     ("GET", "/api/settings", "SystemSettings"),
+    # ผลจากทีม AI (make integration ส่งตัวอย่างเข้าไว้ให้แล้ว)
+    ("GET", "/api/ai/anomalies?limit=20", "Paginated<AnomalyEvent>"),
+    ("GET", "/api/ai/anomalies/{anomaly}", "AnomalyEvent"),
+    ("GET", "/api/ai/forecast", "AIForecast[]"),
+    ("GET", "/api/ai/forecast?target=tank_level&targetId=tank-1", "AIForecast"),
+    ("GET", "/api/ai/maintenance", "MaintenancePrediction[]"),
+    ("GET", "/api/ai/metrics", "AIMetric[]"),
+    ("GET", "/api/ai/status", "AIServiceStatus"),
     # ข้อความจริงหนึ่งข้อความจาก stream (ต้องเปิด simulator) — อาร์เรย์ของ RealtimeEvent
     ("WS", "/api/stream?channels=telemetry,system", "RealtimeEvent[]"),
     ("GET", "/api/auth/session", "AuthSession | null"),
@@ -108,9 +117,12 @@ def main() -> None:
     out += [f"import type {{ {', '.join(names)} }} from '../../../lib/services/{module}';"
             for module, names in SERVICES.items()]
     latest = fetch("GET", "/api/alerts?limit=1")["items"]  # type: ignore[index]
-    alert_id = latest[0]["id"] if latest else "0"
+    anomalies = fetch("GET", "/api/ai/anomalies?limit=1")["items"]  # type: ignore[index]
+    ids = {"{alert}": latest[0]["id"] if latest else "0", "{anomaly}": anomalies[0]["id"] if anomalies else "0"}
     for index, (method, path, ts_type) in enumerate(CASES):
-        body = json.dumps(fetch(method, path.replace("{alert}", alert_id)), ensure_ascii=False, indent=1)
+        for placeholder, value in ids.items():
+            path = path.replace(placeholder, value)
+        body = json.dumps(fetch(method, path), ensure_ascii=False, indent=1)
         out.append(f"\n// {method} {path}\nexport const case{index}: {ts_type} = {body};")
     sys.stdout.write("\n".join(out) + "\n")
 

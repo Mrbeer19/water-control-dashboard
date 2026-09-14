@@ -133,6 +133,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
       REDIS_URL: redis://redis:6379/0
       INGEST_URL: http://ingest:8080
+      AI_INGEST_TOKEN: ${AI_INGEST_TOKEN:-}   # บริการ AI ส่งผลด้วย Authorization: Bearer <token> · ว่าง = ส่งได้เฉพาะ admin
     ports:
       - "127.0.0.1:8000:8000"          # dev: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 · เครื่องจริงเข้าผ่าน nginx
     depends_on:

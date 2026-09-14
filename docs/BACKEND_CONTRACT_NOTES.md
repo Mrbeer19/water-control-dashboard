@@ -225,3 +225,32 @@ socket.onmessage = (message) => {
 ### 34. 👉 ยืนยันรูปข้อความตาม P-03 และยังแนะนำ debounce ใน `use-live-data.ts` (P-02 ทาง ก.)
 
 backend รวบแล้วก็จริง แต่หน้า `/` ยังดึง 17 fetcher ต่อหนึ่งข้อความ — จอเปิดค้างหลายเครื่องจะหนักตอนติดตั้งจริง
+
+---
+
+## ผลจากทีม AI (เฟส 4e)
+
+### 35. 👉 ถึงทีม AI: ส่งผลเข้า backend ด้วย `Authorization: Bearer <AI_INGEST_TOKEN>`
+
+| ส่งอะไร | endpoint |
+|---|---|
+| ความผิดปกติ | `POST /api/ai/anomalies` (ทีละรายการ) |
+| พยากรณ์ · บำรุงรักษา · ค่าที่คำนวณ | `POST /api/ai/forecasts` · `/maintenance` · `/metrics` (รายการเดียวหรืออาร์เรย์ไม่เกิน 500) |
+| สัญญาณชีพ | `PUT /api/ai/status` อย่างน้อยทุก 5 นาที ไม่งั้นหน้าจอขึ้นว่าติดต่อไม่ได้ |
+
+- ★ **`sourceId` บังคับ** และต้องเป็น id ที่มีในระบบ (`zone-7`, `pump-1` …) — ต่างจาก AI_CONTRACT.md ฉบับเดิม (D-55)
+- ★ `score` นอก 0–1 และ `healthScore` นอก 0–100 ถูกปฏิเสธ (400 พร้อมบอกวิธีแก้) ไม่หารให้
+- ส่ง `id` เดิมซ้ำ = อัปเดตรายการเดิม แต่ `status` / `feedback` ที่หน้างานตั้งแล้วจะไม่ถูกทับ
+- เวลาต้องมี offset (`+07:00`) · `type` `detector` `target` `key` เป็น string เปิดตามเดิม
+
+### 36. ℹ️ ถึงหน้าบ้าน: `id` ของผล AI เป็น id ของ backend · field ที่ทีม AI ไม่ได้ส่งจะไม่มีใน JSON
+
+ตรงกับ optional ใน `lib/types.ts` ทุกตัว (ตรวจด้วย tsc แล้ว) · ตัวกรอง `severity` และ `minScore` ไม่ทิ้งรายการที่ไม่มีค่านั้น
+
+### 37. ℹ️ `getForecast(target)` ที่ยังไม่มีผล → 404 `FORECAST_NOT_FOUND`
+
+type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต้องจับ error แล้วแสดง "ยังไม่มีผลพยากรณ์" · `getForecasts()` ได้อาร์เรย์ว่างตามปกติ
+
+### 38. ℹ️ ความผิดปกติระดับเตือนขึ้นไปสร้าง alert `ANOMALY_DETECTED` ให้เอง (`alert.anomalyEventId`)
+
+ปิดเคส (`/status`) ครบทุกเคสของ alert แล้ว alert ปิดตาม · `feedback` ไม่ใช่การปิดเคส · `setScenario()` ไม่มีใน API จริง ต้องลบตอนสลับ

@@ -23,6 +23,7 @@ import redis
 import redis.asyncio as aioredis
 from fastapi import WebSocket, WebSocketDisconnect
 
+from . import ai
 from . import alerts as al
 from .db import pool
 from .domain_site import build_devices, build_electric_nodes, build_sensors, connection_status
@@ -56,11 +57,13 @@ class Dirty:
     telemetry: dict[str, set[str]] = field(default_factory=dict)
     alerts: set[tuple[str, str]] = field(default_factory=set)
     alert_ids: set[int] = field(default_factory=set)
+    anomaly_ids: set[int] = field(default_factory=set)
     devices: set[str] = field(default_factory=set)
     connection: bool = False
 
     def empty(self) -> bool:
-        return not (self.telemetry or self.alerts or self.alert_ids or self.devices or self.connection)
+        return not (self.telemetry or self.alerts or self.alert_ids or self.anomaly_ids or self.devices
+                    or self.connection)
 
     def add(self, channel: str, data: dict[str, object]) -> None:
         if channel == "telemetry":
@@ -71,7 +74,9 @@ class Dirty:
             else:
                 self.telemetry.setdefault(source, set()).add(str(data.get("entityId")))
         elif channel == "alerts":
-            if str(data.get("alertId", "")).isdigit():
+            if str(data.get("anomalyId", "")).isdigit():
+                self.anomaly_ids.add(int(str(data["anomalyId"])))
+            elif str(data.get("alertId", "")).isdigit():
                 self.alert_ids.add(int(str(data["alertId"])))
             elif data.get("entityId") and data.get("code"):
                 self.alerts.add((str(data["entityId"]), str(data["code"])))
@@ -131,6 +136,10 @@ def build_events(dirty: Dirty) -> list[dict[str, object]]:
             alert = al.get_alert(conn, reg.timezone, alert_id)
             if alert is not None:
                 found.append(("alert", alert))
+        for anomaly_id in sorted(dirty.anomaly_ids):
+            anomaly = ai.get_anomaly(conn, reg.timezone, anomaly_id)
+            if anomaly is not None:
+                found.append(("anomaly", anomaly))
         if dirty.connection:
             found.append(("connection", connection_status(conn, reg)))
         at = iso(now_ms(), reg.timezone)
@@ -187,7 +196,7 @@ class Hub:
         fresh = []
         for event in events:
             key, mark = key_of(event), fingerprint(event)
-            if event["type"] == "alert" or self.fingerprints.get(key) != mark:
+            if event["type"] in ("alert", "anomaly") or self.fingerprints.get(key) != mark:
                 self.fingerprints[key] = mark
                 fresh.append(event)
         return fresh

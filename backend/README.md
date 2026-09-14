@@ -204,6 +204,17 @@ ingest ─PUBLISH─► redis ─► Hub ใน api (ทุก 2 วินาท
 - `?channels=telemetry,alerts,commands,system` · ไม่มีใครเชื่อมต่อ = ไม่แตะ DB
 - วัดเกณฑ์ข้อ 5 จริง: `make integration` (ไฟล์ `tests/test_stream_api.py` พิมพ์อัตรา ingest เทียบจำนวนข้อความ)
 
+## ผลจากทีม AI — `/api/ai/*`
+
+```
+บริการ AI ─POST (Bearer AI_INGEST_TOKEN)─► ตรวจตาม docs/AI_CONTRACT.md ─► ai_anomalies · ai_forecasts · ai_maintenance · ai_metrics
+                                                                         └─► severity ≥ warning ─► alert ANOMALY_DETECTED ─► notifier
+หน้าจอ ◄─GET─ เฉพาะ field ที่ทีม AI ส่งมาจริง                          └─► stream event `anomaly`
+```
+
+- backend ไม่มีโมเดลใด ๆ — แค่รับ ตรวจสัญญา เก็บ และเสิร์ฟ (`api/ai.py`)
+- ตั้ง `AI_INGEST_TOKEN` ใน `.env` แล้วส่งให้ทีม AI · ว่าง = ส่งผลได้เฉพาะ admin ที่ล็อกอิน
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

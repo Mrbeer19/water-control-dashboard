@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 
 from .db import pool
 from .errors import ApiException
+from .routes_ai import router as ai_router
 from .routes_alerts import router as alerts_router
 from .routes_auth import router as auth_router
 from .routes_domain import router as domain_router
@@ -48,6 +49,7 @@ app.include_router(domain_router)
 app.include_router(alerts_router)
 app.include_router(auth_router)
 app.include_router(settings_router)
+app.include_router(ai_router)
 app.add_api_websocket_route("/api/stream", stream_endpoint)
 
 

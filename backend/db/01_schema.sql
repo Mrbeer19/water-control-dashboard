@@ -273,19 +273,125 @@ CREATE INDEX notification_log_due_idx ON notification_log (next_attempt_at) WHER
 
 -- ─────────────── ตารางของทีม AI (backend แค่เสิร์ฟ ไม่เขียนโมเดล) ───────────────
 
+-- ★ ทุกตารางรับตามสัญญา docs/AI_CONTRACT.md · external_id = id ของทีม AI (ส่งซ้ำ = อัปเดตแถวเดิม)
 CREATE TABLE ai_anomalies (
-  id           BIGSERIAL PRIMARY KEY,
-  detected_at  TIMESTAMPTZ NOT NULL,
-  source_id    TEXT NOT NULL,                       -- ★ ไม่มีแล้วหมุดไม่ขึ้นบนกราฟ
-  source_type  TEXT NOT NULL,
-  anomaly_type TEXT NOT NULL,                       -- ★ string เปิด ห้ามทำ enum ปิด
-  severity     TEXT,
-  score        NUMERIC CHECK (score BETWEEN 0 AND 1),  -- ★ 0–1 สูง = แย่
-  metric       TEXT,
-  window_start TIMESTAMPTZ,
-  window_end   TIMESTAMPTZ,
-  evidence     JSONB,
-  status       TEXT,
-  feedback     TEXT
+  id               BIGSERIAL PRIMARY KEY,
+  external_id      TEXT UNIQUE,
+  detected_at      TIMESTAMPTZ NOT NULL,
+  source_id        TEXT NOT NULL REFERENCES entities(entity_id),   -- ★ ไม่มีแล้วหมุดไม่ขึ้นบนกราฟ
+  source_type      TEXT NOT NULL,
+  anomaly_type     TEXT NOT NULL,                   -- ★ string เปิด ห้ามทำ enum ปิด
+  detector         TEXT,
+  severity         TEXT CHECK (severity IN ('critical', 'warning', 'info')),
+  score            NUMERIC CHECK (score BETWEEN 0 AND 1),          -- ★ 0–1 สูง = แย่
+  metric           TEXT,
+  window_start     TIMESTAMPTZ,
+  window_end       TIMESTAMPTZ,
+  evidence         JSONB,
+  expected_band    JSONB,
+  features         JSONB,
+  suggested_action TEXT,
+  summary_th       TEXT,
+  summary_en       TEXT,
+  model_name       TEXT,
+  extra            JSONB,
+  -- ★ สถานะ/ผลตรวจจากหน้างานเป็นของคน — ทีม AI ส่งซ้ำไม่ทับ
+  status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'resolved', 'dismissed')),
+  resolved_at      TIMESTAMPTZ,
+  feedback         TEXT CHECK (feedback IN ('confirmed', 'false_positive')),
+  alert_id         BIGINT REFERENCES alerts(alert_id) ON DELETE SET NULL,
+  received_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX ai_anomalies_detected_idx ON ai_anomalies (detected_at DESC);
+CREATE INDEX ai_anomalies_source_idx ON ai_anomalies (source_id, detected_at DESC);
+ALTER TABLE alerts ADD FOREIGN KEY (anomaly_id) REFERENCES ai_anomalies(id) ON DELETE SET NULL;
+
+CREATE TABLE ai_forecasts (
+  id            BIGSERIAL PRIMARY KEY,
+  external_id   TEXT UNIQUE,
+  target        TEXT NOT NULL,                      -- string เปิด
+  target_id     TEXT,
+  target_name   TEXT,
+  metric        TEXT,
+  unit          TEXT,
+  horizon       TEXT,
+  horizon_hours NUMERIC,
+  generated_at  TIMESTAMPTZ NOT NULL,
+  history       JSONB,
+  forecast      JSONB,
+  value         NUMERIC,
+  expected_at   TIMESTAMPTZ,
+  confidence    NUMERIC CHECK (confidence BETWEEN 0 AND 1),
+  mape_percent  NUMERIC,
+  model_name    TEXT,
+  summary_th    TEXT,
+  summary_en    TEXT,
+  received_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ai_forecasts_target_idx ON ai_forecasts (target, target_id, generated_at DESC);
+
+CREATE TABLE ai_maintenance (
+  id                   BIGSERIAL PRIMARY KEY,
+  external_id          TEXT UNIQUE,
+  target_type          TEXT NOT NULL,
+  target_id            TEXT NOT NULL REFERENCES entities(entity_id),
+  generated_at         TIMESTAMPTZ NOT NULL,
+  target_name          TEXT,
+  failure_probability  NUMERIC CHECK (failure_probability BETWEEN 0 AND 1),
+  days_until_service   NUMERIC,
+  estimated_issue_date TIMESTAMPTZ,
+  health_score         NUMERIC CHECK (health_score BETWEEN 0 AND 100),  -- ★ 0–100 สูง = ดี (กลับทางกับ score)
+  trend                TEXT,
+  features             JSONB,
+  model_name           TEXT,
+  note                 TEXT,
+  recommendation_th    TEXT,
+  recommendation_en    TEXT,
+  received_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ai_maintenance_target_idx ON ai_maintenance (target_type, target_id, generated_at DESC);
+
+CREATE TABLE ai_metrics (
+  id              BIGSERIAL PRIMARY KEY,
+  key             TEXT NOT NULL,                     -- string เปิด
+  computed_at     TIMESTAMPTZ NOT NULL,
+  value           NUMERIC,
+  text            TEXT,
+  unit            TEXT,
+  format          TEXT,
+  decimals        INT,
+  scope_type      TEXT,
+  scope_id        TEXT,
+  scope_name      TEXT,
+  target          NUMERIC,
+  thresholds      JSONB,
+  status          TEXT CHECK (status IN ('ok', 'warning', 'critical', 'offline')),
+  previous_value  NUMERIC,
+  change_percent  NUMERIC,
+  trend           TEXT,
+  higher_is_worse BOOLEAN,
+  confidence      NUMERIC CHECK (confidence BETWEEN 0 AND 1),
+  basis           JSONB,
+  series          JSONB,
+  model_name      TEXT,
+  summary_th      TEXT,
+  summary_en      TEXT,
+  extra           JSONB,
+  received_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ai_metrics_key_idx ON ai_metrics (key, scope_type, scope_id, computed_at DESC);
+
+-- สัญญาณชีพจากบริการ AI — มีได้แถวเดียว
+CREATE TABLE ai_status (
+  id                  BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  reported_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  models              JSONB NOT NULL DEFAULT '[]',
+  message             TEXT,
+  mode                TEXT,
+  last_trained_at     TIMESTAMPTZ,
+  training_days       NUMERIC,
+  accuracy            NUMERIC CHECK (accuracy BETWEEN 0 AND 1),
+  false_positive_rate NUMERIC CHECK (false_positive_rate BETWEEN 0 AND 1),
+  summary_text        TEXT
+);
