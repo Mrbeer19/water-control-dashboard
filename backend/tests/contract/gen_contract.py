@@ -20,7 +20,7 @@ TYPES = ("Tank", "Pump", "Valve", "Zone", "ZoneCost", "WaterMeter", "MainMeter",
          "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError",
          "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated",
          "SystemSettings", "AuthSession", "RealtimeEvent", "AnomalyEvent", "AIForecast", "MaintenancePrediction",
-         "AIMetric", "AIServiceStatus")
+         "AIMetric", "AIServiceStatus", "ControlInterlock", "CommandLogEntry", "CommandResult", "CommandSchedule")
 SERVICES = {"tanks": ["getTankTotals"], "pumps": ["getPumpEnergyToday"], "zones": ["getZoneConsumption"],
             "meters": ["getFlowBalance"], "pressure": ["getHeadcount"], "environment": ["getRainfall"],
             "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"],
@@ -88,6 +88,11 @@ CASES = [
     ("GET", "/api/ai/maintenance", "MaintenancePrediction[]"),
     ("GET", "/api/ai/metrics", "AIMetric[]"),
     ("GET", "/api/ai/status", "AIServiceStatus"),
+    # การสั่งงาน (make integration ทิ้งคำสั่งทุกสถานะไว้ให้ตรวจ)
+    ("GET", "/api/control/interlocks", "ControlInterlock[]"),
+    ("GET", "/api/control/commands?limit=200", "CommandLogEntry[]"),
+    ("GET", "/api/control/commands/{command}", "CommandResult"),
+    ("GET", "/api/control/schedules", "CommandSchedule[]"),
     # ข้อความจริงหนึ่งข้อความจาก stream (ต้องเปิด simulator) — อาร์เรย์ของ RealtimeEvent
     ("WS", "/api/stream?channels=telemetry,system", "RealtimeEvent[]"),
     ("GET", "/api/auth/session", "AuthSession | null"),
@@ -118,7 +123,9 @@ def main() -> None:
             for module, names in SERVICES.items()]
     latest = fetch("GET", "/api/alerts?limit=1")["items"]  # type: ignore[index]
     anomalies = fetch("GET", "/api/ai/anomalies?limit=1")["items"]  # type: ignore[index]
-    ids = {"{alert}": latest[0]["id"] if latest else "0", "{anomaly}": anomalies[0]["id"] if anomalies else "0"}
+    commands = fetch("GET", "/api/control/commands?limit=1")
+    ids = {"{alert}": latest[0]["id"] if latest else "0", "{anomaly}": anomalies[0]["id"] if anomalies else "0",
+           "{command}": commands[0]["command"]["id"] if commands else "0"}  # type: ignore[index]
     for index, (method, path, ts_type) in enumerate(CASES):
         for placeholder, value in ids.items():
             path = path.replace(placeholder, value)

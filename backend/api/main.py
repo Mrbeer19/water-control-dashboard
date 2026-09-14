@@ -21,6 +21,8 @@ from .errors import ApiException
 from .routes_ai import router as ai_router
 from .routes_alerts import router as alerts_router
 from .routes_auth import router as auth_router
+from .routes_control import device_router as device_control_router
+from .routes_control import router as control_router
 from .routes_domain import router as domain_router
 from .routes_settings import router as settings_router
 from .series import SeriesQuery, metric_series, state_spans
@@ -45,7 +47,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Water Control API", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+app.include_router(device_control_router)      # ★ ก่อน domain_router — /devices/{id}/reboot ต้องมาถึงที่นี่
 app.include_router(domain_router)
+app.include_router(control_router)
 app.include_router(alerts_router)
 app.include_router(auth_router)
 app.include_router(settings_router)

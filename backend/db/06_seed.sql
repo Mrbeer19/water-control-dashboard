@@ -269,6 +269,50 @@ INSERT INTO settings (section, value, updated_by) VALUES
      "controlLockout": false, "departmentScopedAccess": true, "auditLogRetentionDays": 730
    }', 'user-admin');
 
+-- ─────────────── ด่านตรวจคำสั่ง (api/interlock.py โหลดใหม่ทุกครั้งที่สั่ง) ───────────────
+-- ★ แปลงจาก pumpInterlock() / valveInterlock() / validate() ใน lib/mock/control.ts + กฎเพิ่มจาก PROMPT_05
+--   blocks_auto = ใช้กับคำสั่งจากตารางเวลา · blocks_manual = ใช้กับคนสั่ง
+INSERT INTO interlock_rules (rule_id, target_kind, check_name, actions, params, message_th, message_en,
+                             blocks_auto, blocks_manual, sort_order) VALUES
+  ('CONTROL_LOCKED', 'any', 'control_locked', '{}', '{"except_actions": ["emergency_stop"]}',
+   'ระบบถูกล็อกการสั่งงาน (โหมดซ่อมบำรุง หรือหลังหยุดฉุกเฉิน)',
+   'Control is locked (maintenance mode or after an emergency stop)', true, true, 10),
+  ('SOURCE_TANK_LOW', 'pump', 'source_tank_below', '{start}', '{"min_percent": 15}',
+   '{tank}ต่ำกว่า {min}% ({percent}%) — สตาร์ตแล้วปั๊มจะดูดแห้ง',
+   '{tankEn} below {min}% ({percent}%) — starting would run the pump dry', true, true, 20),
+  ('PUMP_IN_FAULT', 'pump', 'pump_in_fault', '{start}', '{}',
+   'ปั๊มขัดข้อง ({code}) ต้องเคลียร์ก่อนจึงสั่งเดินได้', 'Pump is in fault ({code}) — clear it before starting',
+   true, true, 30),
+  ('PUMP_LOCKED_OUT', 'pump', 'pump_locked_out', '{start,stop}', '{}',
+   'ปั๊มถูกล็อกอยู่ ต้องปลดล็อกก่อน', 'Pump is locked out — release it first', true, true, 40),
+  ('NO_VFD', 'pump', 'pid_requires_vfd', '{set_mode}', '{}',
+   'ปั๊มตัวนี้ไม่ได้ขับด้วยอินเวอร์เตอร์ จึงใช้โหมด PID ไม่ได้', 'This pump has no VFD, so PID mode is unavailable',
+   true, true, 50),
+  ('REMOTE_DISABLED', 'valve', 'remote_disabled', '{}', '{}',
+   'วาล์วนี้ถูกปิดการสั่งงานระยะไกลที่ตู้หน้างาน', 'Remote control disabled at the local panel', true, true, 60),
+  ('VALVE_MOVING', 'valve', 'valve_moving', '{}', '{}',
+   'วาล์วกำลังเคลื่อนที่ รอให้หยุดก่อน', 'Valve is still moving — wait for it to settle', true, true, 70),
+  ('VIP_AUTO_CLOSE', 'valve', 'vip_zone', '{close,set_open_percent}', '{}',
+   '{zone} เป็นโซน VIP — ห้ามปิดจากระบบอัตโนมัติทุกกรณี', '{zoneEn} is a VIP zone — automatic closing is never allowed',
+   true, false, 80),
+  ('VIP_ZONE', 'valve', 'vip_zone_unconfirmed', '{close,set_open_percent}', '{}',
+   'โซน VIP — ต้องยืนยันสองชั้นก่อนตัดน้ำ', 'VIP zone — closing requires a second confirmation', false, true, 90),
+  ('VALVE_CLOSE_RATE', 'valve', 'close_rate_limit', '{close}', '{"max_closes": 3, "window_seconds": 10}',
+   'สั่งปิดวาล์วได้ไม่เกิน {max} ตัวใน {window} วินาที กันแรงดันในท่อกระชาก — รอสักครู่แล้วค่อยสั่ง',
+   'At most {max} valve closures per {window} seconds to avoid pressure surges — wait and retry', true, true, 100),
+  ('PUMP_DOWNSTREAM_CLOSED', 'valve', 'last_open_valve_of_running_pump', '{close}', '{}',
+   '{pump} กำลังเดินอยู่ ปิดวาล์วนี้แล้วจะไม่เหลือทางจ่ายน้ำ — หยุดปั๊มก่อน',
+   '{pumpEn} is running and this is its last open outlet — stop the pump first', true, true, 110),
+  ('BAD_VALUE', 'valve', 'value_between', '{set_open_percent}', '{"min": 0, "max": 100}',
+   'เปอร์เซ็นต์การเปิดต้องอยู่ระหว่าง {min}–{max}', 'Open percentage must be between {min} and {max}', true, true, 120),
+  ('SETPOINT_OUT_OF_RANGE', 'pressure_control', 'setpoint_within_limits', '{set_setpoint}', '{}',
+   'แรงดันเป้าหมายต้องอยู่ระหว่าง {min}–{max} bar', 'Setpoint must be between {min} and {max} bar', true, true, 130),
+  ('SYSTEM_AUTO', 'system', 'always', '{emergency_stop,open_all,close_all}', '{}',
+   'คำสั่งระดับทั้งระบบตั้งเป็นตารางเวลาไม่ได้', 'System-wide commands cannot be scheduled', true, false, 140),
+  ('SYSTEM_CONFIRM', 'system', 'system_unconfirmed', '{open_all,close_all}', '{}',
+   'คำสั่งเปิด/ปิดวาล์วทุกโซนต้องยืนยันสองชั้น', 'Opening or closing every valve requires a second confirmation',
+   false, true, 150);
+
 -- ─────────────── ค่าตั้งต้นจากโรงงาน (POST /api/settings/reset คืนค่าชุดนี้) ───────────────
 -- ★ ต้องอยู่ท้ายไฟล์ หลังใส่ settings / thresholds / tariffs ครบแล้ว — ต้นทางของค่าตั้งต้นมีที่เดียวคือไฟล์นี้
 INSERT INTO settings_factory (section, value) SELECT section, value FROM settings;

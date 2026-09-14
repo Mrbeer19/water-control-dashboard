@@ -23,7 +23,7 @@ import redis
 import redis.asyncio as aioredis
 from fastapi import WebSocket, WebSocketDisconnect
 
-from . import ai
+from . import ai, control
 from . import alerts as al
 from .db import pool
 from .domain_site import build_devices, build_electric_nodes, build_sensors, connection_status
@@ -33,7 +33,7 @@ from .series import iso, now_ms
 
 TICK_SECONDS = 2.0
 CHANNELS = ("telemetry", "alerts", "commands", "system")
-SUBSCRIBED = ("telemetry", "alerts", "system")
+SUBSCRIBED = ("telemetry", "alerts", "system", "commands")
 # RealtimeEvent.type → RealtimeChannel (ต้องครบทุก type ใน lib/types.ts — tests/test_stream_units.py ตรวจ)
 CHANNEL_OF = {
     "tank": "telemetry", "pump": "telemetry", "valve": "telemetry", "zone": "telemetry", "meter": "telemetry",
@@ -58,12 +58,13 @@ class Dirty:
     alerts: set[tuple[str, str]] = field(default_factory=set)
     alert_ids: set[int] = field(default_factory=set)
     anomaly_ids: set[int] = field(default_factory=set)
+    command_ids: set[str] = field(default_factory=set)
     devices: set[str] = field(default_factory=set)
     connection: bool = False
 
     def empty(self) -> bool:
-        return not (self.telemetry or self.alerts or self.alert_ids or self.anomaly_ids or self.devices
-                    or self.connection)
+        return not (self.telemetry or self.alerts or self.alert_ids or self.anomaly_ids or self.command_ids
+                    or self.devices or self.connection)
 
     def add(self, channel: str, data: dict[str, object]) -> None:
         if channel == "telemetry":
@@ -80,6 +81,9 @@ class Dirty:
                 self.alert_ids.add(int(str(data["alertId"])))
             elif data.get("entityId") and data.get("code"):
                 self.alerts.add((str(data["entityId"]), str(data["code"])))
+        elif channel == "commands":
+            if data.get("commandId"):
+                self.command_ids.add(str(data["commandId"]))
         elif channel == "system":
             if data.get("deviceId"):
                 self.devices.add(str(data["deviceId"]))
@@ -88,7 +92,9 @@ class Dirty:
 
 def key_of(event: dict[str, object]) -> tuple[str, str]:
     payload = event["payload"]
-    return str(event["type"]), str(payload.get("id", "")) if isinstance(payload, dict) else ""
+    if not isinstance(payload, dict):
+        return str(event["type"]), ""
+    return str(event["type"]), str(payload.get("id") or payload.get("commandId") or "")
 
 
 def fingerprint(event: dict[str, object]) -> str:
@@ -136,6 +142,10 @@ def build_events(dirty: Dirty) -> list[dict[str, object]]:
             alert = al.get_alert(conn, reg.timezone, alert_id)
             if alert is not None:
                 found.append(("alert", alert))
+        for command_id in sorted(dirty.command_ids):
+            result = control.get_result(conn, reg.timezone, command_id)
+            if result is not None:
+                found.append(("command_result", result))
         for anomaly_id in sorted(dirty.anomaly_ids):
             anomaly = ai.get_anomaly(conn, reg.timezone, anomaly_id)
             if anomaly is not None:
@@ -196,7 +206,7 @@ class Hub:
         fresh = []
         for event in events:
             key, mark = key_of(event), fingerprint(event)
-            if event["type"] in ("alert", "anomaly") or self.fingerprints.get(key) != mark:
+            if event["type"] in ("alert", "anomaly", "command_result") or self.fingerprints.get(key) != mark:
                 self.fingerprints[key] = mark
                 fresh.append(event)
         return fresh

@@ -215,6 +215,29 @@ ingest ─PUBLISH─► redis ─► Hub ใน api (ทุก 2 วินาท
 - backend ไม่มีโมเดลใด ๆ — แค่รับ ตรวจสัญญา เก็บ และเสิร์ฟ (`api/ai.py`)
 - ตั้ง `AI_INGEST_TOKEN` ใน `.env` แล้วส่งให้ทีม AI · ว่าง = ส่งผลได้เฉพาะ admin ที่ล็อกอิน
 
+## การสั่งงาน — `/api/control/*` · service `dispatcher`
+
+```
+POST /api/control/valve/:id ─► สิทธิ์ + PIN ─► ★ interlock (กฎจาก interlock_rules · ทีละคำสั่ง)
+        │                                        ├─ ไม่ผ่าน → commands(rejected) + audit_log → 409
+        │                                        └─ ผ่าน → commands(pending) + audit_log
+        ├─► MQTT  valve → ESP32 · pump/pressure → PLC ─► 202 ทันที
+        ▼
+dispatcher ◄─ …/feedback ─ อุปกรณ์     ได้ ≤ 10 วินาที → confirmed + latency_ms · ไม่ได้ → timeout (ไม่ทราบผล)
+dispatcher ─ ทุก 10 วินาที ─► ตารางเวลา (สั่งในนาม schedule:<id> = ระบบอัตโนมัติ)
+```
+
+```bash
+make password NAME=somchai PIN=1   # PIN 4 หลักสำหรับหน้า Control (seed ไม่มี PIN ตั้งต้น)
+make integration                   # รวมเกณฑ์รับงานเฟส 5 ทั้ง 8 ข้อ (ปิด simulator ชั่วคราวแล้วเปิดคืนเอง)
+```
+
+| เรื่อง | ทำที่ไหน |
+|---|---|
+| วิธีตรวจของกฎ (แปลงจาก `lib/mock/control.ts`) · ไม่รู้จักวิธีตรวจ = ระงับคำสั่ง | `api/interlock.py` |
+| ลำดับสั่งงาน · โทเคนยืนยันสองชั้น · feedback · timeout · ตารางเวลา | `api/control.py` |
+| กฎ ข้อความ และพารามิเตอร์ (เปิด/ปิด/แก้ได้โดยไม่แก้โค้ด) | ตาราง `interlock_rules` (`db/06_seed.sql`) |
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

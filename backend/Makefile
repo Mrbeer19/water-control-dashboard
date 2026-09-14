@@ -66,12 +66,12 @@ settings-golden: ## ค่าอ้างอิงจาก validateSettings() �
 	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
 	  node --experimental-strip-types --no-warnings backend/scripts/gen_settings_golden.mjs > tests/fixtures/settings_golden.json
 
-password:       ## ตั้งรหัสผ่านผู้ใช้ เช่น make password NAME=admin (seed ไม่มีรหัสตั้งต้น)
-	$(COMPOSE) exec api python -m api.set_password $(NAME)
+password:       ## ตั้งรหัสผ่าน make password NAME=admin · ตั้ง PIN สั่งงาน make password NAME=somchai PIN=1
+	$(COMPOSE) exec api python -m api.set_password $(NAME) $(if $(PIN),--pin,)
 
 integration:    ## เกณฑ์รับงานที่ใช้ stack จริง ยกเว้น S1–S14 (make up ก่อน)
 	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py \
-	  tests/test_auth_settings_api.py tests/test_stream_api.py tests/test_ai_api.py -v
+	  tests/test_auth_settings_api.py tests/test_stream_api.py tests/test_ai_api.py tests/test_control_api.py -v
 
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator

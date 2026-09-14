@@ -585,7 +585,13 @@ def ping_device(device_id: str) -> dict[str, object]:
     return {"reachable": device["status"] != "offline", "latencyMs": None}
 
 
-@router.post("/devices/{device_id}/reboot")
+@router.get("/devices/firmware-jobs/{job_id}")
+def firmware_job(job_id: str) -> None:
+    raise ApiException(501, "NOT_IMPLEMENTED", "ยังไม่มีงานอัปเดตเฟิร์มแวร์ — รอสัญญา OTA กับทีมฮาร์ดแวร์",
+                       "Firmware jobs are not available yet — the OTA contract with hardware is pending",
+                       {"jobId": job_id})
+
+
 @router.post("/devices/{device_id}/firmware")
 def device_command(device_id: str) -> None:
     raise ApiException(501, "NOT_IMPLEMENTED", "คำสั่งไปยังอุปกรณ์เปิดใช้ในเฟสระบบควบคุม (ต้องผ่าน audit log)",

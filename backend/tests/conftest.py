@@ -7,7 +7,7 @@ import secrets
 import httpx
 import pytest
 
-from tests.helpers import Db, DeviceClient, load_env, set_password
+from tests.helpers import Db, DeviceClient, load_env, set_password, set_pin
 
 API = "http://127.0.0.1:8000"
 TEST_ACCOUNTS = ("admin", "somchai", "accounting")   # admin · operator · viewer ตาม seed
@@ -48,6 +48,15 @@ def passwords() -> dict[str, str]:
     made = {username: secrets.token_urlsafe(16) for username in TEST_ACCOUNTS}
     for username, password in made.items():
         set_password(username, password)
+    return made
+
+
+@pytest.fixture(scope="session")
+def pins() -> dict[str, str]:
+    """PIN สั่งงาน 4 หลักสุ่มใหม่ทุกรอบเทส (ไม่ใช่ 0000 เพื่อให้เทส PIN ผิดมีความหมาย)"""
+    made = {username: f"{secrets.randbelow(9000) + 1000}" for username in ("admin", "somchai")}
+    for username, pin in made.items():
+        set_pin(username, pin)
     return made
 
 

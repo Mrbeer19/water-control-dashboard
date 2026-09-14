@@ -254,3 +254,51 @@ type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต�
 ### 38. ℹ️ ความผิดปกติระดับเตือนขึ้นไปสร้าง alert `ANOMALY_DETECTED` ให้เอง (`alert.anomalyEventId`)
 
 ปิดเคส (`/status`) ครบทุกเคสของ alert แล้ว alert ปิดตาม · `feedback` ไม่ใช่การปิดเคส · `setScenario()` ไม่มีใน API จริง ต้องลบตอนสลับ
+
+---
+
+## การสั่งงาน (เฟส 5)
+
+### 39. 👉 ถึงทีมฮาร์ดแวร์: สัญญาคำสั่งและ feedback (QoS 1)
+
+| อุปกรณ์ | รับคำสั่ง | ตอบ feedback |
+|---|---|---|
+| ESP32 วาล์ว | `plant/water/valve/<valve-id>/cmd` | `plant/water/valve/<valve-id>/feedback` |
+| PLC (ผ่าน bridge) | `plant/water/pump/<pump-id>/cmd` · `plant/water/pressure/pressure-control-1/cmd` | `…/feedback` ของเป้าหมายเดียวกัน |
+| ESP32 ทุกตัว (รีบูต) | `plant/water/<device-id>/cmd` → `{"action": "reboot"}` | ไม่ต้องตอบ |
+
+```json
+// cmd
+{ "commandId": "3f9b…", "action": "close", "value": null, "issuedAt": "2026-09-14T11:02:03.120Z", "timeoutMs": 10000 }
+// feedback — ส่ง commandId กลับ · อ่านตำแหน่งจริงจาก limit switch ไม่ใช่สะท้อนคำสั่ง
+{ "commandId": "3f9b…", "ok": true, "position": "closed", "at": "2026-09-14T18:02:03.940+07:00" }
+{ "commandId": "…", "ok": false, "error": "limit switch ไม่ตอบ" }          // อุปกรณ์ปฏิเสธ
+```
+
+`position` = `open` `closed` `opening` `closing` `fault` · ปั๊มใช้ `runState` · เปลี่ยนโหมดใช้ `mode` · setpoint ใช้ `value`
+★ ช่างหมุนวาล์วที่ตู้เองก็ให้ส่ง feedback (ไม่มี `commandId`) — ระบบบันทึกตำแหน่งจริงเสมอ
+★ ไม่ตอบภายใน 10 วินาที ระบบถือว่า "ไม่ทราบผล" ไม่ใช่ล้มเหลว
+
+### 40. 👉 ถึงหน้าบ้าน: `issueCommand()` ได้ 202 + `CommandLogEntry` · ถูกด่านปฏิเสธได้ 409
+
+| ได้ | หมายถึง | ทำอะไรต่อ |
+|---|---|---|
+| 409 `INTERLOCK_REJECTED` | ติดกฎ `details.rule` · `messageTh` คือเหตุผลที่อ่านได้ | แสดงเหตุผล ห้ามให้กดซ้ำทันที |
+| 409 `CONFIRMATION_REQUIRED` | ต้องยืนยันชั้นที่สอง (โซน VIP · เปิด/ปิดทุกโซน) | หลังผู้ใช้ยืนยัน ส่งคำสั่งเดิมพร้อม `confirmToken` จาก `details` ภายใน 120 วินาที |
+| 503 `BROKER_UNAVAILABLE` | คำสั่งไม่ถึงอุปกรณ์แน่นอน | ลองใหม่ได้ |
+
+★ ต้องเพิ่ม `confirmToken` ใน body ของ `issueCommand()` · `issuedByUserId` ไม่ใช้ตัดสินแล้ว (ใช้ผู้ที่ล็อกอิน)
+
+### 41. 👉 PIN: เรียก `POST /api/control/unlock` `{ pin }` แทนการตรวจใน `PinGate`
+
+สั่งงานได้ 15 นาทีในเซสชันนั้น · ผิดได้ 403 `PIN_INVALID` · ผิด 5 ครั้ง `PIN_LOCKED` · ยังไม่ตั้ง `PIN_NOT_SET` · ไม่ได้ปลดล็อก `PIN_REQUIRED`
+
+### 42. ℹ️ timeout = "ไม่ทราบผล" (`errorCode: FEEDBACK_TIMEOUT` หลัง 10 วินาที — mock ใช้ 5 วินาที)
+
+ข้อความใน `COMMAND_STATE_LABEL.timeout` ควรบอกให้ตรวจหน้างานก่อนสั่งซ้ำ — สั่งปิดวาล์วซ้ำอาจเกิดค้อนน้ำ
+
+### 43. ℹ️ `/api/control/valve/:id` รับ id โซนได้ (`zone-8`) · `reasons[].code` ของ interlock คือ `rule_id` ในตาราง
+
+`/system/clear-lockout` ต้องผ่าน PIN เหมือนคำสั่งอื่น · หยุดฉุกเฉินไม่ต้องยืนยันสองชั้นและไม่ติดกฎใด
+
+### 44. ℹ️ รีบูตได้เฉพาะ ESP32 — `ok: true` แปลว่าส่งคำสั่งออก ไม่ใช่รีบูตสำเร็จ · อัปเดตเฟิร์มแวร์ยังตอบ 501

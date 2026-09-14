@@ -104,13 +104,19 @@ CREATE TABLE meter_readings (
 );
 CREATE INDEX meter_readings_entity_idx ON meter_readings (entity_id, read_on DESC);
 
+-- ด่านตรวจคำสั่ง — ★ เปิด/ปิด พารามิเตอร์ และข้อความอยู่ที่นี่ · โค้ด (api/interlock.py) มีแค่วิธีตรวจตาม check_name
 CREATE TABLE interlock_rules (
-  rule_id       TEXT PRIMARY KEY,
-  target_kind   TEXT NOT NULL,
-  condition     JSONB NOT NULL,
-  message_th    TEXT NOT NULL,
-  blocks_auto   BOOLEAN NOT NULL DEFAULT true,
-  blocks_manual BOOLEAN NOT NULL DEFAULT false
+  rule_id       TEXT PRIMARY KEY,                   -- รหัสที่หน้าจอเห็น เช่น SOURCE_TANK_LOW
+  target_kind   TEXT NOT NULL,                      -- pump | valve | pressure_control | system | any
+  check_name    TEXT NOT NULL,                      -- ไม่รู้จักชื่อ = ระงับคำสั่ง (fail-closed)
+  actions       TEXT[] NOT NULL DEFAULT '{}',       -- คำสั่งที่กฎนี้คุม · ว่าง = ทุกคำสั่ง
+  params        JSONB NOT NULL DEFAULT '{}'::jsonb,
+  message_th    TEXT NOT NULL,                      -- {ตัวแปร} เติมจากผลการตรวจ
+  message_en    TEXT NOT NULL,
+  enabled       BOOLEAN NOT NULL DEFAULT true,
+  sort_order    INT NOT NULL DEFAULT 100,
+  blocks_auto   BOOLEAN NOT NULL DEFAULT true,      -- ใช้กับคำสั่งจากตารางเวลา
+  blocks_manual BOOLEAN NOT NULL DEFAULT false      -- ใช้กับคนสั่ง
 );
 
 CREATE TABLE settings (
@@ -124,6 +130,7 @@ CREATE TABLE users (
   user_id       TEXT PRIMARY KEY,
   username      TEXT UNIQUE NOT NULL,
   password_hash TEXT,
+  pin_hash      TEXT,                               -- PIN 4 หลักก่อนสั่งงาน (argon2) · make password NAME=… PIN=1
   role          TEXT NOT NULL,                      -- viewer | operator | admin
   display_name  TEXT NOT NULL,
   department_id TEXT REFERENCES departments(department_id),
@@ -141,7 +148,8 @@ CREATE TABLE sessions (
   expires_at   TIMESTAMPTZ NOT NULL,
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   revoked_at   TIMESTAMPTZ,
-  ip           TEXT
+  ip           TEXT,
+  control_unlocked_until TIMESTAMPTZ                -- ใส่ PIN ผ่านแล้ว สั่งงานได้ถึงเวลานี้
 );
 CREATE INDEX sessions_user_idx ON sessions (user_id);
 
@@ -203,9 +211,53 @@ CREATE TABLE commands (
     CHECK (status IN ('pending', 'awaiting_feedback', 'confirmed', 'timeout', 'rejected')),
   reject_reason TEXT,
   confirmed_at  TIMESTAMPTZ,
-  latency_ms    INT
+  latency_ms    INT,                                -- ตั้งแต่กดจนอุปกรณ์ยืนยัน
+  reject_code   TEXT,                               -- rule_id ของด่านที่ปฏิเสธ · CONFIRMATION_REQUIRED · BROKER_UNAVAILABLE
+  reason        TEXT,                               -- เหตุผลที่ผู้สั่งกรอก
+  requires_confirmation BOOLEAN NOT NULL DEFAULT false,
+  timeout_ms    INT NOT NULL DEFAULT 10000,
+  sent_at       TIMESTAMPTZ,
+  feedback_value JSONB,
+  parent_id     UUID REFERENCES commands(command_id), -- คำสั่งย่อยของคำสั่งทั้งระบบ (หยุดฉุกเฉิน · เปิด/ปิดทุกโซน)
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX commands_created_idx ON commands (created_at DESC);
+
+CREATE INDEX commands_target_idx ON commands (target_kind, target_id, created_at DESC);
+CREATE INDEX commands_open_idx ON commands (created_at) WHERE status IN ('pending', 'awaiting_feedback');
+
+-- โทเคนยืนยันชั้นที่สองจากเซิร์ฟเวอร์ (โซน VIP · เปิด/ปิดทุกโซน) — ใช้ได้ครั้งเดียว ผูกกับผู้ใช้ + เป้าหมาย + คำสั่ง
+CREATE TABLE control_confirmations (
+  token_hash  TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL,
+  target_kind TEXT NOT NULL,
+  target_id   TEXT NOT NULL,
+  action      TEXT NOT NULL,
+  value       JSONB,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ
+);
+
+-- ตารางสั่งงานล่วงหน้า — ★ dispatcher สั่งในนาม schedule:<id> ซึ่งนับเป็นระบบอัตโนมัติ
+CREATE TABLE command_schedules (
+  schedule_id     BIGSERIAL PRIMARY KEY,
+  target_kind     TEXT NOT NULL,
+  target_id       TEXT NOT NULL,
+  action          TEXT NOT NULL,
+  value           JSONB,
+  run_time        TEXT NOT NULL CHECK (run_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),   -- เวลาโรงงาน
+  repeat          TEXT NOT NULL CHECK (repeat IN ('once', 'daily', 'weekdays', 'weekly')),
+  days_of_week    INT[] NOT NULL DEFAULT '{}',        -- 0 = อาทิตย์ … 6 = เสาร์
+  enabled         BOOLEAN NOT NULL DEFAULT true,
+  next_run_at     TIMESTAMPTZ,
+  last_run_at     TIMESTAMPTZ,
+  last_command_id UUID REFERENCES commands(command_id) ON DELETE SET NULL,
+  created_by      TEXT NOT NULL REFERENCES users(user_id),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX command_schedules_due_idx ON command_schedules (next_run_at) WHERE enabled;
 
 CREATE TABLE audit_log (
   log_id     BIGSERIAL PRIMARY KEY,

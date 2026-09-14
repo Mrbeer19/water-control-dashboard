@@ -133,6 +133,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
       REDIS_URL: redis://redis:6379/0
       INGEST_URL: http://ingest:8080
+      MQTT_HOST: mosquitto
+      MQTT_USER: api                   # ส่งคำสั่งไป plant/water/{valve,pump,pressure}/:id/cmd ตาม ACL
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
       AI_INGEST_TOKEN: ${AI_INGEST_TOKEN:-}   # บริการ AI ส่งผลด้วย Authorization: Bearer <token> · ว่าง = ส่งได้เฉพาะ admin
     ports:
       - "127.0.0.1:8000:8000"          # dev: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 · เครื่องจริงเข้าผ่าน nginx
@@ -170,6 +173,34 @@ services:
       mosquitto: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/notifier.alive') > 30)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
+  # รับ feedback ของคำสั่ง · ตัด timeout 10 วินาที · เดินตารางเวลา — image เดียวกับ api
+  dispatcher:
+    build: ./api
+    image: water-backend/api:0.3.0
+    command: ["python", "-m", "api.dispatcher"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      MQTT_HOST: mosquitto
+      MQTT_USER: api
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/dispatcher.alive') > 30)"]
       interval: 10s
       timeout: 3s
       retries: 3
