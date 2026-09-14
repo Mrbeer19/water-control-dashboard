@@ -238,6 +238,25 @@ make integration                   # รวมเกณฑ์รับงาน�
 | ลำดับสั่งงาน · โทเคนยืนยันสองชั้น · feedback · timeout · ตารางเวลา | `api/control.py` |
 | กฎ ข้อความ และพารามิเตอร์ (เปิด/ปิด/แก้ได้โดยไม่แก้โค้ด) | ตาราง `interlock_rules` (`db/06_seed.sql`) |
 
+## รายงาน — `/api/reports/*`
+
+```
+counter_total() / fetch_buckets + build_points ── ชุดเดียวกับ /api/metrics/series ──► ยอดในรายงาน = ผลรวมบนกราฟ
+tariffs (อัตรา ณ วันเริ่มช่วง) ─► ขั้นบันไดจากยอดรวมทั้งช่วง ─► เฉลี่ยลงรายวัน/รายโซนตามสัดส่วน
+meter_readings ─► รอบจดจริง (anchor=meter_reading) · หน่วยออกบิล = เลขครั้งนี้ − ครั้งก่อน
+```
+
+| endpoint | ตอบ | หมายเหตุ |
+|---|---|---|
+| `GET /api/reports/billing?utility=water\|electricity&from=&to=` | `BillingEstimate` | ไม่ระบุช่วง = รอบบิลปัจจุบัน (`billing.billingCycleStartDay`) |
+| `GET /api/reports/usage?from=&to=&preset=` | `UsageReport` | เทียบกับช่วงก่อนหน้าที่ยาวเท่ากัน |
+| `GET /api/reports/monthly?months=&anchor=calendar\|meter_reading` | `MonthlyUsagePoint[]` | ยอดจากมิเตอร์หลัก |
+| `GET /api/reports/meter-readings?meterId=&limit=` | `MeterReading[]` | ไม่ระบุ = มิเตอร์หลัก |
+| `GET /api/reports?type=&from=&to=` | `ReportDefinition` | `daily` `monthly` `zone_comparison` `department_cost` `energy` `leak_audit` |
+
+- `from`/`to` รับ epoch ms หรือ ISO ที่มี offset · ขยายเป็นวันเต็มตามเวลาโรงงาน (D-72)
+- เกณฑ์รับงานข้อ 3–6: `make integration` (`tests/test_reports_api.py`)
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

@@ -38,14 +38,14 @@ from .domain_water import (
     tank_totals,
 )
 from .errors import ApiException, bad_request, not_found
-from .metric_registry import AMOUNT, COUNTER, GAUGE, LEVEL, METRICS, SOURCES, MetricDef
+from .metric_registry import AMOUNT, COUNTER, LEVEL, METRICS, SOURCES
 from .registry import Registry, registry, worst_status
-from .series import build_points, calendar_bounds, fetch_buckets, fetch_prior_counter, iso, now_ms, to_dt
+from .reports import daily_points, department_usage
+from .series import now_ms, to_dt
 from .usage import (
     billing_period,
     counter_total,
     day_start,
-    electricity_rate,
     month_start,
     tariff,
     tier_cost,
@@ -329,7 +329,7 @@ def get_unaccounted(response: Response, frm: str | None = Query(None, alias="fro
 @router.get("/meters/daily")
 def get_daily_usage(response: Response, frm: str | None = Query(None, alias="from"), to: str | None = None,
                     projection: bool = False) -> list[dict[str, object]]:
-    """ยอดใช้น้ำรายวัน = Σ มิเตอร์ทุกโซน · ค่าน้ำรายวันเป็นค่าประมาณ (ขั้นบันไดคิดจากยอดทั้งรอบบิล)
+    """ยอดใช้น้ำรายวัน = Σ มิเตอร์ทุกโซน · ค่าน้ำรายวันเฉลี่ยตามสัดส่วนจากค่าน้ำทั้งรอบบิล (D-70)
 
     ★ projection: จุดพยากรณ์มาจากทีม AI — ยังไม่มีผลพยากรณ์จึงยังไม่ต่อจุดอนาคต (D-31)
     """
@@ -337,43 +337,13 @@ def get_daily_usage(response: Response, frm: str | None = Query(None, alias="fro
         reg = registry(conn)
         tz, now = reg.timezone, now_ms()
         end = parse_time(to, now, "to")
-        start = parse_time(frm, day_start(now, tz) - 29 * bk.MS_DAY, "from")
-        start = bk.bucket_start(start, "day", tz)
+        start = bk.bucket_start(parse_time(frm, day_start(now, tz) - 29 * bk.MS_DAY, "from"), "day", tz)
         if (end - start) / bk.MS_DAY > MAX_DAILY_DAYS:
             raise bad_request("RANGE_TOO_LONG", f"ขอรายวันได้ไม่เกิน {MAX_DAILY_DAYS} วัน",
                               f"Daily usage limited to {MAX_DAILY_DAYS} days")
-        bounds = calendar_bounds(start, end, "day", tz)
-        per_day = [0.0] * len(bounds)
-        volume = MetricDef("meter", "volume", COUNTER, "")
-        for meter in reg.of_type("meter"):
-            if meter["zone_id"] is None:
-                continue
-            rows = fetch_buckets(conn, volume, "1d", str(meter["entity_id"]), bounds)
-            prior = fetch_prior_counter(conn, volume, "1d", str(meter["entity_id"]), start)
-            for index, point in enumerate(build_points(COUNTER, rows, bounds, now, prior)):
-                per_day[index] += float(point["delta"] or 0.0)  # type: ignore[arg-type]
-        temps: list[object] = [None] * len(bounds)
-        rains: list[object] = [None] * len(bounds)
-        outdoor = next((s for s in reg.of_type("sensor") if reg.spec(str(s["entity_id"])).get("hasRainGauge")), None)
-        if outdoor is not None:
-            outdoor_id = str(outdoor["entity_id"])
-            temp_rows = fetch_buckets(conn, MetricDef("env", "temp", GAUGE, ""), "1d", outdoor_id, bounds)
-            temps = [p["avg"] for p in build_points(GAUGE, temp_rows, bounds, now)]
-            rain_rows = fetch_buckets(conn, MetricDef("env", "rain", AMOUNT, ""), "1d", outdoor_id, bounds)
-            rains = [p["sum"] for p in build_points(AMOUNT, rain_rows, bounds, now)]
-        tiers = water_tiers(tariff(conn, "water", now, tz))
+        body = daily_points(conn, reg, start, end)
     _cached(response)
-    out = []
-    for index, (day, _stop) in enumerate(bounds):
-        y, m, d, *_ = bk.zoned_parts(day, tz)
-        m3 = round(per_day[index], 2)
-        temp, rain = temps[index], rains[index]
-        out.append({"date": f"{y:04d}-{m:02d}-{d:02d}", "timestamp": day, "cubicMeters": m3,
-                    "costBaht": tier_cost(m3, tiers),
-                    "avgTemperatureCelsius": None if temp is None else round(float(temp), 1),  # type: ignore[arg-type]
-                    "rainfallMm": None if rain is None else round(float(rain), 2),  # type: ignore[arg-type]
-                    "projected": False})
-    return out
+    return body
 
 
 @router.get("/meters/{meter_id}/history")
@@ -496,45 +466,10 @@ def get_department_usage(response: Response, frm: str | None = Query(None, alias
     """★ ผลลัพธ์หลักของโปรเจกต์ — คิดจากข้อมูลที่บันทึกจริงตลอดช่วง ไม่ใช่ค่าสะสมล่าสุด"""
     with pool.connection() as conn:
         reg = registry(conn)
-        tz = reg.timezone
         start, end = _period(reg, frm, to)
-        previous = (start - (end - start), start)
-        tiers = water_tiers(tariff(conn, "water", start, tz))
-        rate = electricity_rate(tariff(conn, "electricity", start, tz))
-
-        def totals(a: int, b: int) -> dict[str, tuple[float, float]]:
-            water: dict[str, float] = {}
-            energy: dict[str, float] = {}
-            for zone in reg.zones.values():
-                meter = reg.meter_of_zone(str(zone["zone_id"]))
-                if meter is not None and zone["department_id"] is not None:
-                    water[str(zone["department_id"])] = water.get(str(zone["department_id"]), 0.0) + (
-                        counter_total(conn, tz, "meter", "volume", str(meter["entity_id"]), a, b) or 0.0)
-            for node in reg.of_type("electric_node"):
-                dept = str(reg.spec(str(node["entity_id"])).get("departmentId"))
-                energy[dept] = energy.get(dept, 0.0) + (
-                    counter_total(conn, tz, "power", "energy", str(node["entity_id"]), a, b) or 0.0)
-            return {d: (water.get(d, 0.0), energy.get(d, 0.0)) for d in reg.departments}
-
-        current, before = totals(start, end), totals(*previous)
-    rows = []
-    for dept in build_departments(reg):
-        water_m3, kwh = current[str(dept["id"])]
-        prev_water, prev_kwh = before[str(dept["id"])]
-        water_cost, elec_cost = tier_cost(round(water_m3, 2), tiers), round(kwh * rate, 2)
-        total = round(water_cost + elec_cost, 2)
-        prev_total = tier_cost(round(prev_water, 2), tiers) + round(prev_kwh * rate, 2)
-        change = round((total - prev_total) / prev_total * 100, 1) if prev_total else 0.0
-        rows.append({"departmentId": dept["id"], "departmentName": dept["name"],
-                     "costCenterCode": dept["costCenterCode"], "periodStart": iso(start, tz), "periodEnd": iso(end, tz),
-                     "waterCubicMeters": round(water_m3, 2), "waterCostBaht": water_cost, "energyKwh": round(kwh, 1),
-                     "electricityCostBaht": elec_cost, "totalCostBaht": total, "sharePercent": 0.0,
-                     "changeFromPreviousPercent": change})
-    grand = sum(float(r["totalCostBaht"]) for r in rows)  # type: ignore[arg-type]
-    for row in rows:
-        row["sharePercent"] = round(float(row["totalCostBaht"]) / grand * 100, 1) if grand else 0.0  # type: ignore[arg-type]
+        body = department_usage(conn, reg, start, end)
     _cached(response)
-    return rows
+    return body
 
 
 @router.get("/users")

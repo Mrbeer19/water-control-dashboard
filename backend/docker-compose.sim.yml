@@ -17,5 +17,11 @@ services:
       TZ: Asia/Bangkok
       MQTT_HOST: mosquitto
       MQTT_DEVICE_PASSWORD: ${MQTT_DEVICE_PASSWORD:?ต้องตั้งใน .env}
+      SIM_STATE: /state/counters.json    # ตัวนับสะสมข้ามการรีสตาร์ต (แทน NVS ของบอร์ดจริง)
+    volumes:
+      - sim-state:/state
     depends_on:
       mosquitto: { condition: service_healthy }
+
+volumes:
+  sim-state:

@@ -97,6 +97,29 @@ class Plant:
     def _phases(node: dict) -> list[str]:
         return ["L1", "L2", "L3"] if node["three_phase"] else ["single"]
 
+    # ─────────────── ตัวนับสะสมข้ามการรีสตาร์ต ───────────────
+
+    def counters(self) -> dict:
+        return {"meters": dict(self.meter_m3), "main": self.main_m3,
+                "pumps": {pid: s["energy"] for pid, s in self.pump.items()},
+                "power": {nid: dict(s["energy"]) for nid, s in self.power.items()}}
+
+    def restore(self, saved: dict) -> None:
+        """★ มิเตอร์จริงเก็บเลขหน้าปัดใน NVS — รีสตาร์ตแล้วตัวนับห้ามถอยหลัง
+        ไม่งั้น backend มองเป็นการรีเซ็ตแล้วนับยอดทั้งหน้าปัดเป็นการใช้น้ำใหม่ (ใช้ค่าที่มากกว่าเสมอ)
+        """
+        for mid, value in saved.get("meters", {}).items():
+            if mid in self.meter_m3:
+                self.meter_m3[mid] = max(self.meter_m3[mid], float(value))
+        self.main_m3 = max(self.main_m3, float(saved.get("main", 0.0)))
+        for pid, value in saved.get("pumps", {}).items():
+            if pid in self.pump:
+                self.pump[pid]["energy"] = max(self.pump[pid]["energy"], float(value))
+        for nid, phases in saved.get("power", {}).items():
+            for phase, value in phases.items():
+                if nid in self.power and phase in self.power[nid]["energy"]:
+                    self.power[nid]["energy"][phase] = max(self.power[nid]["energy"][phase], float(value))
+
     def walk(self, value: float, target: float, reversion: float, sigma: float, low: float, high: float) -> float:
         """random walk ที่ดึงกลับเข้าหาเป้า + noise แบบ gaussian"""
         return clamp(value + (target - value) * reversion + self.rng.gauss(0, sigma), low, high)
@@ -368,6 +391,14 @@ def rows_of(subtopic: str, payload: dict) -> list[str]:
     return [f"{table}:{entity}:"]
 
 
+def save_state(path: Path, plant: Plant) -> None:
+    """เขียนแบบ atomic — ถูก kill กลางทางไฟล์เดิมยังอยู่ครบ"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(plant.counters()), encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="simulator โรงงานน้ำ — ส่งข้อมูลปลอมในนามอุปกรณ์ทุกตัว")
     parser.add_argument("--host", default=os.environ.get("MQTT_HOST", "127.0.0.1"))
@@ -382,6 +413,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--scenario", action="append", default=[], choices=NAMES)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--report", help="เขียนสรุปจำนวนข้อความ/แถวที่ส่งลงไฟล์ JSON")
+    parser.add_argument("--state", default=os.environ.get("SIM_STATE"),
+                        help="ไฟล์เก็บตัวนับสะสม (แทน NVS ของบอร์ด) — รีสตาร์ตแล้วนับต่อ ไม่ถอยหลัง")
     args = parser.parse_args(argv)
 
     password = os.environ.get("MQTT_DEVICE_PASSWORD")
@@ -399,6 +432,9 @@ def main(argv: list[str] | None = None) -> None:
 
     plant = Plant(profile, Scenarios.from_names(args.scenario, profile), random.Random(args.seed))
     plant._dt = dt
+    state_path = Path(args.state) if args.state else None
+    if state_path is not None and state_path.exists():
+        plant.restore(json.loads(state_path.read_text(encoding="utf-8")))
     publisher = Publisher(args.host, args.port, password, args.base_topic, list(profile["devices"]))
     publisher.wait_connected(30)
 
@@ -427,6 +463,8 @@ def main(argv: list[str] | None = None) -> None:
                     rows[key] += 1
                 published_since_drain += 1
             sim += timedelta(seconds=dt)
+        if state_path is not None and not args.fast:
+            save_state(state_path, plant)
         if args.fast:
             if published_since_drain >= 2000:   # อย่าให้คิวในหน่วยความจำโตไม่รู้จบ
                 publisher.drain()
@@ -440,6 +478,8 @@ def main(argv: list[str] | None = None) -> None:
             print(json.dumps(progress), flush=True)
 
     publisher.close()
+    if state_path is not None:
+        save_state(state_path, plant)
     report = {"start": start.isoformat(), "end": sim.isoformat(), "stepSeconds": dt,
               "messages": sum(publisher.messages.values()), "failed": publisher.failed,
               "rows": dict(sorted(rows.items()))}
