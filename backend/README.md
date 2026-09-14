@@ -306,6 +306,26 @@ pg_restore -d water --no-owner water-YYYYMMDD-HHMM.dump     # เตือนว
 psql -d water -c "SELECT timescaledb_post_restore();"
 ```
 
+## ขึ้นเครื่องจริงที่ไม่มีอินเทอร์เน็ต — `make bundle` · `make install`
+
+```bash
+# เครื่องที่มีเน็ต
+make bundle                     # ตรวจ tag ทุก image (ห้าม latest) → build → pull → dist/water-backend-<วันที่>-<commit>.tar + .sha256
+scripts/bundle.sh --check       # ตรวจ tag อย่างเดียว
+
+# เครื่องในโรงงาน: คัดลอกโฟลเดอร์ backend/ + ไฟล์ .tar ไป แล้ว
+make init && vi .env && make passwd
+make install BUNDLE=dist/water-backend-<วันที่>-<commit>.tar   # ตรวจ sha256 → load → ตรวจครบทุก image → up --pull never
+```
+
+- bundle ไม่รวม simulator (ห้ามขึ้นเครื่องจริง) และไม่รวม `.env`
+- ⚠️ ยังไม่ได้ซ้อมบนเครื่องที่ตัดเน็ตจริง (เกณฑ์เฟส 7 ข้อ 8–9) — ทำก่อนวันติดตั้ง
+
+## CI — job `check-backend`
+
+`.github/workflows/ci.yml` มี job แยกจาก `check` (required check ของหน้าบ้าน): `ruff` · unit test · `docker compose config`
+แพ็กเกจของเทสอยู่ `tests/requirements.txt` (ใช้ร่วมกับ `make venv`) · เจ้าของ repo ต้องเพิ่ม `check-backend` เป็น required check เอง
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

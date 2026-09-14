@@ -2,7 +2,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: env passwd up down reset ps logs psql venv lint test scenarios sim sim-stop
+.PHONY: env passwd up down reset ps logs psql venv lint test scenarios sim sim-stop bundle install
 
 env:            ## สร้าง .env จากตัวอย่าง (แล้วแก้รหัสทุกตัวก่อนใช้งานจริง)
 	@test -f .env || cp .env.example .env
@@ -78,3 +78,9 @@ sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 
 sim-stop:
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml stop simulator
+
+bundle:         ## รวม image production เป็น dist/water-backend-<วันที่>-<commit>.tar (ตรวจ tag ก่อน · ไม่รวม simulator)
+	scripts/bundle.sh
+
+install:        ## ติดตั้งบนเครื่องที่ไม่มีเน็ต: make install BUNDLE=dist/water-backend-….tar
+	scripts/install.sh $(BUNDLE)

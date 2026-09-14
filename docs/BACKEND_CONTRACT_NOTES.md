@@ -339,3 +339,16 @@ type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต�
 
 `maintenance.dataRetentionDays` ใน seed = 365 แต่ PROMPT_06 เขียน 30 วัน — backend ใช้ค่าตั้ง (ขั้นต่ำ 30) และลบเฉพาะวันที่ archive เป็น Parquet ครบแล้ว
 container ไม่ mount SMB เอง: ต้อง mount `\\10.20.10.20\water-backup` บน host แล้วตั้ง `BACKUP_HOST_DIR` ใน `.env` · ทีม AI อ่านข้อมูลดิบย้อนหลังจาก `data/archive/<table>/date=YYYY-MM-DD/`
+
+## สลับหน้าบ้านเป็น API จริง (เฟส 7)
+
+### 53. ❓ ถึงหน้าบ้าน: backend พร้อมแล้ว แต่ยังไม่สลับ `lib/services/` ให้ — ขอให้เลือกวิธี (DECISIONS D-90)
+
+PROMPT_07 ให้ลบ `lib/mock/` แล้วเขียน service ใหม่ทั้งหมด แต่เดโม GitHub Pages (`pages.yml`) และ `npm run check:series` ยังใช้ mock อยู่
+
+| ทางเลือก | ผล |
+|---|---|
+| **(ก) แนะนำ** — `internal.ts` มีสองโหมด: มี `NEXT_PUBLIC_API_BASE_URL` = ยิง API (`fetch` + `credentials: 'include'` + แปลง `ApiError`) · ไม่มี = mock เดิม (import แบบ dynamic ไม่ติดไปกับ build จริง) | เดโม Pages และ `check:series` ใช้ต่อได้ · ไม่ต้องแก้ component · ต้องดูแล mock ต่อ |
+| (ข) ลบ `lib/mock/` ตาม PROMPT_07 | ต้องปิดหรือย้ายเดโม Pages · เขียน `check-series.mjs` ใหม่ให้ยิง API · ลบ `scenario-switcher` และการ์ดบัญชีทดลองในหน้า login |
+
+ของที่หน้าบ้านต้องปรับตามสัญญาจริงไม่ว่าเลือกทางไหน: ข้อ 40 (`confirmToken` · 409) · 41 (PIN ผ่าน `/unlock`) · 45 (ช่วงวันเต็ม) · 51 (ดาวน์โหลดไฟล์ส่งออก) · P-02 (`use-live-data.ts` debounce) · WS ส่ง `RealtimeEvent[]` ต่อข้อความ (D-50)
