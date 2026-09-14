@@ -62,6 +62,13 @@ contract:       ## คอมไพล์ response จริงทุก endpoint
 	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
 	  node_modules/.bin/tsc -p backend/tests/contract/tsconfig.json
 
+settings-golden: ## ค่าอ้างอิงจาก validateSettings() ของหน้าบ้าน (รันใหม่ทุกครั้งที่ lib/services/settings.ts เปลี่ยน)
+	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
+	  node --experimental-strip-types --no-warnings backend/scripts/gen_settings_golden.mjs > tests/fixtures/settings_golden.json
+
+password:       ## ตั้งรหัสผ่านผู้ใช้ เช่น make password NAME=admin (seed ไม่มีรหัสตั้งต้น)
+	$(COMPOSE) exec api python -m api.set_password $(NAME)
+
 integration:    ## เกณฑ์รับงานที่ใช้ stack จริง ยกเว้น S1–S14 (make up ก่อน)
 	.venv/bin/pytest -m integration tests/test_series_parity.py tests/test_alerts_api.py -v
 

@@ -182,3 +182,9 @@ def ingest_drained(timeout: float = 120) -> None:
         return depth["processor"] == 0 and depth["writer"] == 0 and metrics["spool_bytes"] == 0
     wait_for(drained, timeout, "ingest ยังเขียนไม่หมดคิว")
     time.sleep(1.5)   # รอก้อนสุดท้ายที่อยู่ในรอบ batch 1 วินาที
+
+
+def set_password(username: str, password: str) -> None:
+    """ตั้งรหัสผ่านผ่านสคริปต์จริงใน container api — เซสชันเดิมของผู้ใช้นั้นถูกยกเลิก"""
+    subprocess.run(["docker", "compose", "exec", "-T", "api", "python", "-m", "api.set_password", username, "--stdin"],
+                   cwd=BACKEND, input=password + "\n", check=True, capture_output=True, text=True, timeout=60)

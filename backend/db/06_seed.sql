@@ -268,3 +268,10 @@ INSERT INTO settings (section, value, updated_by) VALUES
      "requirePinForControl": true, "minimumRoleForControl": "operator", "sessionTimeoutMinutes": 30,
      "controlLockout": false, "departmentScopedAccess": true, "auditLogRetentionDays": 730
    }', 'user-admin');
+
+-- ─────────────── ค่าตั้งต้นจากโรงงาน (POST /api/settings/reset คืนค่าชุดนี้) ───────────────
+-- ★ ต้องอยู่ท้ายไฟล์ หลังใส่ settings / thresholds / tariffs ครบแล้ว — ต้นทางของค่าตั้งต้นมีที่เดียวคือไฟล์นี้
+INSERT INTO settings_factory (section, value) SELECT section, value FROM settings;
+INSERT INTO thresholds_factory SELECT * FROM thresholds;
+INSERT INTO tariffs_factory (kind, config)
+SELECT DISTINCT ON (kind) kind, config FROM tariffs ORDER BY kind, effective_from DESC;

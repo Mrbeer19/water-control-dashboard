@@ -59,7 +59,8 @@ def deliveries_of(api, alert_id: str) -> list[dict]:
     return api.get("/api/notifications/deliveries", params={"alertId": alert_id}).json()
 
 
-def test_alert_lifecycle_notify_acknowledge_resolve_reopen(db, env, api, buzzer):
+def test_alert_lifecycle_notify_acknowledge_resolve_reopen(db, env, api, buzzer, signed_in):
+    operator, viewer = signed_in("somchai"), signed_in("accounting")
     db.rows("DELETE FROM alerts WHERE entity_id = %s AND kind = %s", ENTITY, CODE)
 
     # ── เปิด ──
@@ -92,10 +93,11 @@ def test_alert_lifecycle_notify_acknowledge_resolve_reopen(db, env, api, buzzer)
         # เครื่อง dev ไม่มีเมลเซิร์ฟเวอร์ → ล้มทันทีพร้อมบอกเหตุ ไม่ลองซ้ำเปล่า ๆ
         assert (mail["deliveryState"], mail["attempts"]) == ("failed", 1)
         assert "SMTP_HOST" in mail["errorMessage"]
-        assert api.post(f"/api/notifications/deliveries/{mail['id']}/retry").json()["deliveryState"] == "queued"
+        assert operator.post(f"/api/notifications/deliveries/{mail['id']}/retry").json()["deliveryState"] == "queued"
         wait_for(lambda: next(r for r in deliveries_of(api, alert_id) if r["id"] == mail["id"])["attempts"] == 2,
                  15, "กดส่งซ้ำแล้ว notifier ต้องลองอีกครั้ง")
-    assert api.post(f"/api/notifications/deliveries/{buzz['id']}/retry").status_code == 409
+    assert api.post(f"/api/notifications/deliveries/{buzz['id']}/retry").status_code == 401
+    assert operator.post(f"/api/notifications/deliveries/{buzz['id']}/retry").status_code == 409
 
     # ── preview = ข้อความเดียวกับที่ส่งจริง ──
     preview = api.get(f"/api/alerts/{alert_id}/preview", params={"channel": "buzzer"}).json()
@@ -106,13 +108,15 @@ def test_alert_lifecycle_notify_acknowledge_resolve_reopen(db, env, api, buzzer)
     assert (line["recipient"], line["deliveryState"]) == ("-", None)
 
     # ── อ่าน · รับทราบ ──
-    assert api.post(f"/api/alerts/{alert_id}/read").json()["read"] is True
+    assert api.post(f"/api/alerts/{alert_id}/read").json()["code"] == "UNAUTHENTICATED"
+    assert viewer.post(f"/api/alerts/{alert_id}/read").json()["read"] is True
     ack_url = f"/api/alerts/{alert_id}/acknowledge"
-    assert api.post(ack_url, json={"acknowledgedByUserId": "user-accounting"}).status_code == 403
-    assert api.post(ack_url, json={"acknowledgedByUserId": "nobody"}).status_code == 400
-    assert api.post(ack_url, json={"acknowledgedByUserId": "user-somchai", "snoozeMinutes": 0}).status_code == 400
-    ack = api.post(ack_url, json={"acknowledgedByUserId": "user-somchai", "note": "เปิดพัดลมแล้ว",
-                                  "snoozeMinutes": 30}).json()
+    assert api.post(ack_url, json={}).status_code == 401
+    assert viewer.post(ack_url, json={}).json()["code"] == "FORBIDDEN"
+    assert operator.post(ack_url, json={"acknowledgedByUserId": "user-admin"}).status_code == 403   # รับทราบแทนคนอื่น
+    assert operator.post(ack_url, json={"snoozeMinutes": 0}).status_code == 400
+    ack = operator.post(ack_url, json={"acknowledgedByUserId": "user-somchai", "note": "เปิดพัดลมแล้ว",
+                                       "snoozeMinutes": 30}).json()
     assert ack["acknowledgedBy"] == {"userId": "user-somchai", "displayName": "ช่างสมชาย", "role": "operator"}
     assert (ack["note"], ack["snoozeMinutes"]) == ("เปิดพัดลมแล้ว", 30)
     current = api.get(f"/api/alerts/{alert_id}").json()
@@ -144,18 +148,20 @@ def test_alert_lifecycle_notify_acknowledge_resolve_reopen(db, env, api, buzzer)
     run_op(db, "alert_close", entity_id=ENTITY, kind=CODE, ended_at=now(), peak_value=None)
 
 
-def test_alert_filters_ids_and_bodies_are_validated(api):
+def test_alert_filters_ids_and_bodies_are_validated(api, signed_in):
+    operator = signed_in("somchai")
     assert api.get("/api/alerts", params={"severity": "urgent"}).json()["code"] == "VALIDATION_FAILED"
     assert api.get("/api/alerts", params={"codes": "NOT_A_CODE"}).status_code == 400
     assert api.get("/api/alerts", params={"limit": 0}).status_code == 400
     assert api.get("/api/alerts/abc").status_code == 404
     assert api.get("/api/alerts/999999999").json()["code"] == "ALERT_NOT_FOUND"
     assert api.get("/api/alerts/1/preview", params={"channel": "fax"}).status_code == 400
-    assert api.post("/api/notifications/deliveries/999999999/retry").status_code == 404
-    missing = api.post("/api/alerts/999999999/acknowledge", json={"acknowledgedByUserId": "user-somchai"})
+    assert operator.post("/api/notifications/deliveries/999999999/retry").status_code == 404
+    missing = operator.post("/api/alerts/999999999/acknowledge", json={"acknowledgedByUserId": "user-somchai"})
     assert missing.status_code == 404
     page = api.get("/api/alerts", params={"severity": "critical,warning", "limit": 2}).json()
     assert page["limit"] == 2 and len(page["items"]) <= 2
     counts = api.get("/api/alerts/unread-count").json()
     assert set(counts) == {"total", "critical"} and counts["critical"] <= counts["total"]
-    assert isinstance(api.post("/api/alerts/read-all").json(), int)
+    assert api.post("/api/alerts/read-all").status_code == 401
+    assert isinstance(operator.post("/api/alerts/read-all").json(), int)

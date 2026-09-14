@@ -133,6 +133,40 @@ CREATE TABLE users (
 -- ─────────────── ตารางเหตุการณ์ (ไม่ใช่ time-series) ───────────────
 
 -- ★ หัวใจของ kind:'state' · span ที่ยังไม่จบมีได้แค่ตัวเดียวต่อ (entity, metric)
+-- เซสชันผู้ใช้ — ★ เก็บเฉพาะ sha256 ของ token ใน cookie · DB หลุดก็ใช้สวมรอยไม่ได้
+CREATE TABLE sessions (
+  token_hash   TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(user_id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at   TIMESTAMPTZ NOT NULL,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  revoked_at   TIMESTAMPTZ,
+  ip           TEXT
+);
+CREATE INDEX sessions_user_idx ON sessions (user_id);
+
+-- ล็อกอินไม่ผ่าน — นับต่อชื่อผู้ใช้ (รวมชื่อที่ไม่มีจริง) ไว้ล็อกชั่วคราว
+CREATE TABLE login_failures (
+  id       BIGSERIAL PRIMARY KEY,
+  username TEXT NOT NULL,
+  at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ip       TEXT
+);
+CREATE INDEX login_failures_user_idx ON login_failures (username, at DESC);
+
+-- ความลับของค่าตั้ง เช่น LINE Channel Access Token — ★ API ห้ามส่งค่ากลับไม่ว่ากรณีใด
+CREATE TABLE settings_secrets (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by TEXT
+);
+
+-- ค่าตั้งต้นจากโรงงาน — 06_seed.sql คัดลอกไว้ตอนติดตั้ง · POST /api/settings/reset คืนค่าชุดนี้
+CREATE TABLE settings_factory (section TEXT PRIMARY KEY, value JSONB NOT NULL);
+CREATE TABLE thresholds_factory (LIKE thresholds INCLUDING DEFAULTS);
+CREATE TABLE tariffs_factory (kind TEXT PRIMARY KEY, config JSONB NOT NULL);
+
 CREATE TABLE state_spans (
   span_id    BIGSERIAL PRIMARY KEY,
   entity_id  TEXT NOT NULL REFERENCES entities(entity_id),

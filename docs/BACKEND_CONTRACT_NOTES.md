@@ -161,3 +161,39 @@ preview (`/api/alerts/:id/preview`) ประกอบด้วยฟังก�
 ### 24. ❓ ช่องทาง email ต้องมีเมลเซิร์ฟเวอร์ภายในโรงงาน (`SMTP_HOST`)
 
 ถ้าไม่มี รายการ email จะขึ้น `failed` พร้อมเหตุผล ไม่ลองซ้ำ · LINE และ SMS ขึ้น `failed` พร้อมเหตุผลเช่นกันจนกว่าจะมีคนตัดสิน (P-06)
+
+---
+
+## เข้าสู่ระบบและค่าตั้ง (เฟส 4c)
+
+### 25. ℹ️ เซสชันอยู่ใน cookie httpOnly `wcm_session` (path `/api`) — หน้าบ้านอ่าน token ไม่ได้และไม่ต้องเก็บเอง
+
+login ไม่ผ่านตอบ 200 + `{ ok: false, errorTh, errorEn }` ตามสัญญา `signIn()` · `/api/auth/session` `/refresh` `/me` ตอบ `null` เมื่อไม่มีเซสชัน
+วันหมดอายุมาจากเซิร์ฟเวอร์ (`sessionTimeoutMinutes`) ต่ออายุได้ไม่เกิน 12 ชั่วโมงจากตอนล็อกอิน
+
+### 26. 👉 ตอนสลับเป็น API (เฟส 7) ต้องลบบัญชีสาธิตและ session ใน localStorage ของ `lib/services/auth.ts`
+
+fetch ต้องส่ง cookie (`credentials: 'include'` หรือเรียกผ่าน proxy ที่ origin เดียวกัน)
+
+### 27. ℹ️ endpoint ที่เขียนข้อมูลตอบ 401 `UNAUTHENTICATED` / 403 `FORBIDDEN`
+
+`acknowledgedByUserId` และ `updatedByUserId` ในสัญญาเดิมไม่ใช้ตัดสินแล้ว — เซิร์ฟเวอร์ใช้ผู้ที่ล็อกอิน (ส่ง id คนอื่นมา = 403)
+สิทธิ์: อ่านแล้ว = ผู้ที่ล็อกอิน · รับทราบ/ส่งซ้ำ = operator ขึ้นไป · ค่าตั้งทั้งหมด = admin
+
+### 28. ℹ️ `PATCH /api/settings/:section` ไม่ผ่าน → 400 `SETTINGS_INVALID`
+
+`details` = `{ "billing.vatPercent": "VAT ต้องอยู่ระหว่าง 0–100" }` ใช้ path เดียวกับ `SettingsFieldError` จึงผูกกับช่องในฟอร์มได้ตรง
+กฎชุดเดียวกับ `validateSettings()` (ตรวจกับไฟล์ .ts จริง) บวกกฎชนิดข้อมูล/เขตเวลาของเซิร์ฟเวอร์ · `/import` ยังคืน `{ ok, errors }` เหมือนเดิม
+
+### 29. ℹ️ เกณฑ์เตือนมาจากตาราง thresholds และขั้นอัตรามาจาก tariffs
+
+แก้อัตรา = เพิ่มอัตราที่มีผลตั้งแต่วันนี้ (รายงานย้อนหลังยังใช้อัตราเดิม) · `id` / `name` ของขั้นอัตราเซิร์ฟเวอร์ตั้งให้
+แก้เกณฑ์ในหมวดรายอุปกรณ์ (`tanks[].thresholdsPercent`) ไม่มีผล ต้องแก้ที่หมวด `thresholds` (D-48)
+
+### 30. ❓ endpoint อ่านไม่ต้องล็อกอิน และ `departmentScopedAccess` ยังไม่บังคับ (D-41)
+
+ทำไว้ให้จอแขวนผนังเปิดค้างได้ — ต้องตัดสินร่วมกันว่าจะให้จอแขวนผนังใช้บัญชีแบบไหน
+
+### 31. ℹ️ `/api/settings/line/test` ตอบ `ok: false` + `message` ขึ้นต้น `offline_mode` · `/network/test` เปิด TCP จริงจากเครื่อง API
+
+เขตเวลาที่ offset ไม่ใช่ชั่วโมงเต็ม (เช่น `Asia/Kathmandu`) และเขตที่ไม่ตรงกับข้อมูลรวมของกราฟ ถูกปฏิเสธ

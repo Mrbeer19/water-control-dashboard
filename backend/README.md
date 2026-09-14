@@ -178,6 +178,22 @@ docker compose logs -f notifier        # ดูผลการส่งแต่
 
 > อีเมลใช้ได้เมื่อตั้ง `SMTP_HOST` ใน `.env` · บัซเซอร์ใช้ topic `plant/water/buzzer/cmd` — ดู `docs/BACKEND_CONTRACT_NOTES.md` ข้อ 23
 
+## เข้าสู่ระบบและค่าตั้ง — `/api/auth` · `/api/settings`
+
+```bash
+make password NAME=admin      # ★ seed ไม่มีรหัสผ่าน ต้องตั้งก่อนล็อกอินครั้งแรก (argon2 · อย่างน้อย 10 ตัว)
+make settings-golden          # สร้างค่าอ้างอิงจาก validateSettings() ของหน้าบ้านใหม่ เมื่อ lib/services/settings.ts เปลี่ยน
+```
+
+| เรื่อง | ทำที่ไหน |
+|---|---|
+| รหัสผ่าน argon2 · cookie httpOnly · หมดอายุตาม `sessionTimeoutMinutes` · ล็อกชื่อผู้ใช้หลังผิด 5 ครั้ง | `api/auth.py` |
+| สิทธิ์: อ่านเปิด · เขียน alert = ผู้ที่ล็อกอิน/operator · ค่าตั้ง = admin | `auth.AnyUser` / `Operator` / `Admin` |
+| ประกอบ `SystemSettings` จาก settings + thresholds + tariffs · กฎตรวจชุดเดียวกับหน้าจอ | `api/settings.py` |
+| ค่าตั้งต้นของ reset = สำเนาที่ seed เก็บไว้ (`*_factory`) | `db/06_seed.sql` ท้ายไฟล์ |
+
+> LINE Channel Access Token อยู่ในตาราง `settings_secrets` และไม่เคยถูกส่งกลับทาง API (ตอบ `••••` + 4 ตัวท้าย)
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

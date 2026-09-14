@@ -18,7 +18,8 @@ BASE = "http://127.0.0.1:8000"
 TYPES = ("Tank", "Pump", "Valve", "Zone", "ZoneCost", "WaterMeter", "MainMeter", "UnaccountedWater", "DailyUsagePoint",
          "PressureControl", "EnvironmentSensor", "EnvironmentReading", "ElectricNode", "Department", "DepartmentUsage",
          "User", "Device", "ConnectionStatus", "ServiceHealth", "SystemSummary", "TimeSeriesPoint", "ApiError",
-         "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated")
+         "Alert", "AlertAcknowledgement", "NotificationDelivery", "NotificationPreview", "RecoveryEvent", "Paginated",
+         "SystemSettings", "AuthSession")
 SERVICES = {"tanks": ["getTankTotals"], "pumps": ["getPumpEnergyToday"], "zones": ["getZoneConsumption"],
             "meters": ["getFlowBalance"], "pressure": ["getHeadcount"], "environment": ["getRainfall"],
             "electric": ["getEnergyByDepartment"], "devices": ["getDeviceSummary", "pingDevice"],
@@ -77,6 +78,9 @@ CASES = [
     ("GET", "/api/alerts/{alert}/preview?channel=email", "NotificationPreview"),
     ("GET", "/api/notifications/deliveries", "NotificationDelivery[]"),
     ("GET", "/api/alerts/999999999", "ApiError"),
+    ("GET", "/api/settings", "SystemSettings"),
+    ("GET", "/api/auth/session", "AuthSession | null"),
+    ("GET", "/api/auth/me", "User | null"),
     ("GET", "/api/tanks/nope", "ApiError"),
     ("GET", "/api/zones/cost?from=bad", "ApiError"),
 ]

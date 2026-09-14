@@ -12,9 +12,10 @@ from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import alerts as al
+from .auth import AnyUser, Operator
 from .common import parse_time
 from .db import pool
-from .errors import bad_request
+from .errors import ApiException, bad_request
 from .registry import registry
 
 router = APIRouter(prefix="/api")
@@ -77,7 +78,7 @@ def get_unread_count(response: Response) -> dict[str, int]:
 
 
 @router.post("/alerts/read-all")
-def post_read_all() -> int:
+def post_read_all(_user: AnyUser) -> int:
     with pool.connection() as conn:
         return al.mark_all_read(conn)
 
@@ -102,7 +103,7 @@ def get_alert(alert_id: str) -> dict[str, object]:
 
 
 @router.post("/alerts/{alert_id}/read")
-def post_read(alert_id: str) -> dict[str, object]:
+def post_read(alert_id: str, _user: AnyUser) -> dict[str, object]:
     with pool.connection() as conn:
         return al.mark_read(conn, registry(conn).timezone, al.parse_id(alert_id))
 
@@ -110,17 +111,21 @@ def post_read(alert_id: str) -> dict[str, object]:
 class AcknowledgeBody(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    acknowledged_by_user_id: str = Field(alias="acknowledgedByUserId", min_length=1)
+    acknowledged_by_user_id: str | None = Field(None, alias="acknowledgedByUserId")
     note: str | None = Field(None, max_length=500)
     snooze_minutes: int | None = Field(None, alias="snoozeMinutes", ge=1, le=1440)
 
 
 @router.post("/alerts/{alert_id}/acknowledge")
-def post_acknowledge(alert_id: str, body: AcknowledgeBody) -> dict[str, object]:
+def post_acknowledge(alert_id: str, body: AcknowledgeBody, user: Operator) -> dict[str, object]:
+    """★ ผู้รับทราบคือผู้ที่ล็อกอิน · acknowledgedByUserId ในสัญญาเดิม ถ้าส่งมาต้องเป็นคนเดียวกัน"""
+    if body.acknowledged_by_user_id not in (None, user.user_id):
+        raise ApiException(403, "FORBIDDEN", "รับทราบแทนผู้ใช้อื่นไม่ได้", "Cannot acknowledge on behalf of another user",
+                           {"acknowledgedByUserId": body.acknowledged_by_user_id})
     note = body.note.strip() if body.note and body.note.strip() else None
     with pool.connection() as conn:
-        return al.acknowledge(conn, registry(conn).timezone, al.parse_id(alert_id), body.acknowledged_by_user_id,
-                              note, body.snooze_minutes)
+        return al.acknowledge(conn, registry(conn).timezone, al.parse_id(alert_id), user.user_id, note,
+                              body.snooze_minutes)
 
 
 @router.get("/alerts/{alert_id}/preview")
@@ -137,6 +142,6 @@ def get_deliveries(alert_id: str | None = Query(None, alias="alertId")) -> list[
 
 
 @router.post("/notifications/deliveries/{delivery_id}/retry")
-def post_retry(delivery_id: str) -> dict[str, object]:
+def post_retry(delivery_id: str, _user: Operator) -> dict[str, object]:
     with pool.connection() as conn:
         return al.retry_delivery(conn, registry(conn).timezone, al.parse_id(delivery_id, "DELIVERY"))
