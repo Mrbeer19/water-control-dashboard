@@ -32,10 +32,10 @@ psql:
 
 venv:           ## เครื่องมือทดสอบบนเครื่อง (ต้องมีเน็ตครั้งแรก)
 	python3 -m venv .venv
-	.venv/bin/pip install -r ingest/requirements.txt -r simulator/requirements.txt pytest==8.4.2 ruff==0.8.6
+	.venv/bin/pip install -r ingest/requirements.txt -r simulator/requirements.txt -r api/requirements.txt pytest==8.4.2 ruff==0.8.6
 
 lint:
-	.venv/bin/ruff check ingest simulator tests
+	.venv/bin/ruff check ingest simulator api scripts tests
 
 test:           ## unit test — ไม่ต้องมี docker
 	.venv/bin/pytest -q
@@ -55,6 +55,12 @@ frontend-checks: ## 6 คำสั่งที่ CI บังคับก่อ
 	cd .. && npx tsc --noEmit && npm run lint && npm run check:colors && npm run build
 	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
 	  sh -c 'npm run check:buckets && npm run check:series'
+
+contract:       ## คอมไพล์ response จริงทุก endpoint เทียบ lib/types.ts (make up + make sim ก่อน)
+	mkdir -p data/contract
+	$(COMPOSE) exec -T api python - < tests/contract/gen_contract.py > data/contract/generated.ts
+	docker run --rm --network none -v "$(abspath ..)":/app:ro -w /app $(NODE22) \
+	  node_modules/.bin/tsc -p backend/tests/contract/tsconfig.json
 
 sim:            ## เปิด simulator 28 stream ต่อเนื่อง
 	$(COMPOSE) -f docker-compose.yml -f docker-compose.sim.yml up -d --build simulator

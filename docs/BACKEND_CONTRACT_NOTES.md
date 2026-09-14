@@ -99,3 +99,36 @@ PROJECT_BRIEF §7.1 มีตัวอย่างแค่ถัง backend จ
 
 ต้องตัดสิน: ขอเปิดขาออกเฉพาะ `api-data.line.me:443` หรือใช้ SMTP ภายใน + บัซเซอร์อย่างเดียว
 (จะทำ notifier เป็น plugin ไว้ให้สลับได้ในเฟส endpoint รายโดเมน)
+
+---
+
+## endpoint รายโดเมน (เฟส 4a) — ถึงทีมหน้าบ้าน
+
+ทุก response ถูกคอมไพล์เทียบ `lib/types.ts` ด้วย tsc แล้ว (`make contract` ใน `backend/`) · path ตรงกับ `TODO(backend)` ทุกตัว
+
+### 13. ℹ️ entity ที่ยังไม่มีข้อมูล: ตัวเลขเป็น 0 · `lastSeen` = 1970 · **`status` เป็น `offline` เสมอ** (D-27)
+
+type บังคับ `number` จึงส่ง null ไม่ได้ → ขอให้ UI ดู `status` ก่อนแสดงตัวเลข (ซึ่งทำอยู่แล้วด้วยสีเทา)
+field ที่เป็น `number | null` (เช่น `rssi`, `minutesToFull`, ฝนของจุดในอาคาร) ส่ง null ตามจริง
+
+### 14. ℹ️ `/…/history` รับ `interval` (วินาที) หรือ `intervalSeconds` · `from`/`to` เป็น epoch ms หรือ ISO ที่มี offset (D-33)
+
+ไม่ส่งช่วง = 1 ชั่วโมงล่าสุด · เกิน 2,000 จุด → 400 `TOO_MANY_POINTS` · metric ที่ entity นั้นไม่มี → 400 `METRIC_NOT_SUPPORTED`
+
+### 15. ℹ️ `/api/zones/cost` · `/api/meters/unaccounted` · `/api/departments/usage` ไม่ส่ง `from`/`to` = รอบบิลปัจจุบัน
+
+รอบบิลเริ่มตาม `billing.billingCycleStartDay` · ค่าน้ำรายโซนคิดขั้นบันไดจากปริมาณของโซนเอง (ผลรวมไม่เท่าบิลจริง — ตรงกับคอมเมนต์ใน `getZoneCosts()`)
+
+### 16. ❓ ตำแหน่งวาล์วเป็น `open` จนกว่าจะมีระบบสั่งงาน (D-28) · ค่าระบบควบคุมแรงดันเป็นค่าตอนติดตั้ง (D-29)
+
+ingest ยังไม่รับ feedback วาล์ว และยังไม่ได้อ่าน DB ของ PLC — ทั้งสองอย่างมาพร้อมเฟสระบบควบคุม
+
+### 17. ℹ️ PLC/HMI แสดง `offline` · reboot/firmware ตอบ 501 `NOT_IMPLEMENTED` · ping ตัดสินจากข้อความล่าสุด (D-30)
+
+`pingDevice()` ได้ `latencyMs: null` เสมอ (ไม่ส่ง ICMP จาก container)
+
+### 18. ℹ️ `/api/meters/daily?projection=true` ยังไม่มีจุดอนาคต (D-31) · `/api/pressure/headcount` ตอบ null ทั้งคู่
+
+พยากรณ์รอผลจากทีม AI · จำนวนคนยังไม่มีแหล่งข้อมูล — UI ต้อง render ได้เมื่อไม่มีสองอย่างนี้
+
+### 19. ℹ️ `SystemSummary.todayEnergyKwh` = พลังงานปั๊ม + ตู้ไฟรายแผนก (จากตัวนับจริง ไม่ใช่ `power × ชั่วโมง` แบบ mock)

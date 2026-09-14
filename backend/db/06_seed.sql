@@ -174,8 +174,51 @@ SELECT 'meter-' || z.zone_id, 'flow_lpm', NULL, NULL, round(b.lpm * 1.6), round(
                ('zone-5', 28), ('zone-6', 54), ('zone-7', 16), ('zone-8', 9)) AS b(zone_id, lpm)
     ON b.zone_id = z.zone_id;
 
--- ─────────────── ค่าตั้งระบบ ───────────────
+-- ─────────────── รายละเอียดที่ API ใช้ประกอบ entity (ตรงกับ lib/mock/network.ts · hardware.ts) ───────────────
+UPDATE devices SET expansion_modules = m.modules
+  FROM (VALUES
+    ('esp32-pump-house',  ARRAY['PZEM-004T v3.0 ×2 (UART1)', 'ES-Y30A 5 m (UART2)', 'SHT31']),
+    ('esp32-meter-bank',  ARRAY['pulse input ×8 (PCNT)']),
+    ('esp32-valve-bank',  ARRAY['relay board ×8']),
+    ('esp32-vip',         ARRAY['PZEM-004T v3.0 (UART1)', 'ES-Y30A 5 m (UART2)', 'pulse input', 'relay']),
+    ('esp32-pond',        ARRAY['ES-Y30A 5 m (RS485)', 'relay (วาล์วเติมจากประปา)']),
+    ('esp32-meter-main',  ARRAY['pulse input', 'pressure transmitter 4–20 mA']),
+    ('esp32-env-outdoor', ARRAY['BME280', 'BH1750', 'tipping-bucket rain gauge']),
+    ('esp32-elec-1',      ARRAY['PZEM-004T v3.0 ×3']),
+    ('esp32-elec-2',      ARRAY['PZEM-004T v3.0 ×3']),
+    ('esp32-elec-3',      ARRAY['PZEM-004T v3.0 ×3']),
+    ('esp32-elec-4',      ARRAY['PZEM-004T v3.0']),
+    ('plc-1',             ARRAY['SM1231 AI 4×13-bit (4–20 mA)']),
+    ('plc-2',             ARRAY['FX3U-4AD'])
+  ) AS m(device_id, modules)
+ WHERE devices.device_id = m.device_id;
+
+-- ชั่วโมงเดินสะสมก่อนเริ่มใช้ระบบนี้ (อ่านจากมิเตอร์ชั่วโมงที่ตู้ควบคุม) · โหมดควบคุมตั้งต้น
+UPDATE entities SET spec = spec || '{"initialRuntimeHours": 8412.6, "controlMode": "auto"}' WHERE entity_id = 'pump-1';
+UPDATE entities SET spec = spec || '{"initialRuntimeHours": 8106.2, "controlMode": "auto"}' WHERE entity_id = 'pump-2';
+UPDATE entities SET spec = spec || '{"initialRuntimeHours": 3275.9, "controlMode": "pid"}'  WHERE entity_id = 'pump-3';
+UPDATE entities SET spec = spec || '{"pipeSizeInches": 1, "pulsesPerLiter": 450}'
+ WHERE source_type = 'meter' AND entity_id <> 'meter-main';
+UPDATE entities SET spec = spec || '{"pipeSizeInches": 2, "pulsesPerLiter": 100}' WHERE entity_id = 'meter-main';
+UPDATE entities SET spec = spec || '{"remoteEnabled": true}' WHERE source_type = 'valve';
+-- ลูป PID แรงดัน: ค่าจริงอยู่ใน PLC — ตรงนี้คือค่าที่ตั้งไว้ตอนติดตั้ง ใช้แสดงผลจนกว่าจะอ่านจาก PLC ได้
+UPDATE entities SET spec = '{"setpointBar": 3.2, "mode": "manual", "gains": {"kp": 1.8, "ki": 0.35, "kd": 0.05},
+                             "controlledPumpId": "pump-3", "setpointLimitsBar": {"min": 1.5, "max": 4.5}}'
+ WHERE entity_id = 'pressure-control-1';
+
+-- ─────────────── ผู้ใช้ ───────────────
+-- ★ ยังไม่มีรหัสผ่าน — ตั้งด้วย scripts/set_password.py หลังติดตั้ง (ห้ามมีรหัสผ่านตั้งต้นในไฟล์นี้)
+INSERT INTO users (user_id, username, role, display_name, department_id) VALUES
+  ('user-admin',      'admin',      'admin',    'ผู้ดูแลระบบ',     NULL),
+  ('user-somchai',    'somchai',    'operator', 'ช่างสมชาย',       'dept-facility'),
+  ('user-nid',        'nid',        'operator', 'หัวหน้ากะ นิด',   'dept-production'),
+  ('user-ploy',       'ploy',       'operator', 'พลอย (บุคคล)',    'dept-hr'),
+  ('user-accounting', 'accounting', 'viewer',   'ฝ่ายบัญชี',        NULL);
+
+-- ─────────────── ค่าตั้งระบบ (ตรงกับ DEFAULT_SETTINGS ใน lib/mock/settings.ts) ───────────────
 -- ★ เขตเวลาอ่านจากแถวนี้ ห้าม hardcode ในโค้ด
+-- ★ ไม่มีหมวด thresholds และ billing.tiers ที่นี่ — API ประกอบจากตาราง thresholds / tariffs
+--   ซึ่งเป็นต้นทางความจริงที่ ingest และการคิดค่าน้ำใช้อยู่ (ไม่เก็บสองที่)
 INSERT INTO settings (section, value, updated_by) VALUES
   ('general', '{
      "siteName": "โรงงานสาขาธัญบุรี",
@@ -184,5 +227,44 @@ INSERT INTO settings (section, value, updated_by) VALUES
      "defaultLocale": "th",
      "defaultTheme": "system",
      "refreshIntervalMs": 2000,
-     "wallDisplayMode": false
+     "wallDisplayMode": false,
+     "temperatureUnit": "celsius"
+   }', 'user-admin'),
+  ('network', '{
+     "mqttHost": "10.20.10.2", "mqttPort": 1883, "mqttBaseTopic": "plant/water",
+     "plcHost": "10.20.20.5", "plcPort": 102,
+     "secondaryPlcHost": "10.20.20.6", "secondaryPlcPort": 5551,
+     "gatewayHost": "10.20.10.2", "ntpServer": "10.20.10.1",
+     "pollIntervalMs": 2000, "deviceTimeoutSeconds": 30,
+     "databaseHost": "10.20.10.2", "databasePort": 5432
+   }', 'user-admin'),
+  ('notifications', '{
+     "enabledChannels": ["email", "buzzer"],
+     "recipients": {"line": [], "email": ["maintenance@plant.local", "facility@plant.local"], "sms": [],
+                    "buzzer": ["ตู้คอนโทรลหลัก"], "webhook": []},
+     "minimumSeverity": "warning",
+     "quietHours": {"enabled": true, "startTime": "22:00", "endTime": "06:00", "overrideSeverity": "critical"},
+     "escalationAfterMinutes": 15,
+     "deduplicationWindowMinutes": 10,
+     "notifyDepartmentManager": true
+   }', 'user-admin'),
+  ('billing', '{
+     "currency": "THB",
+     "billingCycleStartDay": 1,
+     "meterReadingDay": 18
+   }', 'user-admin'),
+  ('ai', '{
+     "forecastEnabled": true, "forecastHorizonHours": 24, "forecastModelName": "prophet-water-v2 (on-gateway)",
+     "anomalyDetectionEnabled": true, "anomalyModelName": "isolation-forest-v1 (on-gateway)",
+     "anomalySensitivity": 0.65, "ruleBasedDetectionEnabled": true, "leakDetectionEnabled": true,
+     "retrainIntervalHours": 168, "nightFlowStartTime": "23:00", "nightFlowEndTime": "05:00"
+   }', 'user-admin'),
+  ('maintenance', '{
+     "pumpAlternationEnabled": true, "pumpAlternationHours": 12, "serviceIntervalHours": 2000,
+     "dataRetentionDays": 365, "backupEnabled": true, "backupTime": "02:30",
+     "backupPath": "\\\\10.20.10.20\\water-backup"
+   }', 'user-admin'),
+  ('security', '{
+     "requirePinForControl": true, "minimumRoleForControl": "operator", "sessionTimeoutMinutes": 30,
+     "controlLockout": false, "departmentScopedAccess": true, "auditLogRetentionDays": 730
    }', 'user-admin');

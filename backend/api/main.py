@@ -16,11 +16,11 @@ from fastapi import FastAPI, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from .db import make_pool
+from .db import pool
 from .errors import ApiException
+from .routes_domain import router as domain_router
 from .series import SeriesQuery, metric_series, state_spans
 
-pool = make_pool()
 SERVICE = "api"
 
 
@@ -38,6 +38,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Water Control API", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+app.include_router(domain_router)
 
 
 @app.exception_handler(ApiException)

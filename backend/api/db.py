@@ -1,4 +1,4 @@
-"""connection pool ของ API"""
+"""connection pool ของ API — ใช้ร่วมกันทุก router"""
 
 from __future__ import annotations
 
@@ -15,3 +15,6 @@ def make_pool() -> ConnectionPool:
                         password=env.get("POSTGRES_PASSWORD", ""), application_name="api")
     return ConnectionPool(dsn, min_size=1, max_size=int(env.get("API_DB_POOL", "8")), open=False,
                           kwargs={"autocommit": True, "connect_timeout": 3})
+
+
+pool = make_pool()

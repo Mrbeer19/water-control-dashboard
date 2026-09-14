@@ -46,6 +46,7 @@ CREATE TABLE devices (
   firmware    TEXT,
   location    TEXT,
   location_en TEXT,
+  expansion_modules TEXT[] NOT NULL DEFAULT '{}',   -- โมดูลที่เสียบอยู่ เช่น PZEM, SM1231
   active      BOOLEAN NOT NULL DEFAULT true
 );
 

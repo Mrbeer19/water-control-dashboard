@@ -137,6 +137,25 @@ node scripts/gen_buckets_golden.mjs && .venv/bin/pytest tests/test_buckets_parit
 > CALL refresh_continuous_aggregate('pump_5m', '2025-01-01', '2025-03-01');  -- แล้วตามด้วย _1h และ _1d
 > ```
 
+## endpoint รายโดเมน (อ่านอย่างเดียว) — `/api/tanks` … `/api/system/summary`
+
+path และรูป response ตรงกับ `TODO(backend)` ใน `lib/services/*.ts` และ type ใน `lib/types.ts`
+
+| ชั้น | ไฟล์ | หน้าที่ |
+|---|---|---|
+| ทะเบียน + ค่าตั้ง (cache 5 วินาที) | `api/registry.py` | entity · อุปกรณ์ · โซน · เกณฑ์ · settings จาก DB — ไม่มีจำนวนตายตัวในโค้ด |
+| ค่าล่าสุด | `api/latest.py` | Redis `latest:<id>` ก่อน ถ้าไม่มีถอยไปแถวล่าสุดใน DB |
+| ปริมาณสะสม · ค่าน้ำขั้นบันได · รอบบิล · น้ำสูญหาย | `api/usage.py` | ใช้ `fetch_buckets` + `build_points` ชุดเดียวกับกราฟ ตัวเลขรายงานจึงตรงกับกราฟ |
+| ประกอบรูปตาม `lib/types.ts` | `api/domain_water.py` · `api/domain_site.py` | สถานะใช้ตรรกะเดียวกับ `statusFromRange()` / `worstStatus()` |
+| route | `api/routes_domain.py` | ทุก endpoint อ่านอย่างเดียวตอบ `Cache-Control: max-age=1` |
+
+```bash
+make contract   # ยิงทุก endpoint แล้วคอมไพล์ response จริงเทียบ lib/types.ts ด้วย tsc (make up + make sim ก่อน)
+```
+
+> field ขาด · field เกิน · null ในที่ห้าม null · string นอก union → tsc ล้ม · ไฟล์ที่สร้างอยู่ `data/contract/generated.ts`
+> ข้อตกลงที่หน้าบ้านต้องรู้อยู่ใน `docs/BACKEND_CONTRACT_NOTES.md` ข้อ 13–19 · เหตุผลอยู่ใน `DECISIONS.md` D-26 ถึง D-34
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

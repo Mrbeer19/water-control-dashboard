@@ -40,7 +40,11 @@ class RedisPublisher:
                 values.setdefault("phases", {})[str(row["phase"])] = reading  # type: ignore[index]
             else:
                 values.update(reading)
-        document = {"entityId": entity_id, "sourceType": source_type, "at": message.at.isoformat(), "values": values}
+        recv_time = message.rows[0][1]["recv_time"] if message.rows else None
+        # ★ recvTime = นาฬิกาเซิร์ฟเวอร์ ใช้เป็น lastSeen (นาฬิกาบอร์ดเพี้ยนได้)
+        document = {"entityId": entity_id, "sourceType": source_type, "at": message.at.isoformat(),
+                    "recvTime": recv_time.isoformat() if recv_time is not None else None,  # type: ignore[union-attr]
+                    "values": values}
         try:
             with self._client.pipeline(transaction=False) as pipe:
                 pipe.set(f"latest:{entity_id}", json.dumps(document, default=str), ex=LATEST_TTL_S)
