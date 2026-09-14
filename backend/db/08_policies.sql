@@ -41,7 +41,7 @@ SELECT add_compression_policy(t, INTERVAL '7 days')
   FROM unnest(ARRAY['tank_telemetry', 'pump_telemetry', 'meter_telemetry',
                     'env_telemetry', 'power_telemetry', 'device_status']::regclass[]) AS t;
 
--- ─────────────── retention — ★ ยังไม่เปิด ───────────────
--- ต้องมี worker/archive.py export ข้อมูลดิบเป็น Parquet ก่อนลบเสมอ (ทีม AI ใช้เทรน ลบแล้วเอาคืนไม่ได้)
--- เปิดในเฟส 6 หลัง archive ผ่านการทดสอบ:
---   raw 30 วัน · 5 นาที 90 วัน · 1 ชม. 2 ปี · 1 วัน ถาวร
+-- ─────────────── retention ───────────────
+-- ★ ข้อมูลดิบไม่ใช้ retention policy — api/worker/archive.py export เป็น Parquet และตรวจจำนวนแถวก่อน แล้วจึงลบ chunk เอง
+--   (ทีม AI ใช้ข้อมูลดิบเทรน ลบแล้วเอาคืนไม่ได้) · เก็บตาม maintenance.dataRetentionDays ขั้นต่ำ 30 วัน
+-- aggregate: 5 นาที 90 วัน · 1 ชม. 2 ปี · 1 วัน ถาวร — อยู่ใน 09_archive.sql (ต้องสร้างหลังตาราง archive)

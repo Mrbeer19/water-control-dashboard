@@ -170,8 +170,11 @@ def test_05_gauge_min_at_max_at_exist_and_point_to_the_extreme_hour():
     hours = [h for h in points("sensor", "env-outdoor", "temperature", *DAY15, "hour") if h["count"] > 0]
     day = day_bucket("sensor", "env-outdoor", "temperature", DAY15[0])
     assert ms(DAY15[0]) <= day["minAt"] < ms(DAY15[1]) and ms(DAY15[0]) <= day["maxAt"] < ms(DAY15[1])
-    assert day["minAt"] == min(hours, key=lambda h: h["min"])["minAt"]
-    assert day["maxAt"] == max(hours, key=lambda h: h["max"])["maxAt"]
+    # ★ ค่าสุดขั้วเท่ากันได้หลายชั่วโมง (คลื่น sin สมมาตรรอบจุดต่ำสุด 18:00 และนาทีที่ 0 เป็น null → 17:55 = 18:05)
+    #   ตอนนั้นเวลาของชั่วโมงไหนก็ถูก — ลำดับแถวหลัง aggregate สร้างใหม่เปลี่ยนได้ ห้ามเทียบกับตัวแรกที่ min() เจอ
+    lowest, highest = min(h["min"] for h in hours), max(h["max"] for h in hours)
+    assert day["minAt"] in {h["minAt"] for h in hours if h["min"] == lowest}
+    assert day["maxAt"] in {h["maxAt"] for h in hours if h["max"] == highest}
 
 
 def test_06_gauge_bucket_has_no_sum_key():

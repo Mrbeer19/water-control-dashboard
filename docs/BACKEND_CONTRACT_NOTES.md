@@ -334,3 +334,8 @@ type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต�
 
 เรียก `GET /api/reports/export/:jobId` ซ้ำจนได้ 200 (ระหว่างรอได้ 202 `{jobId, status}`) แล้วเปิดไฟล์ · ต้องล็อกอิน (401 ถ้าไม่ได้ล็อกอิน)
 `format: 'xlsx'` ตอบ 400 `FORMAT_NOT_SUPPORTED` — ขอให้ซ่อนปุ่ม xlsx หรือบอกให้ใช้ CSV แทน · ไฟล์เก็บ 7 วัน (เกินได้ 410 `EXPORT_EXPIRED`)
+
+### 52. ❓ ถึงทีม: เก็บข้อมูลดิบกี่วัน (D-85) · ถึงทีมติดตั้ง: mount SMB ของปลายทางสำรองบน host (D-86)
+
+`maintenance.dataRetentionDays` ใน seed = 365 แต่ PROMPT_06 เขียน 30 วัน — backend ใช้ค่าตั้ง (ขั้นต่ำ 30) และลบเฉพาะวันที่ archive เป็น Parquet ครบแล้ว
+container ไม่ mount SMB เอง: ต้อง mount `\\10.20.10.20\water-backup` บน host แล้วตั้ง `BACKUP_HOST_DIR` ใน `.env` · ทีม AI อ่านข้อมูลดิบย้อนหลังจาก `data/archive/<table>/date=YYYY-MM-DD/`

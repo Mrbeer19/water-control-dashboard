@@ -282,6 +282,30 @@ GET /api/reports/export/:jobId ─► ไฟล์ (ยังไม่เสร�
 - CSV: UTF-8 with BOM · metadata บนสุด · null = ช่องว่าง · PDF: WeasyPrint + ฟอนต์ Sarabun ฝังใน image · `xlsx` ตอบ 400
 - image ของ worker แยก: `docker/worker.Dockerfile` (build context = `backend/`) · เกณฑ์ข้อ 7–8: `tests/test_exports_api.py`
 
+## archive · retention · สำรองข้อมูล (service `worker`)
+
+```
+01:30 ทุกคืน ─► ข้อมูลดิบวันที่จบแล้ว → data/archive/<table>/date=YYYY-MM-DD/*.parquet ─► อ่านกลับนับแถว ─► archive_manifest
+             └► ลบ chunk ดิบที่เก่ากว่า maintenance.dataRetentionDays (≥ 30 วัน) — ★ เฉพาะเมื่อ archive ครบและจำนวนแถวตรง
+backupTime ─► pg_dump -Fc → BACKUP_HOST_DIR/water-YYYYMMDD-HHMM.dump ─► ตรวจไฟล์ ─► เก็บ 14 ไฟล์ · ผลใน backup_runs
+```
+
+```bash
+docker compose exec worker python -m api.worker archive --day 2026-09-11   # archive วันเดียวใหม่
+docker compose exec worker python -m api.worker archive --dry-run          # งานประจำคืนแต่ไม่ลบ chunk
+docker compose exec worker python -m api.worker backup                     # สำรองเดี๋ยวนี้ (ก่อนอัปเกรด)
+```
+
+**เครื่องจริง:** mount SMB `\\10.20.10.20\water-backup` บน host ก่อน แล้วตั้ง `BACKUP_HOST_DIR` ใน `.env` ชี้ไปที่ mount นั้น
+
+**กู้คืน** (ใช้ image TimescaleDB รุ่นเดียวกับที่ dump · เกณฑ์ข้อ 9 ทดสอบขั้นตอนนี้จริงใน `tests/test_archive_backup_api.py`):
+
+```bash
+psql -d water -c "SELECT timescaledb_pre_restore();"
+pg_restore -d water --no-owner water-YYYYMMDD-HHMM.dump     # เตือนว่า extension timescaledb มีอยู่แล้ว = ปกติ
+psql -d water -c "SELECT timescaledb_post_restore();"
+```
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

@@ -6,9 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TZ=Asia/Bangkok
 
-# ★ WeasyPrint ใช้ Pango/HarfBuzz ของระบบ — ติดตั้งตอน build เท่านั้น เครื่องในโรงงานไม่ต้องมีเน็ต
+# ★ WeasyPrint ใช้ Pango/HarfBuzz ของระบบ · pg_dump/pg_restore 17 ตรงกับเซิร์ฟเวอร์ PostgreSQL 17 (สำรองข้อมูล)
+#   ติดตั้งตอน build เท่านั้น เครื่องในโรงงานไม่ต้องมีเน็ต
 RUN apt-get update \
  && apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fontconfig \
+      postgresql-client-17 \
  && rm -rf /var/lib/apt/lists/*
 
 # ★ ฟอนต์ไทยฝังใน image แล้ว fc-cache — ไม่งั้น PDF เป็นสี่เหลี่ยมทั้งหน้า · build ล้มทันทีถ้าหาฟอนต์ไม่เจอ
