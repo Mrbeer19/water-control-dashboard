@@ -75,6 +75,10 @@ SOURCES: dict[str, Source] = {
         Measure("free_heap", "free_heap", GAUGE),
         Measure("uptime", "uptime_s", COUNTER),
     )),
+    # ค่าที่ worker คำนวณระดับทั้งโรงงาน (ไม่ได้มาจากเซนเซอร์ตัวใด) · หนึ่งแถว = หนึ่งหน้าต่างที่ประเมิน
+    "plant": Source("plant_metrics", None, (
+        Measure("unaccounted", "unaccounted_percent", GAUGE),
+    )),
 }
 
 LEVELS = (("5m", "5 minutes"), ("1h", "1 hour"), ("1d", "1 day"))
@@ -115,6 +119,8 @@ METRICS: dict[tuple[str, str], MetricDef] = {
     ("zone", "volume_cubic_meters"): MetricDef("meter", "volume", COUNTER, "m³"),
     # ระดับทั้งโรงงานที่คิดได้แล้วจากมิเตอร์หลักตัวเดียว
     ("system", "main_inflow_lpm"): MetricDef("meter", "flow", GAUGE, "L/min"),
+    # worker น้ำสูญหายเขียนทุก 5 นาที (หน้าต่าง 60 นาที) · ข้อมูลไม่ครบ = null
+    ("system", "unaccounted_percent"): MetricDef("plant", "unaccounted", GAUGE, "%"),
 
     ("sensor", "temperature"): MetricDef("env", "temp", GAUGE, "°C"),
     ("sensor", "humidity"): MetricDef("env", "humidity", GAUGE, "%RH"),
@@ -139,6 +145,5 @@ STATE_METRICS = frozenset({"pump_run_state", "online_state"})
 # metric ที่มีในสัญญาแต่ต้องรอเฟสอื่นคำนวณ — ตอบ 404 พร้อมบอกว่ารออะไร
 PENDING_METRICS = {
     "zone_outflow_lpm": "รอ worker สมดุลน้ำ (เฟส 6)",
-    "unaccounted_percent": "รอ worker น้ำสูญหาย (เฟส 6)",
     "headcount": "ยังไม่มีแหล่งข้อมูลจำนวนคนจาก PLC",
 }

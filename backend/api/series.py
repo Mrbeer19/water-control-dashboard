@@ -178,6 +178,9 @@ def resolve_entity(conn: psycopg.Connection, source_type: str, source_id: str, m
                         (source_id,))
         elif source_type == "system" and metric == "main_inflow_lpm":
             cur.execute("SELECT * FROM entities WHERE source_type = 'meter' AND (spec ->> 'isMain')::boolean LIMIT 1")
+        elif source_type == "system" and metric == "unaccounted_percent":
+            # ค่าระดับทั้งโรงงานมีชุดเดียว — sourceId ใดก็ได้ชี้ entity ระบบตัวเดียวกัน
+            cur.execute("SELECT * FROM entities WHERE source_type = 'system' ORDER BY entity_id LIMIT 1")
         else:
             cur.execute("SELECT * FROM entities WHERE entity_id = %s AND source_type = %s", (source_id, source_type))
         found = cur.fetchone()

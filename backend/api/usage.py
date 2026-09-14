@@ -20,13 +20,14 @@ def _granularity(start_ms: int, end_ms: int) -> str:
 
 
 def counter_total(conn: psycopg.Connection, tz: str, source: str, measure: str, entity_id: str,
-                  start_ms: int, end_ms: int) -> float | None:
+                  start_ms: int, end_ms: int, granularity: str | None = None) -> float | None:
     """ผลรวม delta ของตัวนับในช่วง — รีเซ็ตกลางช่วงนับถูกต้องที่ความละเอียดรายชั่วโมง/รายวัน
     ★ ผู้เรียกต้องส่ง start ที่ตรงขอบชั่วโมง/วัน (เที่ยงคืน, ต้นรอบบิล) ไม่งั้น bucket แรกจะเริ่มก่อน start
+    granularity: บังคับความละเอียด (worker น้ำสูญหายใช้ minute_5) · ไม่ระบุ = รายชั่วโมงถ้า ≤ 31 วัน ไม่งั้นรายวัน
     """
     if end_ms <= start_ms:
         return 0.0
-    granularity = _granularity(start_ms, end_ms)
+    granularity = granularity or _granularity(start_ms, end_ms)
     bounds = calendar_bounds(start_ms, end_ms, granularity, tz)
     if not bounds:
         return None
@@ -141,19 +142,22 @@ def electricity_rate(config: dict[str, object] | None) -> float:
 
 # ─────────────── น้ำสูญหาย ───────────────
 
-def unaccounted_water(conn: psycopg.Connection, reg: Registry, start_ms: int, end_ms: int) -> dict[str, object]:
+def unaccounted_water(conn: psycopg.Connection, reg: Registry, start_ms: int, end_ms: int,
+                      granularity: str | None = None) -> dict[str, object]:
     """น้ำสูญหาย = มิเตอร์หลัก − Σ ทุกโซน − Δ ปริมาณน้ำในถังทุกใบ (รวมบ่อสำรอง)
 
     ★ ห้ามละ Δstorage: ช่วงเติมถังน้ำที่ผ่านมิเตอร์หลักยังไม่ถูกใช้ ถ้าไม่หักจะเตือนว่ารั่วทุกครั้งที่เติม
     """
     tz = reg.timezone
     main = reg.main_meter()
-    main_m3 = counter_total(conn, tz, "meter", "volume", str(main["entity_id"]), start_ms, end_ms) if main else None
+    main_m3 = None if main is None else counter_total(conn, tz, "meter", "volume", str(main["entity_id"]),
+                                                      start_ms, end_ms, granularity)
     zone_m3 = 0.0
     for meter in reg.of_type("meter"):
         if meter["zone_id"] is None:
             continue
-        zone_m3 += counter_total(conn, tz, "meter", "volume", str(meter["entity_id"]), start_ms, end_ms) or 0.0
+        zone_m3 += counter_total(conn, tz, "meter", "volume", str(meter["entity_id"]), start_ms, end_ms,
+                                 granularity) or 0.0
     storage_l = 0.0
     for tank in reg.of_type("tank"):
         before, after = tank_liters_before(conn, str(tank["entity_id"]), start_ms, fallback_after=True), \

@@ -73,6 +73,8 @@ class Plant:
         self.rng = rng
         self.tz = ZoneInfo(profile["timezone"])
         self.liters = {tid: t["capacity_l"] * t["initial_percent"] / 100 for tid, t in profile["tanks"].items()}
+        for tid, percent in scenarios.tank_start.items():
+            self.liters[tid] = profile["tanks"][tid]["capacity_l"] * percent / 100
         self.running = dict.fromkeys(profile["pumps"], False)
         self.pump = {pid: {"power": 0.0, "voltage": 380.0, "pressure": 0.2, "flow": 0.0,
                            "energy": float(p["initial_energy_kwh"])} for pid, p in profile["pumps"].items()}

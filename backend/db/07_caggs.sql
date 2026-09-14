@@ -572,3 +572,46 @@ SELECT time_bucket('1 day', bucket, :'tz') AS bucket, entity_id,
   FROM device_1h
  GROUP BY 1, 2
 WITH NO DATA;
+
+-- ─────────────── plant (plant_metrics) ───────────────
+CREATE MATERIALIZED VIEW plant_5m
+WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+SELECT time_bucket('5 minutes', time, :'tz') AS bucket, entity_id,
+       count(*) AS n_rows,
+       sum(unaccounted_percent) AS unaccounted_sum,
+       count(unaccounted_percent) AS unaccounted_n,
+       min(unaccounted_percent) AS unaccounted_min,
+       max(unaccounted_percent) AS unaccounted_max,
+       first(time, unaccounted_percent) FILTER (WHERE (unaccounted_percent) IS NOT NULL) AS unaccounted_min_at,
+       last(time, unaccounted_percent) FILTER (WHERE (unaccounted_percent) IS NOT NULL) AS unaccounted_max_at
+  FROM plant_metrics
+ GROUP BY 1, 2
+WITH NO DATA;
+
+CREATE MATERIALIZED VIEW plant_1h
+WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+SELECT time_bucket('1 hour', bucket, :'tz') AS bucket, entity_id,
+       sum(n_rows) AS n_rows,
+       sum(unaccounted_sum) AS unaccounted_sum,
+       sum(unaccounted_n) AS unaccounted_n,
+       min(unaccounted_min) AS unaccounted_min,
+       max(unaccounted_max) AS unaccounted_max,
+       first(unaccounted_min_at, unaccounted_min) FILTER (WHERE unaccounted_min IS NOT NULL) AS unaccounted_min_at,
+       last(unaccounted_max_at, unaccounted_max) FILTER (WHERE unaccounted_max IS NOT NULL) AS unaccounted_max_at
+  FROM plant_5m
+ GROUP BY 1, 2
+WITH NO DATA;
+
+CREATE MATERIALIZED VIEW plant_1d
+WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+SELECT time_bucket('1 day', bucket, :'tz') AS bucket, entity_id,
+       sum(n_rows) AS n_rows,
+       sum(unaccounted_sum) AS unaccounted_sum,
+       sum(unaccounted_n) AS unaccounted_n,
+       min(unaccounted_min) AS unaccounted_min,
+       max(unaccounted_max) AS unaccounted_max,
+       first(unaccounted_min_at, unaccounted_min) FILTER (WHERE unaccounted_min IS NOT NULL) AS unaccounted_min_at,
+       last(unaccounted_max_at, unaccounted_max) FILTER (WHERE unaccounted_max IS NOT NULL) AS unaccounted_max_at
+  FROM plant_1h
+ GROUP BY 1, 2
+WITH NO DATA;

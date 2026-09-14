@@ -257,6 +257,20 @@ meter_readings ─► รอบจดจริง (anchor=meter_reading) · ห�
 - `from`/`to` รับ epoch ms หรือ ISO ที่มี offset · ขยายเป็นวันเต็มตามเวลาโรงงาน (D-72)
 - เกณฑ์รับงานข้อ 3–6: `make integration` (`tests/test_reports_api.py`)
 
+## worker — น้ำสูญหาย (service `worker`)
+
+```
+ทุกขอบ 5 นาที ─► หน้าต่าง 60 นาทีล่าสุด: มิเตอร์หลัก − Σโซน − Δถังทุกใบ (รวมบ่อสำรอง)
+                 ├─ มิเตอร์/ถังตัวใดไม่มีข้อมูล → ไม่ตัดสิน (% = null)
+                 ├─ plant_metrics ─► /api/metrics/series?sourceType=system&metric=unaccounted_percent
+                 └─ ≥ 8% เตือน · ≥ 15% วิกฤต ─► alert UNACCOUNTED_WATER_HIGH ─► notifier
+```
+
+```bash
+docker compose exec worker python -m api.worker unaccounted --end 2026-09-13T23:40:00+07:00 --window 30
+make integration   # เกณฑ์ข้อ 1–2: tests/test_worker_api.py เดิน simulator ย้อนหลังเมื่อวาน แล้วลบข้อมูลที่ฉีดทิ้งเอง
+```
+
 ## ข้อตกลงที่ห้ามพลาด
 
 - **`null` คือ null** ห้ามแปลงเป็น `0` ที่ชั้นไหนก็ตาม

@@ -100,3 +100,18 @@ SELECT create_hypertable('meter_telemetry', 'time', chunk_time_interval => INTER
 SELECT create_hypertable('env_telemetry',   'time', chunk_time_interval => INTERVAL '1 day');
 SELECT create_hypertable('power_telemetry', 'time', chunk_time_interval => INTERVAL '1 day');
 SELECT create_hypertable('device_status',   'time', chunk_time_interval => INTERVAL '1 day');
+
+-- ค่าระดับทั้งโรงงานที่ worker คำนวณ (เฟส 6) — หนึ่งแถวต่อหนึ่งหน้าต่างที่ประเมิน · time = ปลายหน้าต่าง
+-- ★ unaccounted_* เป็น null เมื่อมิเตอร์/ถังตัวใดไม่มีข้อมูลในหน้าต่าง (ไม่ตัดสิน ไม่ใช่ 0)
+CREATE TABLE plant_metrics (
+  time                TIMESTAMPTZ NOT NULL,
+  entity_id           TEXT NOT NULL REFERENCES entities(entity_id),
+  window_minutes      INT NOT NULL,
+  main_m3             DOUBLE PRECISION,
+  zone_m3             DOUBLE PRECISION,
+  storage_delta_m3    DOUBLE PRECISION,                  -- Δ ปริมาณน้ำทุกถังรวมบ่อสำรอง
+  unaccounted_m3      DOUBLE PRECISION,
+  unaccounted_percent DOUBLE PRECISION,
+  PRIMARY KEY (entity_id, time)
+);
+SELECT create_hypertable('plant_metrics', 'time', chunk_time_interval => INTERVAL '30 days');

@@ -206,6 +206,30 @@ services:
       retries: 3
       start_period: 15s
 
+  # งานตามเวลา: น้ำสูญหายทุก 5 นาที (เฟส 6) — image เดียวกับ api
+  worker:
+    build: ./api
+    image: water-backend/api:0.3.0
+    command: ["python", "-m", "api.worker"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/worker.alive') > 60)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
 volumes:
   pgdata:
   mosqdata:
