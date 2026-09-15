@@ -29,3 +29,27 @@ jobs:
         run: npm run check:series
       - name: build
         run: npm run build
+
+  # ★ job แยกของ backend — ห้ามรวมเข้า job `check` ซึ่งเป็น required status check ของ branch protection
+  #   ไม่ต้องใช้ docker: unit test ของ backend ไม่แตะ DB/MQTT (integration test รันด้วย make integration บนเครื่อง)
+  check-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/*/requirements.txt
+      - run: pip install -r ingest/requirements.txt -r simulator/requirements.txt -r api/requirements.txt -r tests/requirements.txt
+      - name: ruff
+        run: ruff check ingest simulator api scripts tests
+      - name: unit test
+        run: pytest -q
+      - name: docker compose ถูกรูปแบบ
+        run: |
+          docker compose --env-file .env.example -f docker-compose.yml config -q
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.sim.yml config -q

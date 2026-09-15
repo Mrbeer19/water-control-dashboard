@@ -1,0 +1,354 @@
+# BACKEND_CONTRACT_NOTES.md — ข้อที่ backend ขอแก้/ขอยืนยันสัญญา
+
+เอกสารนี้แนบกับ PR ของ `backend/` · ทุกข้อ **backend ไม่ได้แก้ไฟล์ของทีมอื่นเอง** (`lib/types.ts`, `lib/config/`, `lib/hooks/`)
+เหตุผลเต็มของแต่ละข้ออยู่ใน `backend/DECISIONS.md` และ `PROBLEMS.md` (นอก repo)
+
+| สถานะ | ความหมาย |
+|---|---|
+| 👉 | ทีมที่ระบุต้องลงมือ |
+| ❓ | ขอให้ยืนยัน — backend ทำตามที่เขียนไว้แล้ว ถ้าไม่ตรงบอกได้ |
+| ℹ️ | แจ้งให้ทราบ ไม่ต้องทำอะไร |
+
+---
+
+## ถึงทีมหน้าบ้าน
+
+### 1. 👉 `CounterBucket.delta` — แก้ JSDoc ใน `lib/types.ts` (PROBLEMS P-01)
+
+JSDoc ปัจจุบันเขียน `delta = last − first ของช่วง` ซึ่งทำให้ผลรวมรายชั่วโมง ≠ รายวันบนตัวนับสะสมจริง
+(น้ำ/ไฟที่ไหลระหว่างข้อความสุดท้ายของชั่วโมงหนึ่งกับข้อความแรกของชั่วโมงถัดไปหายทุกรอยต่อ)
+
+backend ใช้ **`delta(N) = last(N) − last(N−1)`** — ผลรวมทุกระดับตรงกันเอง
+ค่าลดลง = รีเซ็ต → `resetDetected: true`, `delta = last(N)` ไม่ติดลบ
+
+**ขอแก้คอมเมนต์อย่างเดียว** type signature และ UI ไม่เปลี่ยน
+`npm run check:series` ผ่านกับ mock เพราะ mock อินทิเกรตอัตราไหล ไม่ได้เป็นตัวนับสะสม — จึงจับเรื่องนี้ไม่ได้
+ฝั่ง backend มี `backend/tests/test_series_parity.py` ที่ใช้ตัวนับสะสมจริงตรวจแทน
+
+### 2. 👉 เพิ่ม 3 คีย์เข้า `MetricKey` + `lib/config/metrics.ts` (P-07 / P-08)
+
+| คีย์ | kind | หน่วยที่ backend ตอบ | ใช้กับ sourceType |
+|---|---|---|---|
+| `pump_run_state` | `state` | `""` | `pump` |
+| `online_state` | `state` | `""` | ทุกชนิด (อ่านจากอุปกรณ์ที่วัดค่า) |
+| `volume_cubic_meters` | `counter` | `m³` | `meter`, `zone` |
+
+backend ตอบได้แล้วทั้งสามคีย์ ระหว่างที่หน้าบ้านยังไม่เพิ่ม หน้าจอจะ render ผ่าน `UNKNOWN_METRIC`
+
+> ⚠️ `HANDOFF §2.11` เสนอ `volume_cubic_meters` เป็น `kind: amount` แต่ข้อมูลจริงเป็นเลขหน้าปัดสะสม
+> backend จึงตอบเป็น **`counter`** (มี `delta`, `resetDetected`) ❓ ขอยืนยันว่ารับได้
+
+### 3. ❓ `raw` ได้เกิน 1,000 จุด (DECISIONS D-23)
+
+`PAIRING` ใน `time-buckets.ts` ให้ `raw` เป็นค่าเริ่มต้นของช่วง ≤ 1 ชม. = สูงสุด 1,800 จุด
+ถ้า backend บังคับเพดาน 1,000 จุดกับ raw ด้วย หน้าจอค่าเริ่มต้นจะได้ 400
+→ backend ใช้เพดาน 1,000 กับทุกระดับ **ยกเว้น raw** (ซึ่งถูกคุมด้วย PAIRING อยู่แล้ว)
+ถ้าหน้าบ้านอยากให้ raw ไม่เกิน 1,000 จริง ต้องลดช่วง raw ใน `PAIRING` เหลือ ≤ 33 นาที
+
+### 4. ℹ️ รายละเอียดของ `/api/metrics/series` ที่ควรรู้
+
+- ขอเกินกติกา → **HTTP 400** รูป `ApiError` · `code` = `GRANULARITY_NOT_ALLOWED` (มี `details.suggested`) หรือ `TOO_MANY_POINTS`
+- **ไม่ coerce granularity เงียบ ๆ แบบ mock** — หน้าบ้านควรเรียก `coerceGranularity()` ก่อนยิง (ทำอยู่แล้วใน UI)
+- `from`/`to` ใน response เป็น ISO พร้อม offset ของเขตเวลาระบบ (`+07:00`) ส่วน mock ใช้ `Z` — เป็น ISO 8601 ทั้งคู่
+- metric ที่ยังคำนวณไม่ได้ (`zone_outflow_lpm`, `unaccounted_percent`, `headcount`) ตอบ **404 `METRIC_NOT_AVAILABLE`** พร้อมเหตุผล ไม่เดาค่า
+- เปลี่ยน `settings.general.timezone` แล้ว aggregate ยังเป็นเขตเวลาเดิม → **409 `AGGREGATE_TIMEZONE_MISMATCH`** จนกว่าจะสร้างใหม่
+- เขตเวลาที่ offset ไม่ใช่ชั่วโมงเต็ม (เช่น `Asia/Kathmandu`) → **400 `TIMEZONE_NOT_WHOLE_HOUR`** (P-11) · ❓ ขอให้ล็อกตัวเลือกในหน้า Settings ด้วย
+- `AmountBucket.max` ของ `rainfall` = **ปริมาณฝนสูงสุดของรายงานครั้งเดียว** (มม. ต่อรอบส่ง) ❓ ถ้าหน้าจอต้องการความหมายอื่นบอกได้
+
+### 5. ℹ️ `/api/metrics/state-spans`
+
+- span ต่อกันไม่มีรู · ผลรวม `durationMs` = `to − from` พอดี · ช่วงที่ไม่มีข้อมูล/อุปกรณ์ offline/อนาคต = `"no_data"`
+- **backend ส่ง `to` เป็นตัวเลขเสมอ (ตัดที่ขอบช่วง) ไม่ส่ง `null`** — เพราะถ้าส่ง `null` ผลรวมจะไม่เท่ากับช่วงที่ขอเมื่อ `to` อยู่ในอนาคต
+- รับพารามิเตอร์เสริม `metric` (ค่าเริ่มต้น: `pump` → `pump_run_state`, อื่น ๆ → `online_state`)
+
+### 6. 👉 `use-live-data.ts` ต้อง debounce ก่อนต่อ WebSocket จริง (P-02) · ยืนยันรูป payload WS (P-03)
+
+ยังไม่กระทบเฟสที่ส่งใน PR นี้ รายละเอียดอยู่ใน PROBLEMS.md — จะกลับมาคุยตอนทำ `/api/stream`
+
+---
+
+## ถึงทีมฮาร์ดแวร์
+
+### 7. ❓ ชื่อ field ใน payload MQTT (DECISIONS D-13)
+
+PROJECT_BRIEF §7.1 มีตัวอย่างแค่ถัง backend จึงกำหนดชื่อที่เหลือไว้ใน `backend/README.md` หัวข้อ "สัญญา payload"
+ถ้า firmware ใช้ชื่ออื่น ingest จะ log `unknown_field` ให้เห็นทันที และแก้ได้ที่ `backend/ingest/normalize.py` ที่เดียว
+
+### 8. ❓ `rainMm` เป็นปริมาณต่อรอบส่ง ไม่ใช่ค่าสะสม (D-09) · `pulseCount` สะสมข้ามการรีบูต (P-10)
+
+ถ้า `pulseCount` นับใหม่ทุกครั้งที่บอร์ดรีบูต ทุกการรีบูตจะกลายเป็น `resetDetected` → ขอให้เก็บลง NVS
+
+### 9. 👉 firmware ต้องเก็บค่าไว้ในบอร์ดตอน broker หลุด แล้วส่งตามเมื่อต่อได้
+
+ทดสอบแล้ว (สถานการณ์ S8): ถ้าบอร์ดเก็บค่าไว้และส่งตาม ข้อมูลช่วงที่ broker ล่ม 60 วินาทีถึง DB ครบ 100%
+ถ้าไม่เก็บ ช่วงนั้นหายถาวร — ไลบรารี MQTT ส่วนใหญ่ **ไม่คิวข้อความตอนหลุดให้เอง**
+
+### 10. ❓ ขอเพิ่ม `seq` (int นับขึ้น ไม่รีเซ็ตข้ามการรีบูต) — ไม่บังคับ (P-09)
+
+ไม่มีก็ทำงานได้ แต่ถ้ามีจะแยก "ข้อความหายระหว่างทาง" ออกจาก "บอร์ดไม่ได้ส่ง" ได้
+
+---
+
+## ถึงทุกทีม
+
+### 11. ℹ️ `alerts.kind` ใช้ `AlertCode` ใน `lib/types.ts` ตรง ๆ (D-15)
+
+`PUMP_OVERCURRENT`, `DEVICE_OFFLINE`, `ZONE_FLOW_HIGH`, … ไม่มีตารางแปลงรหัสอีกชั้น
+
+### 12. ❓ LINE ใช้ไม่ได้บนระบบที่ไม่มีอินเทอร์เน็ต (P-06)
+
+ต้องตัดสิน: ขอเปิดขาออกเฉพาะ `api-data.line.me:443` หรือใช้ SMTP ภายใน + บัซเซอร์อย่างเดียว
+(จะทำ notifier เป็น plugin ไว้ให้สลับได้ในเฟส endpoint รายโดเมน)
+
+---
+
+## endpoint รายโดเมน (เฟส 4a) — ถึงทีมหน้าบ้าน
+
+ทุก response ถูกคอมไพล์เทียบ `lib/types.ts` ด้วย tsc แล้ว (`make contract` ใน `backend/`) · path ตรงกับ `TODO(backend)` ทุกตัว
+
+### 13. ℹ️ entity ที่ยังไม่มีข้อมูล: ตัวเลขเป็น 0 · `lastSeen` = 1970 · **`status` เป็น `offline` เสมอ** (D-27)
+
+type บังคับ `number` จึงส่ง null ไม่ได้ → ขอให้ UI ดู `status` ก่อนแสดงตัวเลข (ซึ่งทำอยู่แล้วด้วยสีเทา)
+field ที่เป็น `number | null` (เช่น `rssi`, `minutesToFull`, ฝนของจุดในอาคาร) ส่ง null ตามจริง
+
+### 14. ℹ️ `/…/history` รับ `interval` (วินาที) หรือ `intervalSeconds` · `from`/`to` เป็น epoch ms หรือ ISO ที่มี offset (D-33)
+
+ไม่ส่งช่วง = 1 ชั่วโมงล่าสุด · เกิน 2,000 จุด → 400 `TOO_MANY_POINTS` · metric ที่ entity นั้นไม่มี → 400 `METRIC_NOT_SUPPORTED`
+
+### 15. ℹ️ `/api/zones/cost` · `/api/meters/unaccounted` · `/api/departments/usage` ไม่ส่ง `from`/`to` = รอบบิลปัจจุบัน
+
+รอบบิลเริ่มตาม `billing.billingCycleStartDay` · ค่าน้ำรายโซนคิดขั้นบันไดจากปริมาณของโซนเอง (ผลรวมไม่เท่าบิลจริง — ตรงกับคอมเมนต์ใน `getZoneCosts()`)
+
+### 16. ❓ ตำแหน่งวาล์วเป็น `open` จนกว่าจะมีระบบสั่งงาน (D-28) · ค่าระบบควบคุมแรงดันเป็นค่าตอนติดตั้ง (D-29)
+
+ingest ยังไม่รับ feedback วาล์ว และยังไม่ได้อ่าน DB ของ PLC — ทั้งสองอย่างมาพร้อมเฟสระบบควบคุม
+
+### 17. ℹ️ PLC/HMI แสดง `offline` · reboot/firmware ตอบ 501 `NOT_IMPLEMENTED` · ping ตัดสินจากข้อความล่าสุด (D-30)
+
+`pingDevice()` ได้ `latencyMs: null` เสมอ (ไม่ส่ง ICMP จาก container)
+
+### 18. ℹ️ `/api/meters/daily?projection=true` ยังไม่มีจุดอนาคต (D-31) · `/api/pressure/headcount` ตอบ null ทั้งคู่
+
+พยากรณ์รอผลจากทีม AI · จำนวนคนยังไม่มีแหล่งข้อมูล — UI ต้อง render ได้เมื่อไม่มีสองอย่างนี้
+
+### 19. ℹ️ `SystemSummary.todayEnergyKwh` = พลังงานปั๊ม + ตู้ไฟรายแผนก (จากตัวนับจริง ไม่ใช่ `power × ชั่วโมง` แบบ mock)
+
+---
+
+## การแจ้งเตือน (เฟส 4b)
+
+### 20. ℹ️ `messageTh` / `messageEn` / `unit` ของ alert มาจากเซิร์ฟเวอร์ตาม `AlertCode` · id ของ alert/ack/delivery เป็นเลขในรูป string
+
+preview (`/api/alerts/:id/preview`) ประกอบด้วยฟังก์ชันเดียวกับที่ notifier ส่งจริง — ข้อความตรงกันทุกตัวอักษร
+
+### 21. ℹ️ `POST /api/notifications/deliveries/:id/retry` คืน `deliveryState: 'queued'` ทันที ผลจริงมาในรอบถัดไป (≤ 2 วินาที)
+
+ต่างจาก mock ที่คืน `delivered` เลย → UI ควรดึงรายการใหม่หลังกด · รายการที่ส่งถึงแล้วตอบ 409 `ALREADY_DELIVERED`
+
+### 22. ℹ️ `/api/alerts` รับตัวกรองแบบ `?severity=critical,warning` หรือส่งชื่อซ้ำ · มี `departmentIds` · `from`/`to` เทียบกับ `raisedAt`
+
+`occurrenceCount` > 1 = เหตุเดิมกลับมาภายในหน้าต่างกันสแปม (แถวเดิม ไม่แจ้งซ้ำ — D-35)
+
+### 23. 👉 ถึงทีมฮาร์ดแวร์: บัซเซอร์ต้อง subscribe `plant/water/buzzer/cmd`
+
+```json
+{ "cabinet": "ตู้คอนโทรลหลัก", "alertId": "12", "code": "ENV_TEMP_HIGH", "severity": "critical",
+  "sourceId": "env-control-cabinet", "pattern": "continuous", "at": "2026-09-14T16:54:43.000+07:00" }
+```
+
+`pattern` = `continuous` (วิกฤต) หรือ `beep` · ตู้ไหนดังดูจาก `cabinet` · ต้องเพิ่ม `topic read plant/water/buzzer/cmd` ใน ACL ของ ESP32 ที่ติดบัซเซอร์
+
+### 24. ❓ ช่องทาง email ต้องมีเมลเซิร์ฟเวอร์ภายในโรงงาน (`SMTP_HOST`)
+
+ถ้าไม่มี รายการ email จะขึ้น `failed` พร้อมเหตุผล ไม่ลองซ้ำ · LINE และ SMS ขึ้น `failed` พร้อมเหตุผลเช่นกันจนกว่าจะมีคนตัดสิน (P-06)
+
+---
+
+## เข้าสู่ระบบและค่าตั้ง (เฟส 4c)
+
+### 25. ℹ️ เซสชันอยู่ใน cookie httpOnly `wcm_session` (path `/api`) — หน้าบ้านอ่าน token ไม่ได้และไม่ต้องเก็บเอง
+
+login ไม่ผ่านตอบ 200 + `{ ok: false, errorTh, errorEn }` ตามสัญญา `signIn()` · `/api/auth/session` `/refresh` `/me` ตอบ `null` เมื่อไม่มีเซสชัน
+วันหมดอายุมาจากเซิร์ฟเวอร์ (`sessionTimeoutMinutes`) ต่ออายุได้ไม่เกิน 12 ชั่วโมงจากตอนล็อกอิน
+
+### 26. 👉 ตอนสลับเป็น API (เฟส 7) ต้องลบบัญชีสาธิตและ session ใน localStorage ของ `lib/services/auth.ts`
+
+fetch ต้องส่ง cookie (`credentials: 'include'` หรือเรียกผ่าน proxy ที่ origin เดียวกัน)
+
+### 27. ℹ️ endpoint ที่เขียนข้อมูลตอบ 401 `UNAUTHENTICATED` / 403 `FORBIDDEN`
+
+`acknowledgedByUserId` และ `updatedByUserId` ในสัญญาเดิมไม่ใช้ตัดสินแล้ว — เซิร์ฟเวอร์ใช้ผู้ที่ล็อกอิน (ส่ง id คนอื่นมา = 403)
+สิทธิ์: อ่านแล้ว = ผู้ที่ล็อกอิน · รับทราบ/ส่งซ้ำ = operator ขึ้นไป · ค่าตั้งทั้งหมด = admin
+
+### 28. ℹ️ `PATCH /api/settings/:section` ไม่ผ่าน → 400 `SETTINGS_INVALID`
+
+`details` = `{ "billing.vatPercent": "VAT ต้องอยู่ระหว่าง 0–100" }` ใช้ path เดียวกับ `SettingsFieldError` จึงผูกกับช่องในฟอร์มได้ตรง
+กฎชุดเดียวกับ `validateSettings()` (ตรวจกับไฟล์ .ts จริง) บวกกฎชนิดข้อมูล/เขตเวลาของเซิร์ฟเวอร์ · `/import` ยังคืน `{ ok, errors }` เหมือนเดิม
+
+### 29. ℹ️ เกณฑ์เตือนมาจากตาราง thresholds และขั้นอัตรามาจาก tariffs
+
+แก้อัตรา = เพิ่มอัตราที่มีผลตั้งแต่วันนี้ (รายงานย้อนหลังยังใช้อัตราเดิม) · `id` / `name` ของขั้นอัตราเซิร์ฟเวอร์ตั้งให้
+แก้เกณฑ์ในหมวดรายอุปกรณ์ (`tanks[].thresholdsPercent`) ไม่มีผล ต้องแก้ที่หมวด `thresholds` (D-48)
+
+### 30. ❓ endpoint อ่านไม่ต้องล็อกอิน และ `departmentScopedAccess` ยังไม่บังคับ (D-41)
+
+ทำไว้ให้จอแขวนผนังเปิดค้างได้ — ต้องตัดสินร่วมกันว่าจะให้จอแขวนผนังใช้บัญชีแบบไหน
+
+### 31. ℹ️ `/api/settings/line/test` ตอบ `ok: false` + `message` ขึ้นต้น `offline_mode` · `/network/test` เปิด TCP จริงจากเครื่อง API
+
+เขตเวลาที่ offset ไม่ใช่ชั่วโมงเต็ม (เช่น `Asia/Kathmandu`) และเขตที่ไม่ตรงกับข้อมูลรวมของกราฟ ถูกปฏิเสธ
+
+---
+
+## ข้อมูลสด (เฟส 4d)
+
+### 32. ℹ️ `WS /api/stream` หนึ่งข้อความ = อาร์เรย์ `RealtimeEvent[]` ไม่เกิน 1 ข้อความต่อ 2 วินาที
+
+```ts
+socket.onmessage = (message) => {
+  const events = JSON.parse(message.data) as RealtimeEvent[];   // entity ทั้งก้อน field ตรงกับ REST
+};
+```
+
+ส่งเฉพาะ entity ที่เนื้อหาเปลี่ยน · ไม่มีอะไรเปลี่ยน = ไม่ส่ง · วัดจริงตอน ingest รับเต็มกำลัง: 10 ข้อความใน 20 วินาที
+`subscribeToUpdates(listener)` แบบเดิมใช้ต่อได้ — เรียก listener หนึ่งครั้งต่อข้อความ · หลุดแล้วหน้าจอต้องต่อใหม่เอง (ใส่ backoff)
+
+### 33. ℹ️ เลือก channel ด้วย `?channels=telemetry,alerts` (ไม่ระบุ = ทั้งหมด · ชื่อผิด = ปฏิเสธตอน handshake)
+
+| channel | type ที่ได้ |
+|---|---|
+| `telemetry` | `tank` `pump` `valve` `zone` `meter` `main_meter` `sensor` `electric_node` `pressure_control` |
+| `system` | `device` `connection` |
+| `alerts` | `alert` `anomaly` |
+| `commands` | `command_result` (มาพร้อมเฟสระบบควบคุม) |
+
+### 34. 👉 ยืนยันรูปข้อความตาม P-03 และยังแนะนำ debounce ใน `use-live-data.ts` (P-02 ทาง ก.)
+
+backend รวบแล้วก็จริง แต่หน้า `/` ยังดึง 17 fetcher ต่อหนึ่งข้อความ — จอเปิดค้างหลายเครื่องจะหนักตอนติดตั้งจริง
+
+---
+
+## ผลจากทีม AI (เฟส 4e)
+
+### 35. 👉 ถึงทีม AI: ส่งผลเข้า backend ด้วย `Authorization: Bearer <AI_INGEST_TOKEN>`
+
+| ส่งอะไร | endpoint |
+|---|---|
+| ความผิดปกติ | `POST /api/ai/anomalies` (ทีละรายการ) |
+| พยากรณ์ · บำรุงรักษา · ค่าที่คำนวณ | `POST /api/ai/forecasts` · `/maintenance` · `/metrics` (รายการเดียวหรืออาร์เรย์ไม่เกิน 500) |
+| สัญญาณชีพ | `PUT /api/ai/status` อย่างน้อยทุก 5 นาที ไม่งั้นหน้าจอขึ้นว่าติดต่อไม่ได้ |
+
+- ★ **`sourceId` บังคับ** และต้องเป็น id ที่มีในระบบ (`zone-7`, `pump-1` …) — ต่างจาก AI_CONTRACT.md ฉบับเดิม (D-55)
+- ★ `score` นอก 0–1 และ `healthScore` นอก 0–100 ถูกปฏิเสธ (400 พร้อมบอกวิธีแก้) ไม่หารให้
+- ส่ง `id` เดิมซ้ำ = อัปเดตรายการเดิม แต่ `status` / `feedback` ที่หน้างานตั้งแล้วจะไม่ถูกทับ
+- เวลาต้องมี offset (`+07:00`) · `type` `detector` `target` `key` เป็น string เปิดตามเดิม
+
+### 36. ℹ️ ถึงหน้าบ้าน: `id` ของผล AI เป็น id ของ backend · field ที่ทีม AI ไม่ได้ส่งจะไม่มีใน JSON
+
+ตรงกับ optional ใน `lib/types.ts` ทุกตัว (ตรวจด้วย tsc แล้ว) · ตัวกรอง `severity` และ `minScore` ไม่ทิ้งรายการที่ไม่มีค่านั้น
+
+### 37. ℹ️ `getForecast(target)` ที่ยังไม่มีผล → 404 `FORECAST_NOT_FOUND`
+
+type เดิมคืน `AIForecast` (ไม่ใช่ `null`) — UI ต้องจับ error แล้วแสดง "ยังไม่มีผลพยากรณ์" · `getForecasts()` ได้อาร์เรย์ว่างตามปกติ
+
+### 38. ℹ️ ความผิดปกติระดับเตือนขึ้นไปสร้าง alert `ANOMALY_DETECTED` ให้เอง (`alert.anomalyEventId`)
+
+ปิดเคส (`/status`) ครบทุกเคสของ alert แล้ว alert ปิดตาม · `feedback` ไม่ใช่การปิดเคส · `setScenario()` ไม่มีใน API จริง ต้องลบตอนสลับ
+
+---
+
+## การสั่งงาน (เฟส 5)
+
+### 39. 👉 ถึงทีมฮาร์ดแวร์: สัญญาคำสั่งและ feedback (QoS 1)
+
+| อุปกรณ์ | รับคำสั่ง | ตอบ feedback |
+|---|---|---|
+| ESP32 วาล์ว | `plant/water/valve/<valve-id>/cmd` | `plant/water/valve/<valve-id>/feedback` |
+| PLC (ผ่าน bridge) | `plant/water/pump/<pump-id>/cmd` · `plant/water/pressure/pressure-control-1/cmd` | `…/feedback` ของเป้าหมายเดียวกัน |
+| ESP32 ทุกตัว (รีบูต) | `plant/water/<device-id>/cmd` → `{"action": "reboot"}` | ไม่ต้องตอบ |
+
+```json
+// cmd
+{ "commandId": "3f9b…", "action": "close", "value": null, "issuedAt": "2026-09-14T11:02:03.120Z", "timeoutMs": 10000 }
+// feedback — ส่ง commandId กลับ · อ่านตำแหน่งจริงจาก limit switch ไม่ใช่สะท้อนคำสั่ง
+{ "commandId": "3f9b…", "ok": true, "position": "closed", "at": "2026-09-14T18:02:03.940+07:00" }
+{ "commandId": "…", "ok": false, "error": "limit switch ไม่ตอบ" }          // อุปกรณ์ปฏิเสธ
+```
+
+`position` = `open` `closed` `opening` `closing` `fault` · ปั๊มใช้ `runState` · เปลี่ยนโหมดใช้ `mode` · setpoint ใช้ `value`
+★ ช่างหมุนวาล์วที่ตู้เองก็ให้ส่ง feedback (ไม่มี `commandId`) — ระบบบันทึกตำแหน่งจริงเสมอ
+★ ไม่ตอบภายใน 10 วินาที ระบบถือว่า "ไม่ทราบผล" ไม่ใช่ล้มเหลว
+
+### 40. 👉 ถึงหน้าบ้าน: `issueCommand()` ได้ 202 + `CommandLogEntry` · ถูกด่านปฏิเสธได้ 409
+
+| ได้ | หมายถึง | ทำอะไรต่อ |
+|---|---|---|
+| 409 `INTERLOCK_REJECTED` | ติดกฎ `details.rule` · `messageTh` คือเหตุผลที่อ่านได้ | แสดงเหตุผล ห้ามให้กดซ้ำทันที |
+| 409 `CONFIRMATION_REQUIRED` | ต้องยืนยันชั้นที่สอง (โซน VIP · เปิด/ปิดทุกโซน) | หลังผู้ใช้ยืนยัน ส่งคำสั่งเดิมพร้อม `confirmToken` จาก `details` ภายใน 120 วินาที |
+| 503 `BROKER_UNAVAILABLE` | คำสั่งไม่ถึงอุปกรณ์แน่นอน | ลองใหม่ได้ |
+
+★ ต้องเพิ่ม `confirmToken` ใน body ของ `issueCommand()` · `issuedByUserId` ไม่ใช้ตัดสินแล้ว (ใช้ผู้ที่ล็อกอิน)
+
+### 41. 👉 PIN: เรียก `POST /api/control/unlock` `{ pin }` แทนการตรวจใน `PinGate`
+
+สั่งงานได้ 15 นาทีในเซสชันนั้น · ผิดได้ 403 `PIN_INVALID` · ผิด 5 ครั้ง `PIN_LOCKED` · ยังไม่ตั้ง `PIN_NOT_SET` · ไม่ได้ปลดล็อก `PIN_REQUIRED`
+
+### 42. ℹ️ timeout = "ไม่ทราบผล" (`errorCode: FEEDBACK_TIMEOUT` หลัง 10 วินาที — mock ใช้ 5 วินาที)
+
+ข้อความใน `COMMAND_STATE_LABEL.timeout` ควรบอกให้ตรวจหน้างานก่อนสั่งซ้ำ — สั่งปิดวาล์วซ้ำอาจเกิดค้อนน้ำ
+
+### 43. ℹ️ `/api/control/valve/:id` รับ id โซนได้ (`zone-8`) · `reasons[].code` ของ interlock คือ `rule_id` ในตาราง
+
+`/system/clear-lockout` ต้องผ่าน PIN เหมือนคำสั่งอื่น · หยุดฉุกเฉินไม่ต้องยืนยันสองชั้นและไม่ติดกฎใด
+
+### 44. ℹ️ รีบูตได้เฉพาะ ESP32 — `ok: true` แปลว่าส่งคำสั่งออก ไม่ใช่รีบูตสำเร็จ · อัปเดตเฟิร์มแวร์ยังตอบ 501
+
+## รายงาน (เฟส 6)
+
+### 45. 👉 ถึงหน้าบ้าน: ส่ง `TimeRange` เป็น `from`/`to` แบบ ISO ได้เลย · ช่วงถูกขยายเป็นวันเต็ม
+
+`range.from`/`range.to` ใน response จึงอาจไม่เท่ากับที่ส่งไป · `range.preset` = ค่า `preset` ที่แนบมา (ไม่แนบ = `custom`)
+
+### 46. ❓ ค่าน้ำรายโซนมีสองแบบ (DECISIONS D-70)
+
+`/api/zones/cost` (การ์ด Overview) คิดขั้นบันไดแยกรายโซนเหมือน mock · `UsageReport.rows[].costBaht` เฉลี่ยค่าน้ำทั้งช่วงตามสัดส่วน ผลรวมทุกโซน = ค่าน้ำรวม
+ขอให้เลือกแบบเดียว — backend แนะนำแบบเฉลี่ยตามสัดส่วน เพราะกระทบยอดกับบิลได้
+
+### 47. ℹ️ `DailyUsagePoint.costBaht` เปลี่ยนเป็นเฉลี่ยตามสัดส่วนของรอบบิล
+
+เฟส 4a คิดขั้นบันไดจากยอดวันเดียว ทุกวันจึงตกขั้นแรก · ตอนนี้ Σ ค่าน้ำรายวันของรอบ = ค่าน้ำขั้นบันไดของรอบ
+
+### 48. ℹ️ `getBillingEstimate('electricity')` (D-73)
+
+`consumedCubicMeters` คือ kWh · `tierBreakdown` มีขั้นเดียว · `changeFromPreviousPercent` เทียบยอดคาดการณ์สิ้นรอบกับรอบก่อน (เหมือน `calculateBillingEstimate`)
+
+### 49. ❓ ถึงทีม: ปั๊มรับไฟจากตู้ไหน (D-75) · ใครบันทึกเลขจดมิเตอร์ของประปา (D-76)
+
+รายงาน `energy` จึงยังไม่รวมมิเตอร์ปั๊มในยอดรวม · `/api/reports/monthly?anchor=meter_reading` ตอบ 400 `METER_READINGS_MISSING` จนกว่าจะมีบันทึกการจด
+
+### 50. ℹ️ `unaccounted_percent` พร้อมแล้ว — `sourceType: 'system'` (sourceId ใดก็ได้)
+
+แต่ละจุดคือหน้าต่าง 60 นาทีที่จบ ณ เวลานั้น (worker เขียนทุก 5 นาที) · `avg: null` = มิเตอร์/ถังบางตัวไม่มีข้อมูลในหน้าต่าง ไม่ใช่ 0 · ช่วงข้อมูลก่อนเปิด worker ไม่มีค่า
+
+### 51. 👉 ถึงหน้าบ้าน: `requestReportExport()` ได้แค่ `jobId` — ต้องเพิ่มการดาวน์โหลด (D-80)
+
+เรียก `GET /api/reports/export/:jobId` ซ้ำจนได้ 200 (ระหว่างรอได้ 202 `{jobId, status}`) แล้วเปิดไฟล์ · ต้องล็อกอิน (401 ถ้าไม่ได้ล็อกอิน)
+`format: 'xlsx'` ตอบ 400 `FORMAT_NOT_SUPPORTED` — ขอให้ซ่อนปุ่ม xlsx หรือบอกให้ใช้ CSV แทน · ไฟล์เก็บ 7 วัน (เกินได้ 410 `EXPORT_EXPIRED`)
+
+### 52. ❓ ถึงทีม: เก็บข้อมูลดิบกี่วัน (D-85) · ถึงทีมติดตั้ง: mount SMB ของปลายทางสำรองบน host (D-86)
+
+`maintenance.dataRetentionDays` ใน seed = 365 แต่ PROMPT_06 เขียน 30 วัน — backend ใช้ค่าตั้ง (ขั้นต่ำ 30) และลบเฉพาะวันที่ archive เป็น Parquet ครบแล้ว
+container ไม่ mount SMB เอง: ต้อง mount `\\10.20.10.20\water-backup` บน host แล้วตั้ง `BACKUP_HOST_DIR` ใน `.env` · ทีม AI อ่านข้อมูลดิบย้อนหลังจาก `data/archive/<table>/date=YYYY-MM-DD/`
+
+## สลับหน้าบ้านเป็น API จริง (เฟส 7)
+
+### 53. ❓ ถึงหน้าบ้าน: backend พร้อมแล้ว แต่ยังไม่สลับ `lib/services/` ให้ — ขอให้เลือกวิธี (DECISIONS D-90)
+
+PROMPT_07 ให้ลบ `lib/mock/` แล้วเขียน service ใหม่ทั้งหมด แต่เดโม GitHub Pages (`pages.yml`) และ `npm run check:series` ยังใช้ mock อยู่
+
+| ทางเลือก | ผล |
+|---|---|
+| **(ก) แนะนำ** — `internal.ts` มีสองโหมด: มี `NEXT_PUBLIC_API_BASE_URL` = ยิง API (`fetch` + `credentials: 'include'` + แปลง `ApiError`) · ไม่มี = mock เดิม (import แบบ dynamic ไม่ติดไปกับ build จริง) | เดโม Pages และ `check:series` ใช้ต่อได้ · ไม่ต้องแก้ component · ต้องดูแล mock ต่อ |
+| (ข) ลบ `lib/mock/` ตาม PROMPT_07 | ต้องปิดหรือย้ายเดโม Pages · เขียน `check-series.mjs` ใหม่ให้ยิง API · ลบ `scenario-switcher` และการ์ดบัญชีทดลองในหน้า login |
+
+ของที่หน้าบ้านต้องปรับตามสัญญาจริงไม่ว่าเลือกทางไหน: ข้อ 40 (`confirmToken` · 409) · 41 (PIN ผ่าน `/unlock`) · 45 (ช่วงวันเต็ม) · 51 (ดาวน์โหลดไฟล์ส่งออก) · P-02 (`use-live-data.ts` debounce) · WS ส่ง `RealtimeEvent[]` ต่อข้อความ (D-50)

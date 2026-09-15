@@ -1,0 +1,121 @@
+# ACL — ใครส่ง/รับ topic ไหนได้
+#
+# ★ user ของอุปกรณ์ publish ได้เฉพาะ topic ของ entity ที่ตัวเองอ่านอยู่จริง
+#   subscribe ได้เฉพาะ cmd ของตัวเอง — node ที่ถูกยึดส่งค่าปลอมแทนตัวอื่นไม่ได้
+# ★ ผังนี้ตรงกับ lib/mock/network.ts (linkedEntityIds) และ db/06_seed.sql
+#   เพิ่ม/ย้ายอุปกรณ์ต้องแก้ทั้งสามที่ แล้วรัน scripts/gen_passwd.sh ใหม่
+
+# ─────────────── บริการของ backend ───────────────
+
+user ingest
+topic read plant/water/#
+
+user api
+topic read plant/water/#
+topic write plant/water/valve/+/cmd
+topic write plant/water/pump/+/cmd
+topic write plant/water/pressure/+/cmd
+topic write plant/water/+/cmd
+
+# simulator เล่นเป็นทุก node — มีเฉพาะใน docker-compose.sim.yml ห้ามเปิดบนเครื่องจริง
+user simulator
+topic readwrite plant/water/#
+
+user healthcheck
+topic read $SYS/broker/uptime
+
+# ─────────────── ESP32 ───────────────
+
+user dev-esp32-pump-house
+topic write plant/water/pump/pump-1/telemetry
+topic write plant/water/pump/pump-2/telemetry
+topic write plant/water/tank/tank-1/telemetry
+topic write plant/water/env/env-pump-room/telemetry
+topic write plant/water/device/esp32-pump-house/status
+topic read plant/water/esp32-pump-house/cmd
+
+user dev-esp32-meter-bank
+topic write plant/water/meter/meter-zone-1/telemetry
+topic write plant/water/meter/meter-zone-2/telemetry
+topic write plant/water/meter/meter-zone-3/telemetry
+topic write plant/water/meter/meter-zone-4/telemetry
+topic write plant/water/meter/meter-zone-5/telemetry
+topic write plant/water/meter/meter-zone-6/telemetry
+topic write plant/water/meter/meter-zone-7/telemetry
+topic write plant/water/device/esp32-meter-bank/status
+topic read plant/water/esp32-meter-bank/cmd
+
+user dev-esp32-valve-bank
+topic write plant/water/valve/valve-zone-1/feedback
+topic write plant/water/valve/valve-zone-2/feedback
+topic write plant/water/valve/valve-zone-3/feedback
+topic write plant/water/valve/valve-zone-4/feedback
+topic write plant/water/valve/valve-zone-5/feedback
+topic write plant/water/valve/valve-zone-6/feedback
+topic write plant/water/valve/valve-zone-7/feedback
+topic read plant/water/valve/valve-zone-1/cmd
+topic read plant/water/valve/valve-zone-2/cmd
+topic read plant/water/valve/valve-zone-3/cmd
+topic read plant/water/valve/valve-zone-4/cmd
+topic read plant/water/valve/valve-zone-5/cmd
+topic read plant/water/valve/valve-zone-6/cmd
+topic read plant/water/valve/valve-zone-7/cmd
+topic write plant/water/device/esp32-valve-bank/status
+topic read plant/water/esp32-valve-bank/cmd
+
+user dev-esp32-vip
+topic write plant/water/pump/pump-3/telemetry
+topic write plant/water/tank/tank-2/telemetry
+topic write plant/water/meter/meter-zone-8/telemetry
+topic write plant/water/valve/valve-zone-8/feedback
+topic read plant/water/valve/valve-zone-8/cmd
+topic write plant/water/device/esp32-vip/status
+topic read plant/water/esp32-vip/cmd
+
+user dev-esp32-pond
+topic write plant/water/tank/tank-3/telemetry
+topic write plant/water/device/esp32-pond/status
+topic read plant/water/esp32-pond/cmd
+
+user dev-esp32-meter-main
+topic write plant/water/meter/main/telemetry
+topic write plant/water/device/esp32-meter-main/status
+topic read plant/water/esp32-meter-main/cmd
+
+user dev-esp32-env-outdoor
+topic write plant/water/env/env-outdoor/telemetry
+topic write plant/water/device/esp32-env-outdoor/status
+topic read plant/water/esp32-env-outdoor/cmd
+
+user dev-esp32-elec-1
+topic write plant/water/power/elec-production/telemetry
+topic write plant/water/device/esp32-elec-1/status
+topic read plant/water/esp32-elec-1/cmd
+
+user dev-esp32-elec-2
+topic write plant/water/power/elec-facility/telemetry
+topic write plant/water/env/env-control-cabinet/telemetry
+topic write plant/water/device/esp32-elec-2/status
+topic read plant/water/esp32-elec-2/cmd
+
+user dev-esp32-elec-3
+topic write plant/water/power/elec-dormitory/telemetry
+topic write plant/water/device/esp32-elec-3/status
+topic read plant/water/esp32-elec-3/cmd
+
+user dev-esp32-elec-4
+topic write plant/water/power/elec-executive/telemetry
+topic write plant/water/device/esp32-elec-4/status
+topic read plant/water/esp32-elec-4/cmd
+
+# ─────────────── PLC (ผ่าน gateway bridge) ───────────────
+# ★ ปั๊มสั่งผ่าน PLC · วาล์วไม่ได้อยู่หลัง PLC แล้ว (ตัดสิน 12 ก.ย. 2569)
+
+user dev-plc-1
+topic read plant/water/pump/+/cmd
+topic write plant/water/pump/pump-1/feedback
+topic write plant/water/pump/pump-2/feedback
+topic write plant/water/pump/pump-3/feedback
+topic read plant/water/pressure/+/cmd
+topic write plant/water/pressure/pressure-control-1/feedback
+topic write plant/water/device/plc-1/status

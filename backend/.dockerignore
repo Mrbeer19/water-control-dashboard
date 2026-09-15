@@ -1,0 +1,6 @@
+# build context ของ worker (docker/worker.Dockerfile) — ส่งเฉพาะโค้ด api และฟอนต์
+# ★ กัน .env · data/ · mosquitto/passwd · .venv หลุดเข้า image
+*
+!api/
+!assets/fonts/
+**/__pycache__

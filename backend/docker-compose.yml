@@ -1,0 +1,249 @@
+# backend ของระบบมอนิเตอร์น้ำ — รันทั้งหมดบน gateway 10.20.10.2 ไม่มีทางออกอินเทอร์เน็ต
+#
+# ★ image ทุกตัวปักด้วย digest ไม่ใช้ tag — เครื่องปลายทาง pull ใหม่ไม่ได้ ต้องรู้แน่ว่าได้อะไร
+# ★ TZ=Asia/Bangkok ทุก container · log จำกัดขนาด · ไฟดับแล้วต้องขึ้นเองครบ
+
+name: water-backend
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  timescaledb:
+    # TimescaleDB 2.30.0 บน PostgreSQL 17.11
+    image: timescale/timescaledb@sha256:3113d12b78392c064aa7475caf7a52b447b29ddd4f9bfd23526733fcb03e3459
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+    command: ["postgres", "-c", "timezone=Asia/Bangkok", "-c", "log_timezone=Asia/Bangkok"]
+    ports:
+      - "127.0.0.1:5432:5432"          # ★ เปิดเฉพาะในเครื่อง ไม่ใช่ 0.0.0.0
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # ต่อผ่าน TCP โดยตั้งใจ — ช่วง init สคริปต์ เซิร์ฟเวอร์ชั่วคราวฟังแค่ unix socket
+      # ถ้าเช็คผ่าน socket จะขึ้น healthy ก่อน schema สร้างเสร็จ
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+
+  redis:
+    # Redis 7.4 — เก็บค่าล่าสุด + pub/sub เท่านั้น ไม่ต้อง persist (ของจริงอยู่ใน DB)
+    image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  mosquitto:
+    # Eclipse Mosquitto 2.1
+    image: eclipse-mosquitto@sha256:6f8d8a947c506f8a2290ec65cd4bd2bc7cb4d43fb5f6271f861cb013e2ef9797
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      MQTT_PASSWORD_HEALTHCHECK: ${MQTT_PASSWORD_HEALTHCHECK:?ต้องตั้งใน .env}
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/acl:/mosquitto/config/acl:ro
+      - ./mosquitto/passwd:/mosquitto/config/passwd:ro   # สร้างด้วย scripts/gen_passwd.sh
+      - mosqdata:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -u healthcheck -P \"$$MQTT_PASSWORD_HEALTHCHECK\" -t '$$SYS/broker/uptime' -C 1 -W 3"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  nginx:
+    # nginx 1.31 — proxy /api ไป FastAPI และเสิร์ฟ frontend ที่ build แล้ว
+    image: nginx@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  ingest:
+    build: ./ingest
+    image: water-backend/ingest:0.2.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      MQTT_HOST: mosquitto
+      MQTT_USER: ingest
+      MQTT_PASSWORD: ${MQTT_PASSWORD_INGEST:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      SPOOL_DIR: /data/spool
+    ports:
+      - "127.0.0.1:8080:8080"          # /health · /metrics
+    volumes:
+      - ingest-spool:/data/spool       # ★ spool ต้องรอด container รีสตาร์ท
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+
+  api:
+    build: ./api
+    image: water-backend/api:0.3.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      INGEST_URL: http://ingest:8080
+      MQTT_HOST: mosquitto
+      MQTT_USER: api                   # ส่งคำสั่งไป plant/water/{valve,pump,pressure}/:id/cmd ตาม ACL
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
+      AI_INGEST_TOKEN: ${AI_INGEST_TOKEN:-}   # บริการ AI ส่งผลด้วย Authorization: Bearer <token> · ว่าง = ส่งได้เฉพาะ admin
+      EXPORT_DIR: /data/exports
+    volumes:
+      - exports:/data/exports:ro       # ไฟล์ส่งออกที่ worker เรนเดอร์ไว้ — api แค่ส่งต่อ
+    ports:
+      - "127.0.0.1:8000:8000"          # dev: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 · เครื่องจริงเข้าผ่าน nginx
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
+
+  # ส่งแจ้งเตือนตาม alert — image เดียวกับ api คนละคำสั่ง
+  notifier:
+    build: ./api
+    image: water-backend/api:0.3.0
+    command: ["python", "-m", "api.notifier"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      MQTT_HOST: mosquitto
+      MQTT_USER: api                   # บัซเซอร์ใช้ topic plant/water/+/cmd ที่ ACL ของ api อนุญาตอยู่แล้ว
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_FROM: ${SMTP_FROM:-water-alerts@plant.local}
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/notifier.alive') > 30)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
+  # รับ feedback ของคำสั่ง · ตัด timeout 10 วินาที · เดินตารางเวลา — image เดียวกับ api
+  dispatcher:
+    build: ./api
+    image: water-backend/api:0.3.0
+    command: ["python", "-m", "api.dispatcher"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      MQTT_HOST: mosquitto
+      MQTT_USER: api
+      MQTT_PASSWORD: ${MQTT_PASSWORD_API:?ต้องตั้งใน .env}
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/dispatcher.alive') > 30)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
+  # งานตามเวลา: น้ำสูญหายทุก 5 นาที · เรนเดอร์ไฟล์ส่งออก CSV/PDF (เฟส 6)
+  # ★ image แยกจาก api: มี WeasyPrint + ฟอนต์ Sarabun (docker/worker.Dockerfile · build context = backend/)
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    image: water-backend/worker:0.1.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TZ: Asia/Bangkok
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:?ต้องตั้งใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ต้องตั้งใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้งใน .env}
+      REDIS_URL: redis://redis:6379/0
+      EXPORT_DIR: /data/exports
+      ARCHIVE_DIR: /data/archive
+      BACKUP_DIR: /backup
+    volumes:
+      - exports:/data/exports          # api เมานต์แบบอ่านอย่างเดียวเพื่อส่งไฟล์
+      - ./data/archive:/data/archive   # Parquet ข้อมูลดิบ (ทีม AI ใช้เทรน) — เครื่องจริงชี้ไปดิสก์ที่มีพื้นที่พอ
+      - ${BACKUP_HOST_DIR:-./data/backup}:/backup   # ★ host mount SMB (maintenance.backupPath) ไว้ที่นี่ก่อน
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/worker.alive') > 60)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  pgdata:
+  mosqdata:
+  ingest-spool:
+  exports:          # ไฟล์ส่งออกรายงาน (worker เขียน · api อ่าน) เก็บ 7 วัน
